@@ -9,6 +9,7 @@ export interface Profile {
   role: 'admin' | 'dashboard';
   points?: number;
   yearly_points?: number;
+  household_id?: string;
 }
 
 interface AuthContextType {

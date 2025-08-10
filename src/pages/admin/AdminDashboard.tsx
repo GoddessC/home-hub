@@ -16,7 +16,7 @@ import { AlarmList, Alarm } from '@/components/alarms/AlarmList';
 import { UserNav } from '@/components/layout/UserNav';
 
 const AdminDashboard = () => {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const queryClient = useQueryClient();
 
   // Profile and Chore Queries
@@ -51,8 +51,10 @@ const AdminDashboard = () => {
   // Chore Mutations
   const addChoreMutation = useMutation({
     mutationFn: async (newChore: ChoreFormValues) => {
+      if (!profile?.household_id) throw new Error("Household not found for user.");
       const { error } = await supabase.from('chores').insert({
         ...newChore,
+        household_id: profile.household_id,
         due_date: newChore.due_date ? newChore.due_date.toISOString().split('T')[0] : undefined,
       });
       if (error) throw new Error(error.message);

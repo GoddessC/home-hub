@@ -14,12 +14,14 @@ import { YearlyUserPointsList } from '@/components/users/YearlyUserPointsList';
 import { AddAlarmDialog, AlarmFormValues } from '@/components/alarms/AddAlarmDialog';
 import { AlarmList, Alarm } from '@/components/alarms/AlarmList';
 import { UserNav } from '@/components/layout/UserNav';
+import { UserManagementList } from '@/components/users/UserManagementList';
+import { AddUserDialog, AddUserFormValues } from '@/components/users/AddUserDialog';
 
 const AdminDashboard = () => {
   const { user, profile } = useAuth();
   const queryClient = useQueryClient();
 
-  // Profile and Chore Queries
+  // Queries
   const { data: profiles, isLoading: isLoadingProfiles } = useQuery<Profile[]>({
     queryKey: ['profiles'],
     queryFn: async () => {
@@ -38,7 +40,6 @@ const AdminDashboard = () => {
     }
   });
 
-  // Alarm Query
   const { data: alarms, isLoading: isLoadingAlarms } = useQuery<Alarm[]>({
     queryKey: ['alarms'],
     queryFn: async () => {
@@ -48,7 +49,23 @@ const AdminDashboard = () => {
     }
   });
 
-  // Chore Mutations
+  // Mutations
+  const addUserMutation = useMutation({
+    mutationFn: async (newUser: AddUserFormValues) => {
+      const { error } = await supabase.functions.invoke('add-user-to-household', {
+        body: newUser,
+      });
+      if (error) throw new Error(error.message);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['profiles'] });
+      showSuccess('New member added successfully!');
+    },
+    onError: (error) => {
+      showError(`Failed to add member: ${error.message}`);
+    }
+  });
+
   const addChoreMutation = useMutation({
     mutationFn: async (newChore: ChoreFormValues) => {
       if (!profile?.household_id) throw new Error("Household not found for user.");
@@ -97,7 +114,6 @@ const AdminDashboard = () => {
     }
   });
 
-  // Alarm Mutations
   const addAlarmMutation = useMutation({
     mutationFn: async (newAlarm: AlarmFormValues) => {
         if (!profile?.household_id) throw new Error("Household not found for user.");
@@ -162,7 +178,31 @@ const AdminDashboard = () => {
       <main className="flex-grow container mx-auto p-4">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 space-y-8">
-            {/* Chore Management */}
+            
+            <section>
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-3xl font-bold">User Management</h2>
+                <AddUserDialog onAddUser={(data) => addUserMutation.mutate(data)}>
+                  <Button>Add New Member</Button>
+                </AddUserDialog>
+              </div>
+              {isLoadingProfiles ? (
+                <Card>
+                  <CardHeader><Skeleton className="h-8 w-1/4" /></CardHeader>
+                  <CardContent className="space-y-4">
+                    <Skeleton className="h-16 w-full" />
+                    <Skeleton className="h-16 w-full" />
+                  </CardContent>
+                </Card>
+              ) : (
+                <UserManagementList
+                  profiles={profiles || []}
+                  onDeleteUser={() => { /* TODO: Implement delete user */ }}
+                  currentUserId={user!.id}
+                />
+              )}
+            </section>
+
             <section>
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-3xl font-bold">Chore Management</h2>
@@ -189,7 +229,6 @@ const AdminDashboard = () => {
               )}
             </section>
 
-            {/* Alarm Management */}
             <section>
                 <div className="flex justify-between items-center mb-4">
                     <h2 className="text-3xl font-bold">Alarm Management</h2>
@@ -203,7 +242,7 @@ const AdminDashboard = () => {
                         <CardContent className="space-y-4">
                             <Skeleton className="h-20 w-full" />
                             <Skeleton className="h-20 w-full" />
-                        </CardContent>
+                        </Content>
                     </Card>
                 ) : (
                     <AlarmList
@@ -215,7 +254,6 @@ const AdminDashboard = () => {
             </section>
           </div>
 
-          {/* Leaderboard */}
           <div className="space-y-6">
             <h2 className="text-3xl font-bold">Leaderboard</h2>
             {isLoadingProfiles ? (

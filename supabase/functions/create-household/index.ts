@@ -12,10 +12,15 @@ serve(async (req) => {
   }
 
   try {
-    const { householdName, adminFullName, adminEmail, adminPassword, members } = await req.json()
+    const { 
+      householdName, 
+      adminFullName, adminEmail, adminPassword,
+      familyEmail, familyPassword,
+      members 
+    } = await req.json()
 
-    if (!householdName || !adminFullName || !adminEmail || !adminPassword) {
-      return new Response(JSON.stringify({ error: 'Missing required admin or household fields' }), {
+    if (!householdName || !adminFullName || !adminEmail || !adminPassword || !familyEmail || !familyPassword) {
+      return new Response(JSON.stringify({ error: 'Missing required fields for household, admin, or family accounts.' }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 400,
       })
@@ -26,16 +31,7 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    // 1. Create the admin user
-    const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
-      email: adminEmail,
-      password: adminPassword,
-      email_confirm: true,
-    })
-    if (authError) throw authError
-    const adminUser = authData.user
-
-    // 2. Create the household
+    // 1. Create the household
     const { data: householdData, error: householdError } = await supabaseAdmin
       .from('households')
       .insert({ name: householdName })
@@ -43,8 +39,17 @@ serve(async (req) => {
       .single()
     if (householdError) throw householdError
 
+    // 2. Create the admin user
+    const { data: adminAuthData, error: adminAuthError } = await supabaseAdmin.auth.admin.createUser({
+      email: adminEmail,
+      password: adminPassword,
+      email_confirm: true,
+    })
+    if (adminAuthError) throw adminAuthError
+    const adminUser = adminAuthData.user
+
     // 3. Create the admin's profile
-    const { error: profileError } = await supabaseAdmin
+    const { error: adminProfileError } = await supabaseAdmin
       .from('profiles')
       .insert({
         id: adminUser.id,
@@ -52,35 +57,42 @@ serve(async (req) => {
         role: 'admin',
         household_id: householdData.id,
       })
-    if (profileError) throw profileError
+    if (adminProfileError) throw adminProfileError
 
-    // 4. Create additional household members if they exist
-    if (members && Array.isArray(members)) {
-      for (const member of members) {
-        const { fullName, email, password } = member;
-        if (!fullName || !email || !password) {
-          console.warn('Skipping invalid member data:', member)
-          continue;
-        }
+    // 4. Create the shared family dashboard user
+    const { data: familyAuthData, error: familyAuthError } = await supabaseAdmin.auth.admin.createUser({
+        email: familyEmail,
+        password: familyPassword,
+        email_confirm: true,
+    })
+    if (familyAuthError) throw familyAuthError
+    const familyUser = familyAuthData.user
 
-        const { data: memberAuthData, error: memberAuthError } = await supabaseAdmin.auth.admin.createUser({
-          email: email,
-          password: password,
-          email_confirm: true,
-        });
-        if (memberAuthError) throw new Error(`Failed to create member ${email}: ${memberAuthError.message}`);
-        
-        const memberUser = memberAuthData.user;
+    // 5. Create the family dashboard's profile
+    const { error: familyProfileError } = await supabaseAdmin
+      .from('profiles')
+      .insert({
+        id: familyUser.id,
+        full_name: `${householdName} Family`,
+        role: 'dashboard', // 'dashboard' role will now signify the family dashboard
+        household_id: householdData.id,
+      })
+    if (familyProfileError) throw familyProfileError
 
-        const { error: memberProfileError } = await supabaseAdmin
-          .from('profiles')
-          .insert({
-            id: memberUser.id,
-            full_name: fullName,
-            role: 'dashboard',
-            household_id: householdData.id,
-          });
-        if (memberProfileError) throw new Error(`Failed to create profile for ${email}: ${memberProfileError.message}`);
+    // 6. Create non-user member profiles
+    if (members && Array.isArray(members) && members.length > 0) {
+      const memberInserts = members
+        .filter(member => member.name && member.name.trim() !== '')
+        .map(member => ({
+          household_id: householdData.id,
+          full_name: member.name,
+        }));
+
+      if (memberInserts.length > 0) {
+        const { error: membersError } = await supabaseAdmin
+          .from('members')
+          .insert(memberInserts)
+        if (membersError) throw membersError
       }
     }
 

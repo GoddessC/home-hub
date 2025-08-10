@@ -7,47 +7,43 @@ const corsHeaders = {
 }
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
   }
 
   try {
-    const { householdName, adminFullName, adminEmail, adminPassword } = await req.json()
+    const { householdName, adminFullName, adminEmail, adminPassword, members } = await req.json()
 
     if (!householdName || !adminFullName || !adminEmail || !adminPassword) {
-      return new Response(JSON.stringify({ error: 'Missing required fields' }), {
+      return new Response(JSON.stringify({ error: 'Missing required admin or household fields' }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 400,
       })
     }
 
-    // Use the service role key to perform admin actions
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    // 1. Create the admin user in Supabase Auth
+    // 1. Create the admin user
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email: adminEmail,
       password: adminPassword,
-      email_confirm: true, // Auto-confirm user for simplicity in this flow
+      email_confirm: true,
     })
-
     if (authError) throw authError
     const adminUser = authData.user
 
-    // 2. Create the new household
+    // 2. Create the household
     const { data: householdData, error: householdError } = await supabaseAdmin
       .from('households')
       .insert({ name: householdName })
       .select()
       .single()
-
     if (householdError) throw householdError
 
-    // 3. Create the admin's profile, linking the user and household
+    // 3. Create the admin's profile
     const { error: profileError } = await supabaseAdmin
       .from('profiles')
       .insert({
@@ -56,8 +52,37 @@ serve(async (req) => {
         role: 'admin',
         household_id: householdData.id,
       })
-
     if (profileError) throw profileError
+
+    // 4. Create additional household members if they exist
+    if (members && Array.isArray(members)) {
+      for (const member of members) {
+        const { fullName, email, password } = member;
+        if (!fullName || !email || !password) {
+          console.warn('Skipping invalid member data:', member)
+          continue;
+        }
+
+        const { data: memberAuthData, error: memberAuthError } = await supabaseAdmin.auth.admin.createUser({
+          email: email,
+          password: password,
+          email_confirm: true,
+        });
+        if (memberAuthError) throw new Error(`Failed to create member ${email}: ${memberAuthError.message}`);
+        
+        const memberUser = memberAuthData.user;
+
+        const { error: memberProfileError } = await supabaseAdmin
+          .from('profiles')
+          .insert({
+            id: memberUser.id,
+            full_name: fullName,
+            role: 'dashboard',
+            household_id: householdData.id,
+          });
+        if (memberProfileError) throw new Error(`Failed to create profile for ${email}: ${memberProfileError.message}`);
+      }
+    }
 
     return new Response(JSON.stringify({ message: 'Household created successfully' }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

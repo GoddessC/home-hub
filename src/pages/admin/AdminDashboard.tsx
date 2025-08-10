@@ -5,7 +5,7 @@ import { Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { AddChoreDialog, ChoreFormValues } from '@/components/chores/AddChoreDialog';
-import { ChoreList } from '@/components/chores/ChoreList';
+import { ChoreList, Chore } from '@/components/chores/ChoreList';
 import { Profile } from '@/context/AuthContext';
 import { showSuccess, showError } from '@/utils/toast';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -31,7 +31,7 @@ const AdminDashboard = () => {
     }
   });
 
-  const { data: chores, isLoading: isLoadingChores } = useQuery({
+  const { data: chores, isLoading: isLoadingChores } = useQuery<Chore[]>({
     queryKey: ['chores'],
     queryFn: async () => {
       const { data, error } = await supabase.from('chores').select('*, profiles(full_name, avatar_url)').order('created_at', { ascending: false });
@@ -63,6 +63,22 @@ const AdminDashboard = () => {
     },
     onError: (error) => {
       showError(`Failed to add member: ${error.message}`);
+    }
+  });
+
+  const deleteUserMutation = useMutation({
+    mutationFn: async (userIdToDelete: string) => {
+      const { error } = await supabase.functions.invoke('delete-user', {
+        body: { userIdToDelete },
+      });
+      if (error) throw new Error(error.message);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['profiles'] });
+      showSuccess('User deleted successfully.');
+    },
+    onError: (error) => {
+      showError(`Failed to delete user: ${error.message}`);
     }
   });
 
@@ -197,7 +213,7 @@ const AdminDashboard = () => {
               ) : (
                 <UserManagementList
                   profiles={profiles || []}
-                  onDeleteUser={() => { /* TODO: Implement delete user */ }}
+                  onDeleteUser={(userId) => deleteUserMutation.mutate(userId)}
                   currentUserId={user!.id}
                 />
               )}

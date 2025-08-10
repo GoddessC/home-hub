@@ -36,6 +36,7 @@ const Dashboard = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['chores', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['profiles'] });
       showSuccess('Chore updated!');
     },
     onError: (error) => {
@@ -49,9 +50,12 @@ const Dashboard = () => {
         <div className="container mx-auto flex justify-between items-center">
           <h1 className="text-2xl font-bold text-gray-800">HomeHub</h1>
           <div className="flex items-center space-x-4">
-            <span className="text-gray-600">
-              Welcome, {profile?.full_name || user?.email}!
-            </span>
+            <div className="text-right">
+              <span className="text-gray-600 block">
+                Welcome, {profile?.full_name || user?.email}!
+              </span>
+              <span className="font-bold text-primary">{profile?.points ?? 0} Points</span>
+            </div>
             {profile?.role === 'admin' && (
               <Button asChild variant="secondary">
                 <Link to="/admin">Admin Panel</Link>

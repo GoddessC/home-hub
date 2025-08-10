@@ -10,6 +10,7 @@ import { Profile } from '@/context/AuthContext';
 import { showSuccess, showError } from '@/utils/toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { UserPointsList } from '@/components/users/UserPointsList';
 
 const AdminDashboard = () => {
   const { user, profile, signOut } = useAuth();
@@ -57,6 +58,7 @@ const AdminDashboard = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['chores'] });
+      queryClient.invalidateQueries({ queryKey: ['profiles'] });
       showSuccess('Chore updated!');
     },
     onError: (error) => {
@@ -97,32 +99,48 @@ const AdminDashboard = () => {
         </div>
       </header>
       <main className="flex-grow container mx-auto p-4">
-        <div className="space-y-6">
-          <div className="flex justify-between items-center">
-            <h2 className="text-3xl font-bold">Chore Management</h2>
-            {profiles && (
-              <AddChoreDialog profiles={profiles} onAddChore={(data) => addChoreMutation.mutate(data)}>
-                <Button>Add New Chore</Button>
-              </AddChoreDialog>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2 space-y-6">
+            <div className="flex justify-between items-center">
+              <h2 className="text-3xl font-bold">Chore Management</h2>
+              {profiles && (
+                <AddChoreDialog profiles={profiles} onAddChore={(data) => addChoreMutation.mutate(data)}>
+                  <Button>Add New Chore</Button>
+                </AddChoreDialog>
+              )}
+            </div>
+            
+            {isLoadingChores || isLoadingProfiles ? (
+              <Card>
+                <CardHeader><Skeleton className="h-8 w-1/4" /></CardHeader>
+                <CardContent className="space-y-4">
+                  <Skeleton className="h-16 w-full" />
+                  <Skeleton className="h-16 w-full" />
+                  <Skeleton className="h-16 w-full" />
+                </CardContent>
+              </Card>
+            ) : (
+              <ChoreList 
+                chores={chores || []} 
+                onUpdateChore={(id, updates) => updateChoreMutation.mutate({ id, updates })}
+                onDeleteChore={(id) => deleteChoreMutation.mutate(id)}
+              />
             )}
           </div>
-          
-          {isLoadingChores || isLoadingProfiles ? (
-            <Card>
-              <CardHeader><Skeleton className="h-8 w-1/4" /></CardHeader>
-              <CardContent className="space-y-4">
-                <Skeleton className="h-16 w-full" />
-                <Skeleton className="h-16 w-full" />
-                <Skeleton className="h-16 w-full" />
-              </CardContent>
-            </Card>
-          ) : (
-            <ChoreList 
-              chores={chores || []} 
-              onUpdateChore={(id, updates) => updateChoreMutation.mutate({ id, updates })}
-              onDeleteChore={(id) => deleteChoreMutation.mutate(id)}
-            />
-          )}
+          <div className="space-y-6">
+            <h2 className="text-3xl font-bold">Leaderboard</h2>
+            {isLoadingProfiles ? (
+              <Card>
+                <CardHeader><Skeleton className="h-8 w-1/2" /></CardHeader>
+                <CardContent className="space-y-4">
+                  <Skeleton className="h-12 w-full" />
+                  <Skeleton className="h-12 w-full" />
+                </CardContent>
+              </Card>
+            ) : (
+              <UserPointsList profiles={profiles || []} />
+            )}
+          </div>
         </div>
       </main>
       <MadeWithDyad />

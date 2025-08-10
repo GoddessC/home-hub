@@ -13,6 +13,7 @@ import { MadeWithDyad } from '@/components/made-with-dyad';
 import { Link } from 'react-router-dom';
 import { AvatarUpload } from '@/components/profile/AvatarUpload';
 import { Separator } from '@/components/ui/separator';
+import { UserNav } from '@/components/layout/UserNav';
 
 const profileSchema = z.object({
   full_name: z.string().min(2, 'Full name must be at least 2 characters.'),
@@ -68,9 +69,12 @@ const ProfilePage = () => {
           <h1 className="text-2xl font-bold text-gray-800">
             <Link to="/">HomeHub</Link>
           </h1>
-          <Button asChild variant="outline">
-            <Link to="/">Back to Dashboard</Link>
-          </Button>
+          <div className="flex items-center space-x-4">
+            <Button asChild variant="outline">
+              <Link to="/">Back to Dashboard</Link>
+            </Button>
+            <UserNav />
+          </div>
         </div>
       </header>
       <main className="flex-grow container mx-auto p-4 flex justify-center items-start">

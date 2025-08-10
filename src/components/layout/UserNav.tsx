@@ -16,29 +16,35 @@ import { LogOut, User as UserIcon, Shield } from "lucide-react";
 export function UserNav() {
   const { user, profile, signOut } = useAuth();
 
-  if (!user || !profile) {
+  // Only render if the user object is available.
+  if (!user) {
     return null;
   }
 
   const getInitials = (name: string | null | undefined) => {
-    if (!name) return "U";
+    if (!name) return user.email?.[0].toUpperCase() || "U";
     return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
   };
+
+  // Use optional chaining to safely access profile properties.
+  const fullName = profile?.full_name;
+  const avatarUrl = profile?.avatar_url;
+  const role = profile?.role;
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="relative h-8 w-8 rounded-full">
           <Avatar className="h-9 w-9">
-            <AvatarImage src={profile.avatar_url} alt={profile.full_name || ""} />
-            <AvatarFallback>{getInitials(profile.full_name)}</AvatarFallback>
+            <AvatarImage src={avatarUrl || undefined} alt={fullName || ""} />
+            <AvatarFallback>{getInitials(fullName)}</AvatarFallback>
           </Avatar>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-56" align="end" forceMount>
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium leading-none">{profile.full_name}</p>
+            <p className="text-sm font-medium leading-none">{fullName || 'User'}</p>
             <p className="text-xs leading-none text-muted-foreground">
               {user.email}
             </p>
@@ -52,7 +58,7 @@ export function UserNav() {
               <span>Profile</span>
             </DropdownMenuItem>
           </Link>
-          {profile.role === 'admin' && (
+          {role === 'admin' && (
              <Link to="/admin">
                 <DropdownMenuItem>
                     <Shield className="mr-2 h-4 w-4" />

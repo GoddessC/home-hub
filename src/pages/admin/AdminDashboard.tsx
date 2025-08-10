@@ -9,13 +9,16 @@ import { ChoreList } from '@/components/chores/ChoreList';
 import { Profile } from '@/context/AuthContext';
 import { showSuccess, showError } from '@/utils/toast';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { UserPointsList } from '@/components/users/UserPointsList';
+import { AddAlarmDialog, AlarmFormValues } from '@/components/alarms/AddAlarmDialog';
+import { AlarmList, Alarm } from '@/components/alarms/AlarmList';
 
 const AdminDashboard = () => {
   const { user, profile, signOut } = useAuth();
   const queryClient = useQueryClient();
 
+  // Profile and Chore Queries
   const { data: profiles, isLoading: isLoadingProfiles } = useQuery<Profile[]>({
     queryKey: ['profiles'],
     queryFn: async () => {
@@ -34,6 +37,17 @@ const AdminDashboard = () => {
     }
   });
 
+  // Alarm Query
+  const { data: alarms, isLoading: isLoadingAlarms } = useQuery<Alarm[]>({
+    queryKey: ['alarms'],
+    queryFn: async () => {
+        const { data, error } = await supabase.from('alarms').select('*').order('time', { ascending: true });
+        if (error) throw new Error(error.message);
+        return data || [];
+    }
+  });
+
+  // Chore Mutations
   const addChoreMutation = useMutation({
     mutationFn: async (newChore: ChoreFormValues) => {
       const { error } = await supabase.from('chores').insert({
@@ -80,6 +94,49 @@ const AdminDashboard = () => {
     }
   });
 
+  // Alarm Mutations
+  const addAlarmMutation = useMutation({
+    mutationFn: async (newAlarm: AlarmFormValues) => {
+        const { error } = await supabase.from('alarms').insert(newAlarm);
+        if (error) throw new Error(error.message);
+    },
+    onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ['alarms'] });
+        showSuccess('Alarm added successfully!');
+    },
+    onError: (error) => {
+        showError(`Failed to add alarm: ${error.message}`);
+    }
+  });
+
+  const updateAlarmMutation = useMutation({
+    mutationFn: async ({ id, updates }: { id: string, updates: Partial<Alarm> }) => {
+        const { error } = await supabase.from('alarms').update(updates).eq('id', id);
+        if (error) throw new Error(error.message);
+    },
+    onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ['alarms'] });
+        showSuccess('Alarm updated.');
+    },
+    onError: (error) => {
+        showError(`Failed to update alarm: ${error.message}`);
+    }
+  });
+
+  const deleteAlarmMutation = useMutation({
+    mutationFn: async (id: string) => {
+        const { error } = await supabase.from('alarms').delete().eq('id', id);
+        if (error) throw new Error(error.message);
+    },
+    onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ['alarms'] });
+        showSuccess('Alarm deleted.');
+    },
+    onError: (error) => {
+        showError(`Failed to delete alarm: ${error.message}`);
+    }
+  });
+
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
       <header className="p-4 bg-white shadow-md">
@@ -99,34 +156,62 @@ const AdminDashboard = () => {
         </div>
       </header>
       <main className="flex-grow container mx-auto p-4">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 space-y-6">
-            <div className="flex justify-between items-center">
-              <h2 className="text-3xl font-bold">Chore Management</h2>
-              {profiles && (
-                <AddChoreDialog profiles={profiles} onAddChore={(data) => addChoreMutation.mutate(data)}>
-                  <Button>Add New Chore</Button>
-                </AddChoreDialog>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="lg:col-span-2 space-y-8">
+            {/* Chore Management */}
+            <section>
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-3xl font-bold">Chore Management</h2>
+                {profiles && (
+                  <AddChoreDialog profiles={profiles} onAddChore={(data) => addChoreMutation.mutate(data)}>
+                    <Button>Add New Chore</Button>
+                  </AddChoreDialog>
+                )}
+              </div>
+              {isLoadingChores || isLoadingProfiles ? (
+                <Card>
+                  <CardHeader><Skeleton className="h-8 w-1/4" /></CardHeader>
+                  <CardContent className="space-y-4">
+                    <Skeleton className="h-16 w-full" />
+                    <Skeleton className="h-16 w-full" />
+                  </CardContent>
+                </Card>
+              ) : (
+                <ChoreList 
+                  chores={chores || []} 
+                  onUpdateChore={(id, updates) => updateChoreMutation.mutate({ id, updates })}
+                  onDeleteChore={(id) => deleteChoreMutation.mutate(id)}
+                />
               )}
-            </div>
-            
-            {isLoadingChores || isLoadingProfiles ? (
-              <Card>
-                <CardHeader><Skeleton className="h-8 w-1/4" /></CardHeader>
-                <CardContent className="space-y-4">
-                  <Skeleton className="h-16 w-full" />
-                  <Skeleton className="h-16 w-full" />
-                  <Skeleton className="h-16 w-full" />
-                </CardContent>
-              </Card>
-            ) : (
-              <ChoreList 
-                chores={chores || []} 
-                onUpdateChore={(id, updates) => updateChoreMutation.mutate({ id, updates })}
-                onDeleteChore={(id) => deleteChoreMutation.mutate(id)}
-              />
-            )}
+            </section>
+
+            {/* Alarm Management */}
+            <section>
+                <div className="flex justify-between items-center mb-4">
+                    <h2 className="text-3xl font-bold">Alarm Management</h2>
+                    <AddAlarmDialog onAddAlarm={(data) => addAlarmMutation.mutate(data)}>
+                        <Button>Add New Alarm</Button>
+                    </AddAlarmDialog>
+                </div>
+                {isLoadingAlarms ? (
+                    <Card>
+                        <CardHeader><Skeleton className="h-8 w-1/4" /></CardHeader>
+                        <CardContent className="space-y-4">
+                            <Skeleton className="h-20 w-full" />
+                            <Skeleton className="h-20 w-full" />
+                        </CardContent>
+                    </Card>
+                ) : (
+                    <AlarmList
+                        alarms={alarms || []}
+                        onUpdateAlarm={(id, updates) => updateAlarmMutation.mutate({ id, updates })}
+                        onDeleteAlarm={(id) => deleteAlarmMutation.mutate(id)}
+                    />
+                )}
+            </section>
           </div>
+
+          {/* Leaderboard */}
           <div className="space-y-6">
             <h2 className="text-3xl font-bold">Leaderboard</h2>
             {isLoadingProfiles ? (

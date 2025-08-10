@@ -61,7 +61,7 @@ const AdminDashboard = () => {
       queryClient.invalidateQueries({ queryKey: ['profiles'] });
       showSuccess('New member added successfully!');
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       showError(`Failed to add member: ${error.message}`);
     }
   });
@@ -77,7 +77,7 @@ const AdminDashboard = () => {
       queryClient.invalidateQueries({ queryKey: ['profiles'] });
       showSuccess('User deleted successfully.');
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       showError(`Failed to delete user: ${error.message}`);
     }
   });
@@ -96,7 +96,7 @@ const AdminDashboard = () => {
       queryClient.invalidateQueries({ queryKey: ['chores'] });
       showSuccess('Chore added successfully!');
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       showError(`Failed to add chore: ${error.message}`);
     }
   });
@@ -111,7 +111,7 @@ const AdminDashboard = () => {
       queryClient.invalidateQueries({ queryKey: ['profiles'] });
       showSuccess('Chore updated!');
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       showError(`Failed to update chore: ${error.message}`);
     }
   });
@@ -125,7 +125,7 @@ const AdminDashboard = () => {
       queryClient.invalidateQueries({ queryKey: ['chores'] });
       showSuccess('Chore deleted.');
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       showError(`Failed to delete chore: ${error.message}`);
     }
   });
@@ -143,7 +143,7 @@ const AdminDashboard = () => {
         queryClient.invalidateQueries({ queryKey: ['alarms'] });
         showSuccess('Alarm added successfully!');
     },
-    onError: (error) => {
+    onError: (error: Error) => {
         showError(`Failed to add alarm: ${error.message}`);
     }
   });
@@ -157,7 +157,7 @@ const AdminDashboard = () => {
         queryClient.invalidateQueries({ queryKey: ['alarms'] });
         showSuccess('Alarm updated.');
     },
-    onError: (error) => {
+    onError: (error: Error) => {
         showError(`Failed to update alarm: ${error.message}`);
     }
   });
@@ -171,7 +171,7 @@ const AdminDashboard = () => {
         queryClient.invalidateQueries({ queryKey: ['alarms'] });
         showSuccess('Alarm deleted.');
     },
-    onError: (error) => {
+    onError: (error: Error) => {
         showError(`Failed to delete alarm: ${error.message}`);
     }
   });

@@ -1,4 +1,4 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Profile } from "@/context/AuthContext";
 import { Award } from "lucide-react";
 
@@ -13,6 +13,7 @@ export const UserPointsList = ({ profiles }: UserPointsListProps) => {
     <Card>
       <CardHeader>
         <CardTitle>Weekly Points Leaderboard</CardTitle>
+        <CardDescription>Points and chores reset every Monday.</CardDescription>
       </CardHeader>
       <CardContent>
         {sortedProfiles.length > 0 ? (

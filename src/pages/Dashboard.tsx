@@ -8,10 +8,15 @@ import { ChoreList } from '@/components/chores/ChoreList';
 import { showSuccess, showError } from '@/utils/toast';
 import { Card, CardHeader, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
+import { format } from 'date-fns';
+import { TodaysAlarms, Alarm } from '@/components/alarms/TodaysAlarms';
 
 const Dashboard = () => {
   const { user, profile, signOut } = useAuth();
   const queryClient = useQueryClient();
+  const [triggeredAlarms, setTriggeredAlarms] = useState<Record<string, string>>({});
 
   const { data: chores, isLoading: isLoadingChores } = useQuery({
     queryKey: ['chores', user?.id],
@@ -28,6 +33,46 @@ const Dashboard = () => {
     },
     enabled: !!user,
   });
+
+  const { data: alarms, isLoading: isLoadingAlarms } = useQuery<Alarm[]>({
+    queryKey: ['activeAlarms'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('alarms')
+        .select('*')
+        .eq('is_active', true);
+      if (error) throw new Error(error.message);
+      return data || [];
+    },
+  });
+
+  useEffect(() => {
+    if (!alarms || alarms.length === 0) return;
+
+    const interval = setInterval(() => {
+      const now = new Date();
+      const currentTime = format(now, 'HH:mm');
+      const currentDay = now.getDay();
+
+      alarms.forEach((alarm) => {
+        const isToday = alarm.days_of_week?.includes(currentDay);
+        const hasBeenTriggeredThisMinute = triggeredAlarms[alarm.id] === currentTime;
+
+        if (alarm.time === currentTime && isToday && !hasBeenTriggeredThisMinute) {
+          toast.info(`⏰ ${alarm.name}`, {
+            duration: 15000,
+            description: `It's time for your scheduled alarm!`,
+          });
+          setTriggeredAlarms(prev => ({
+            ...prev,
+            [alarm.id]: currentTime,
+          }));
+        }
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [alarms, triggeredAlarms]);
 
   const updateChoreMutation = useMutation({
     mutationFn: async ({ id, updates }: { id: string, updates: any }) => {
@@ -68,23 +113,38 @@ const Dashboard = () => {
         </div>
       </header>
       <main className="flex-grow container mx-auto p-4">
-        <div className="space-y-6">
-          <h2 className="text-3xl font-bold">My Chores</h2>
-          {isLoadingChores ? (
-             <Card>
-              <CardHeader><Skeleton className="h-8 w-1/4" /></CardHeader>
-              <CardContent className="space-y-4">
-                <Skeleton className="h-16 w-full" />
-                <Skeleton className="h-16 w-full" />
-              </CardContent>
-            </Card>
-          ) : (
-            <ChoreList 
-              chores={chores || []} 
-              onUpdateChore={(id, updates) => updateChoreMutation.mutate({ id, updates })}
-              onDeleteChore={() => { /* Non-admins can't delete */ }}
-            />
-          )}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="lg:col-span-2 space-y-6">
+            <h2 className="text-3xl font-bold">My Chores</h2>
+            {isLoadingChores ? (
+               <Card>
+                <CardHeader><Skeleton className="h-8 w-1/4" /></CardHeader>
+                <CardContent className="space-y-4">
+                  <Skeleton className="h-16 w-full" />
+                  <Skeleton className="h-16 w-full" />
+                </CardContent>
+              </Card>
+            ) : (
+              <ChoreList 
+                chores={chores || []} 
+                onUpdateChore={(id, updates) => updateChoreMutation.mutate({ id, updates })}
+                onDeleteChore={() => { /* Non-admins can't delete */ }}
+              />
+            )}
+          </div>
+          <div className="space-y-6">
+            {isLoadingAlarms ? (
+              <Card>
+                <CardHeader><Skeleton className="h-8 w-3/4" /></CardHeader>
+                <CardContent className="space-y-2">
+                  <Skeleton className="h-6 w-full" />
+                  <Skeleton className="h-6 w-full" />
+                </CardContent>
+              </Card>
+            ) : (
+              <TodaysAlarms alarms={alarms || []} />
+            )}
+          </div>
         </div>
       </main>
       <MadeWithDyad />

@@ -13,9 +13,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { UserPointsList } from '@/components/users/UserPointsList';
 import { AddAlarmDialog, AlarmFormValues } from '@/components/alarms/AddAlarmDialog';
 import { AlarmList, Alarm } from '@/components/alarms/AlarmList';
+import { UserNav } from '@/components/layout/UserNav';
 
 const AdminDashboard = () => {
-  const { user, profile, signOut } = useAuth();
+  const { user } = useAuth();
   const queryClient = useQueryClient();
 
   // Profile and Chore Queries
@@ -141,17 +142,14 @@ const AdminDashboard = () => {
     <div className="flex flex-col min-h-screen bg-gray-50">
       <header className="p-4 bg-white shadow-md">
         <div className="container mx-auto flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-gray-800">HomeHub - Admin</h1>
+          <h1 className="text-2xl font-bold text-gray-800">
+            <Link to="/">HomeHub - Admin</Link>
+          </h1>
           <div className="flex items-center space-x-4">
-            <span className="text-gray-600">
-              Welcome, {profile?.full_name || user?.email}!
-            </span>
             <Button asChild variant="secondary">
               <Link to="/">View Dashboard</Link>
             </Button>
-            <Button onClick={signOut} variant="outline">
-              Logout
-            </Button>
+            <UserNav />
           </div>
         </div>
       </header>

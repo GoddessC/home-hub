@@ -3,6 +3,7 @@ import { useAuth } from './context/AuthContext';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import AdminDashboard from './pages/admin/AdminDashboard';
+import ProfilePage from './pages/Profile';
 import NotFound from './pages/NotFound';
 
 const AppRoutes = () => {
@@ -31,6 +32,7 @@ const AppRoutes = () => {
   return (
     <Routes>
       <Route path="/" element={<Dashboard />} />
+      <Route path="/profile" element={<ProfilePage />} />
       {profile?.role === 'admin' && (
         <Route path="/admin" element={<AdminDashboard />} />
       )}

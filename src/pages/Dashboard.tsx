@@ -1,7 +1,5 @@
 import { useAuth } from '@/context/AuthContext';
-import { Button } from '@/components/ui/button';
 import { MadeWithDyad } from '@/components/made-with-dyad';
-import { Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { ChoreList } from '@/components/chores/ChoreList';
@@ -12,9 +10,11 @@ import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { TodaysAlarms, Alarm } from '@/components/alarms/TodaysAlarms';
+import { UserNav } from '@/components/layout/UserNav';
+import { Link } from 'react-router-dom';
 
 const Dashboard = () => {
-  const { user, profile, signOut } = useAuth();
+  const { user, profile } = useAuth();
   const queryClient = useQueryClient();
   const [triggeredAlarms, setTriggeredAlarms] = useState<Record<string, string>>({});
 
@@ -93,22 +93,14 @@ const Dashboard = () => {
     <div className="flex flex-col min-h-screen bg-gray-50">
       <header className="p-4 bg-white shadow-md">
         <div className="container mx-auto flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-gray-800">HomeHub</h1>
+          <h1 className="text-2xl font-bold text-gray-800">
+            <Link to="/">HomeHub</Link>
+          </h1>
           <div className="flex items-center space-x-4">
             <div className="text-right">
-              <span className="text-gray-600 block">
-                Welcome, {profile?.full_name || user?.email}!
-              </span>
               <span className="font-bold text-primary">{profile?.points ?? 0} Points</span>
             </div>
-            {profile?.role === 'admin' && (
-              <Button asChild variant="secondary">
-                <Link to="/admin">Admin Panel</Link>
-              </Button>
-            )}
-            <Button onClick={signOut} variant="outline">
-              Logout
-            </Button>
+            <UserNav />
           </div>
         </div>
       </header>

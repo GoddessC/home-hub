@@ -2,7 +2,7 @@ import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -11,9 +11,12 @@ import { supabase } from '@/integrations/supabase/client';
 import { showSuccess, showError } from '@/utils/toast';
 import { MadeWithDyad } from '@/components/made-with-dyad';
 import { Link } from 'react-router-dom';
+import { AvatarUpload } from '@/components/profile/AvatarUpload';
+import { Separator } from '@/components/ui/separator';
 
 const profileSchema = z.object({
   full_name: z.string().min(2, 'Full name must be at least 2 characters.'),
+  avatar_url: z.string().url().optional(),
 });
 
 type ProfileFormValues = z.infer<typeof profileSchema>;
@@ -22,19 +25,20 @@ const ProfilePage = () => {
   const { user, profile } = useAuth();
   const queryClient = useQueryClient();
 
-  const { control, handleSubmit, formState: { errors, isDirty } } = useForm<ProfileFormValues>({
+  const { control, handleSubmit, setValue, formState: { errors, isDirty } } = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
       full_name: profile?.full_name || '',
+      avatar_url: profile?.avatar_url || '',
     },
   });
 
   const updateProfileMutation = useMutation({
-    mutationFn: async (updatedProfile: ProfileFormValues) => {
+    mutationFn: async (updatedProfile: Partial<ProfileFormValues>) => {
       if (!user) throw new Error('User not authenticated');
       const { error } = await supabase
         .from('profiles')
-        .update({ full_name: updatedProfile.full_name, updated_at: new Date().toISOString() })
+        .update({ ...updatedProfile, updated_at: new Date().toISOString() })
         .eq('id', user.id);
       if (error) throw error;
     },
@@ -48,13 +52,18 @@ const ProfilePage = () => {
     },
   });
 
+  const handleAvatarUpload = (url: string) => {
+    setValue('avatar_url', url, { shouldDirty: true });
+    updateProfileMutation.mutate({ avatar_url: url });
+  };
+
   const onSubmit = (data: ProfileFormValues) => {
-    updateProfileMutation.mutate(data);
+    updateProfileMutation.mutate({ full_name: data.full_name });
   };
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
-       <header className="p-4 bg-white shadow-md">
+       <header className="p-4 bg-white shadow-sm border-b">
         <div className="container mx-auto flex justify-between items-center">
           <h1 className="text-2xl font-bold text-gray-800">
             <Link to="/">HomeHub</Link>
@@ -64,13 +73,15 @@ const ProfilePage = () => {
           </Button>
         </div>
       </header>
-      <main className="flex-grow container mx-auto p-4 flex justify-center items-center">
-        <Card className="w-full max-w-lg">
+      <main className="flex-grow container mx-auto p-4 flex justify-center items-start">
+        <Card className="w-full max-w-2xl">
           <CardHeader>
             <CardTitle>My Profile</CardTitle>
-            <CardDescription>Update your personal information here.</CardDescription>
+            <CardDescription>Update your personal information and avatar.</CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-8">
+            <AvatarUpload onUpload={handleAvatarUpload} />
+            <Separator />
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
@@ -86,9 +97,11 @@ const ProfilePage = () => {
                 />
                 {errors.full_name && <p className="text-red-500 text-sm">{errors.full_name.message}</p>}
               </div>
-              <Button type="submit" disabled={!isDirty || updateProfileMutation.isPending}>
-                {updateProfileMutation.isPending ? 'Saving...' : 'Save Changes'}
-              </Button>
+              <CardFooter className="px-0">
+                <Button type="submit" disabled={!isDirty || updateProfileMutation.isPending}>
+                  {updateProfileMutation.isPending ? 'Saving...' : 'Save Changes'}
+                </Button>
+              </CardFooter>
             </form>
           </CardContent>
         </Card>

@@ -2,7 +2,7 @@ import { useAuth } from '@/context/AuthContext';
 import { MadeWithDyad } from '@/components/made-with-dyad';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { ChoreList } from '@/components/chores/ChoreList';
+import { ChoreList, Chore } from '@/components/chores/ChoreList';
 import { showSuccess, showError } from '@/utils/toast';
 import { Card, CardHeader, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -13,54 +13,73 @@ import { TodaysAlarms, Alarm } from '@/components/alarms/TodaysAlarms';
 import { UserNav } from '@/components/layout/UserNav';
 import { Link } from 'react-router-dom';
 import { AnnouncementPanel } from '@/components/announcements/AnnouncementPanel';
+import { Member } from '@/context/AuthContext';
+import { MemberPointsList } from '@/components/members/MemberPointsList';
 
 const Dashboard = () => {
   const { user, profile } = useAuth();
   const queryClient = useQueryClient();
   const [triggeredAlarms, setTriggeredAlarms] = useState<Record<string, string>>({});
 
-  const { data: chores, isLoading: isLoadingChores } = useQuery({
-    queryKey: ['chores', user?.id],
+  const householdId = profile?.household_id;
+
+  const { data: chores, isLoading: isLoadingChores } = useQuery<Chore[], Error>({
+    queryKey: ['chores', householdId],
     queryFn: async () => {
-      if (!user) return [];
+      if (!householdId) return [];
       const { data, error } = await supabase
         .from('chores')
-        .select('*, profiles(full_name, avatar_url)')
-        .eq('assigned_to', user.id)
+        .select('*, members(full_name, avatar_url)')
+        .eq('household_id', householdId)
         .order('is_completed')
-        .order('created_at', { ascending: false });
+        .order('due_date', { ascending: true, nullsFirst: true });
       if (error) throw new Error(error.message);
       return data || [];
     },
-    enabled: !!user,
+    enabled: !!householdId,
   });
 
-  const { data: alarms, isLoading: isLoadingAlarms } = useQuery<Alarm[]>({
-    queryKey: ['activeAlarms'],
+  const { data: members, isLoading: isLoadingMembers } = useQuery<Member[], Error>({
+    queryKey: ['members', householdId],
     queryFn: async () => {
+      if (!householdId) return [];
+      const { data, error } = await supabase.from('members').select('*').eq('household_id', householdId);
+      if (error) throw new Error(error.message);
+      return data || [];
+    },
+    enabled: !!householdId,
+  });
+
+  const { data: alarms, isLoading: isLoadingAlarms } = useQuery<Alarm[], Error>({
+    queryKey: ['activeAlarms', householdId],
+    queryFn: async () => {
+      if (!householdId) return [];
       const { data, error } = await supabase
         .from('alarms')
         .select('*')
+        .eq('household_id', householdId)
         .eq('is_active', true);
       if (error) throw new Error(error.message);
       return data || [];
     },
+    enabled: !!householdId,
   });
 
   const { data: announcement, isLoading: isLoadingAnnouncement } = useQuery({
-    queryKey: ['latestAnnouncement', user?.id],
+    queryKey: ['latestAnnouncement', householdId],
     queryFn: async () => {
-      if (!user) return null;
+      if (!householdId) return null;
       const { data, error } = await supabase
         .from('announcements')
         .select('*')
+        .eq('household_id', householdId)
         .order('created_at', { ascending: false })
         .limit(1)
         .maybeSingle();
       if (error) throw new Error(error.message);
       return data;
     },
-    enabled: !!user,
+    enabled: !!householdId,
   });
 
   useEffect(() => {
@@ -97,8 +116,8 @@ const Dashboard = () => {
       if (error) throw new Error(error.message);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['chores', user?.id] });
-      queryClient.invalidateQueries({ queryKey: ['profiles'] });
+      queryClient.invalidateQueries({ queryKey: ['chores', householdId] });
+      queryClient.invalidateQueries({ queryKey: ['members', householdId] });
       showSuccess('Chore updated!');
     },
     onError: (error) => {
@@ -113,19 +132,13 @@ const Dashboard = () => {
           <h1 className="text-2xl font-bold text-gray-800">
             <Link to="/">HomeHub</Link>
           </h1>
-          <div className="flex items-center space-x-4">
-            <div className="text-right">
-              <span className="font-bold text-primary">{profile?.points ?? 0} Points</span>
-            </div>
-            <UserNav />
-          </div>
+          <UserNav />
         </div>
       </header>
       <main className="flex-grow container mx-auto p-4">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 space-y-6">
             <AnnouncementPanel announcement={announcement} isLoading={isLoadingAnnouncement} />
-            <h2 className="text-3xl font-bold">My Chores</h2>
             {isLoadingChores ? (
                <Card>
                 <CardHeader><Skeleton className="h-8 w-1/4" /></CardHeader>
@@ -138,11 +151,24 @@ const Dashboard = () => {
               <ChoreList 
                 chores={chores || []} 
                 onUpdateChore={(id, updates) => updateChoreMutation.mutate({ id, updates })}
-                onDeleteChore={() => { /* Non-admins can't delete */ }}
+                onDeleteChore={() => { /* Deleting is admin-only */ }}
+                title="Household Chores"
+                showAdminControls={false}
               />
             )}
           </div>
           <div className="space-y-6">
+            {isLoadingMembers ? (
+              <Card>
+                <CardHeader><Skeleton className="h-8 w-3/4" /></CardHeader>
+                <CardContent className="space-y-2">
+                  <Skeleton className="h-10 w-full" />
+                  <Skeleton className="h-10 w-full" />
+                </CardContent>
+              </Card>
+            ) : (
+              <MemberPointsList members={members || []} />
+            )}
             {isLoadingAlarms ? (
               <Card>
                 <CardHeader><Skeleton className="h-8 w-3/4" /></CardHeader>

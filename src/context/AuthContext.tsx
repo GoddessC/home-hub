@@ -7,9 +7,18 @@ export interface Profile {
   full_name: string;
   avatar_url: string;
   role: 'admin' | 'dashboard';
-  points?: number;
-  yearly_points?: number;
   household_id?: string;
+}
+
+// This interface represents a non-user member of the household
+export interface Member {
+    id: string;
+    household_id: string;
+    full_name: string;
+    avatar_url: string | null;
+    points: number;
+    yearly_points: number;
+    created_at: string;
 }
 
 interface AuthContextType {

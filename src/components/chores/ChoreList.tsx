@@ -5,6 +5,7 @@ import { Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { useAuth } from "@/context/AuthContext";
+import { Member } from "@/context/AuthContext";
 
 export interface Chore {
   id: string;
@@ -13,30 +14,30 @@ export interface Chore {
   assigned_to: string;
   due_date: string | null;
   is_completed: boolean;
-  profiles: {
-    full_name: string;
-    avatar_url: string | null;
-  } | null;
+  points: number;
+  members: Pick<Member, 'full_name' | 'avatar_url'> | null;
 }
 
 interface ChoreListProps {
   chores: Chore[];
   onUpdateChore: (id: string, updates: Partial<Chore>) => void;
   onDeleteChore: (id: string) => void;
+  title?: string;
+  showAdminControls?: boolean;
 }
 
-export const ChoreList = ({ chores, onUpdateChore, onDeleteChore }: ChoreListProps) => {
+export const ChoreList = ({ chores, onUpdateChore, onDeleteChore, title = "Chore List", showAdminControls = false }: ChoreListProps) => {
   const { profile } = useAuth();
-  const isAdmin = profile?.role === 'admin';
+  const isAdmin = profile?.role === 'admin' && showAdminControls;
 
   if (!chores || chores.length === 0) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Chore List</CardTitle>
+          <CardTitle>{title}</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-muted-foreground">No chores found. {isAdmin ? "Add a new chore to get started!" : "You have no assigned chores. Great job!"}</p>
+          <p className="text-muted-foreground">No chores found. {isAdmin ? "Add a new chore to get started!" : "Looks like everything is done!"}</p>
         </CardContent>
       </Card>
     );
@@ -45,7 +46,7 @@ export const ChoreList = ({ chores, onUpdateChore, onDeleteChore }: ChoreListPro
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Chore List</CardTitle>
+        <CardTitle>{title}</CardTitle>
       </CardHeader>
       <CardContent>
         <ul className="space-y-4">
@@ -60,8 +61,9 @@ export const ChoreList = ({ chores, onUpdateChore, onDeleteChore }: ChoreListPro
                 <div className="flex flex-col">
                   <label htmlFor={`chore-${chore.id}`} className="font-medium text-lg">{chore.task}</label>
                   <div className="text-sm text-muted-foreground space-x-2">
-                    <span>Assigned to: {chore.profiles?.full_name || 'Unassigned'}</span>
+                    <span>Assigned to: {chore.members?.full_name || 'Unassigned'}</span>
                     {chore.due_date && <span>| Due: {format(new Date(chore.due_date), "PPP")}</span>}
+                    <span>| Points: {chore.points}</span>
                   </div>
                 </div>
               </div>

@@ -25,28 +25,30 @@ import { format } from "date-fns";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { Profile } from "@/context/AuthContext";
+import { Member } from "@/context/AuthContext";
 import { useState } from "react";
 
 const choreSchema = z.object({
   task: z.string().min(1, "Task description is required."),
-  assigned_to: z.string().uuid("Please select a user."),
+  assigned_to: z.string().uuid("Please select a member."),
   due_date: z.date().optional(),
+  points: z.coerce.number().min(1, "Points must be at least 1.").default(1),
 });
 
 export type ChoreFormValues = z.infer<typeof choreSchema>;
 
 interface AddChoreDialogProps {
-  profiles: Profile[];
+  members: Member[];
   onAddChore: (data: ChoreFormValues) => void;
   children: React.ReactNode;
 }
 
-export const AddChoreDialog = ({ profiles, onAddChore, children }: AddChoreDialogProps) => {
+export const AddChoreDialog = ({ members, onAddChore, children }: AddChoreDialogProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const {
     control,
     handleSubmit,
+    register,
     reset,
     formState: { errors },
   } = useForm<ChoreFormValues>({
@@ -91,12 +93,12 @@ export const AddChoreDialog = ({ profiles, onAddChore, children }: AddChoreDialo
               render={({ field }) => (
                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                   <SelectTrigger className="col-span-3">
-                    <SelectValue placeholder="Select a user" />
+                    <SelectValue placeholder="Select a member" />
                   </SelectTrigger>
                   <SelectContent>
-                    {profiles.map((profile) => (
-                      <SelectItem key={profile.id} value={profile.id}>
-                        {profile.full_name}
+                    {members.map((member) => (
+                      <SelectItem key={member.id} value={member.id}>
+                        {member.full_name}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -137,6 +139,13 @@ export const AddChoreDialog = ({ profiles, onAddChore, children }: AddChoreDialo
                 </Popover>
               )}
             />
+          </div>
+           <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="points" className="text-right">
+              Points
+            </Label>
+            <Input id="points" type="number" {...register("points")} className="col-span-3" defaultValue={1} />
+            {errors.points && <p className="col-span-4 text-red-500 text-sm text-right">{errors.points.message}</p>}
           </div>
           <DialogFooter>
             <Button type="submit">Add Chore</Button>

@@ -15,6 +15,7 @@ import { Link } from 'react-router-dom';
 import { AnnouncementPanel } from '@/components/announcements/AnnouncementPanel';
 import { Member } from '@/context/AuthContext';
 import { MemberPointsList } from '@/components/members/MemberPointsList';
+import { Button } from '@/components/ui/button';
 
 const Dashboard = () => {
   const { user, profile } = useAuth();
@@ -132,7 +133,14 @@ const Dashboard = () => {
           <h1 className="text-2xl font-bold text-gray-800">
             <Link to="/">HomeHub</Link>
           </h1>
-          <UserNav />
+          <div className="flex items-center space-x-4">
+            {profile?.role === 'admin' && (
+              <Button asChild variant="secondary">
+                <Link to="/admin">Admin Panel</Link>
+              </Button>
+            )}
+            <UserNav />
+          </div>
         </div>
       </header>
       <main className="flex-grow container mx-auto p-4">

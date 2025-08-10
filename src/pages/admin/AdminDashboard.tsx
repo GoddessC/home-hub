@@ -22,7 +22,7 @@ const AdminDashboard = () => {
   const queryClient = useQueryClient();
 
   // Queries
-  const { data: profiles, isLoading: isLoadingProfiles } = useQuery<Profile[]>({
+  const { data: profiles, isLoading: isLoadingProfiles } = useQuery<Profile[], Error>({
     queryKey: ['profiles'],
     queryFn: async () => {
       const { data, error } = await supabase.from('profiles').select('*');
@@ -31,7 +31,7 @@ const AdminDashboard = () => {
     }
   });
 
-  const { data: chores, isLoading: isLoadingChores } = useQuery<Chore[]>({
+  const { data: chores, isLoading: isLoadingChores } = useQuery<Chore[], Error>({
     queryKey: ['chores'],
     queryFn: async () => {
       const { data, error } = await supabase.from('chores').select('*, profiles(full_name, avatar_url)').order('created_at', { ascending: false });
@@ -40,7 +40,7 @@ const AdminDashboard = () => {
     }
   });
 
-  const { data: alarms, isLoading: isLoadingAlarms } = useQuery<Alarm[]>({
+  const { data: alarms, isLoading: isLoadingAlarms } = useQuery<Alarm[], Error>({
     queryKey: ['alarms'],
     queryFn: async () => {
         const { data, error } = await supabase.from('alarms').select('*').order('time', { ascending: true });
@@ -50,8 +50,8 @@ const AdminDashboard = () => {
   });
 
   // Mutations
-  const addUserMutation = useMutation({
-    mutationFn: async (newUser: AddUserFormValues) => {
+  const addUserMutation = useMutation<void, Error, AddUserFormValues>({
+    mutationFn: async (newUser) => {
       const { error } = await supabase.functions.invoke('add-user-to-household', {
         body: newUser,
       });
@@ -61,13 +61,13 @@ const AdminDashboard = () => {
       queryClient.invalidateQueries({ queryKey: ['profiles'] });
       showSuccess('New member added successfully!');
     },
-    onError: (error: Error) => {
+    onError: (error) => {
       showError(`Failed to add member: ${error.message}`);
     }
   });
 
-  const deleteUserMutation = useMutation({
-    mutationFn: async (userIdToDelete: string) => {
+  const deleteUserMutation = useMutation<void, Error, string>({
+    mutationFn: async (userIdToDelete) => {
       const { error } = await supabase.functions.invoke('delete-user', {
         body: { userIdToDelete },
       });
@@ -77,13 +77,13 @@ const AdminDashboard = () => {
       queryClient.invalidateQueries({ queryKey: ['profiles'] });
       showSuccess('User deleted successfully.');
     },
-    onError: (error: Error) => {
+    onError: (error) => {
       showError(`Failed to delete user: ${error.message}`);
     }
   });
 
-  const addChoreMutation = useMutation({
-    mutationFn: async (newChore: ChoreFormValues) => {
+  const addChoreMutation = useMutation<void, Error, ChoreFormValues>({
+    mutationFn: async (newChore) => {
       if (!profile?.household_id) throw new Error("Household not found for user.");
       const { error } = await supabase.from('chores').insert({
         ...newChore,
@@ -96,13 +96,13 @@ const AdminDashboard = () => {
       queryClient.invalidateQueries({ queryKey: ['chores'] });
       showSuccess('Chore added successfully!');
     },
-    onError: (error: Error) => {
+    onError: (error) => {
       showError(`Failed to add chore: ${error.message}`);
     }
   });
 
-  const updateChoreMutation = useMutation({
-    mutationFn: async ({ id, updates }: { id: string, updates: any }) => {
+  const updateChoreMutation = useMutation<void, Error, { id: string; updates: Partial<Chore> }>({
+    mutationFn: async ({ id, updates }) => {
       const { error } = await supabase.from('chores').update(updates).eq('id', id);
       if (error) throw new Error(error.message);
     },
@@ -111,13 +111,13 @@ const AdminDashboard = () => {
       queryClient.invalidateQueries({ queryKey: ['profiles'] });
       showSuccess('Chore updated!');
     },
-    onError: (error: Error) => {
+    onError: (error) => {
       showError(`Failed to update chore: ${error.message}`);
     }
   });
 
-  const deleteChoreMutation = useMutation({
-    mutationFn: async (id: string) => {
+  const deleteChoreMutation = useMutation<void, Error, string>({
+    mutationFn: async (id) => {
       const { error } = await supabase.from('chores').delete().eq('id', id);
       if (error) throw new Error(error.message);
     },
@@ -125,13 +125,13 @@ const AdminDashboard = () => {
       queryClient.invalidateQueries({ queryKey: ['chores'] });
       showSuccess('Chore deleted.');
     },
-    onError: (error: Error) => {
+    onError: (error) => {
       showError(`Failed to delete chore: ${error.message}`);
     }
   });
 
-  const addAlarmMutation = useMutation({
-    mutationFn: async (newAlarm: AlarmFormValues) => {
+  const addAlarmMutation = useMutation<void, Error, AlarmFormValues>({
+    mutationFn: async (newAlarm) => {
         if (!profile?.household_id) throw new Error("Household not found for user.");
         const { error } = await supabase.from('alarms').insert({
             ...newAlarm,
@@ -143,13 +143,13 @@ const AdminDashboard = () => {
         queryClient.invalidateQueries({ queryKey: ['alarms'] });
         showSuccess('Alarm added successfully!');
     },
-    onError: (error: Error) => {
+    onError: (error) => {
         showError(`Failed to add alarm: ${error.message}`);
     }
   });
 
-  const updateAlarmMutation = useMutation({
-    mutationFn: async ({ id, updates }: { id: string, updates: Partial<Alarm> }) => {
+  const updateAlarmMutation = useMutation<void, Error, { id: string; updates: Partial<Alarm> }>({
+    mutationFn: async ({ id, updates }) => {
         const { error } = await supabase.from('alarms').update(updates).eq('id', id);
         if (error) throw new Error(error.message);
     },
@@ -157,13 +157,13 @@ const AdminDashboard = () => {
         queryClient.invalidateQueries({ queryKey: ['alarms'] });
         showSuccess('Alarm updated.');
     },
-    onError: (error: Error) => {
+    onError: (error) => {
         showError(`Failed to update alarm: ${error.message}`);
     }
   });
 
-  const deleteAlarmMutation = useMutation({
-    mutationFn: async (id: string) => {
+  const deleteAlarmMutation = useMutation<void, Error, string>({
+    mutationFn: async (id) => {
         const { error } = await supabase.from('alarms').delete().eq('id', id);
         if (error) throw new Error(error.message);
     },
@@ -171,7 +171,7 @@ const AdminDashboard = () => {
         queryClient.invalidateQueries({ queryKey: ['alarms'] });
         showSuccess('Alarm deleted.');
     },
-    onError: (error: Error) => {
+    onError: (error) => {
         showError(`Failed to delete alarm: ${error.message}`);
     }
   });

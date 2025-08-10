@@ -12,6 +12,7 @@ import { format } from 'date-fns';
 import { TodaysAlarms, Alarm } from '@/components/alarms/TodaysAlarms';
 import { UserNav } from '@/components/layout/UserNav';
 import { Link } from 'react-router-dom';
+import { AnnouncementPanel } from '@/components/announcements/AnnouncementPanel';
 
 const Dashboard = () => {
   const { user, profile } = useAuth();
@@ -44,6 +45,22 @@ const Dashboard = () => {
       if (error) throw new Error(error.message);
       return data || [];
     },
+  });
+
+  const { data: announcement, isLoading: isLoadingAnnouncement } = useQuery({
+    queryKey: ['latestAnnouncement', user?.id],
+    queryFn: async () => {
+      if (!user) return null;
+      const { data, error } = await supabase
+        .from('announcements')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (error) throw new Error(error.message);
+      return data;
+    },
+    enabled: !!user,
   });
 
   useEffect(() => {
@@ -107,6 +124,7 @@ const Dashboard = () => {
       <main className="flex-grow container mx-auto p-4">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 space-y-6">
+            <AnnouncementPanel announcement={announcement} isLoading={isLoadingAnnouncement} />
             <h2 className="text-3xl font-bold">My Chores</h2>
             {isLoadingChores ? (
                <Card>

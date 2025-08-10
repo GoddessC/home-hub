@@ -16,6 +16,7 @@ import { AlarmList, Alarm } from '@/components/alarms/AlarmList';
 import { UserNav } from '@/components/layout/UserNav';
 import { UserManagementList } from '@/components/users/UserManagementList';
 import { AddUserDialog, AddUserFormValues } from '@/components/users/AddUserDialog';
+import { AnnouncementManagement, Announcement } from '@/components/announcements/AnnouncementManagement';
 
 // Define argument types for mutations to avoid parser errors with inline types
 type UpdateChoreArgs = {
@@ -27,6 +28,10 @@ type UpdateAlarmArgs = {
   id: string;
   updates: Partial<Alarm>;
 };
+
+type AddAnnouncementArgs = {
+    content: string;
+}
 
 const AdminDashboard = () => {
   const { user, profile } = useAuth();
@@ -57,6 +62,18 @@ const AdminDashboard = () => {
         const { data, error } = await supabase.from('alarms').select('*').order('time', { ascending: true });
         if (error) throw new Error(error.message);
         return data || [];
+    }
+  });
+
+  const { data: announcements, isLoading: isLoadingAnnouncements } = useQuery<Announcement[], Error>({
+    queryKey: ['announcements'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('announcements')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (error) throw new Error(error.message);
+      return data || [];
     }
   });
 
@@ -187,6 +204,41 @@ const AdminDashboard = () => {
     }
   });
 
+  const addAnnouncementMutation = useMutation({
+    mutationFn: async (newAnnouncement: AddAnnouncementArgs) => {
+      if (!profile?.household_id || !user?.id) throw new Error("User or household not found.");
+      const { error } = await supabase.from('announcements').insert({
+        ...newAnnouncement,
+        household_id: profile.household_id,
+        user_id: user.id,
+      });
+      if (error) throw new Error(error.message);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['announcements'] });
+      queryClient.invalidateQueries({ queryKey: ['latestAnnouncement'] });
+      showSuccess('Announcement posted!');
+    },
+    onError: (error: Error) => {
+      showError(`Failed to post announcement: ${error.message}`);
+    }
+  });
+
+  const deleteAnnouncementMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('announcements').delete().eq('id', id);
+      if (error) throw new Error(error.message);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['announcements'] });
+      queryClient.invalidateQueries({ queryKey: ['latestAnnouncement'] });
+      showSuccess('Announcement deleted.');
+    },
+    onError: (error: Error) => {
+      showError(`Failed to delete announcement: ${error.message}`);
+    }
+  });
+
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
       <header className="p-4 bg-white shadow-md">
@@ -206,6 +258,16 @@ const AdminDashboard = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 space-y-8">
             
+            <section>
+              <AnnouncementManagement
+                announcements={announcements || []}
+                onAddAnnouncement={(data) => addAnnouncementMutation.mutate(data)}
+                onDeleteAnnouncement={(id) => deleteAnnouncementMutation.mutate(id)}
+                isLoading={isLoadingAnnouncements}
+                isSubmitting={addAnnouncementMutation.isPending}
+              />
+            </section>
+
             <section>
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-3xl font-bold">User Management</h2>

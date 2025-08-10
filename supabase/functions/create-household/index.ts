@@ -37,7 +37,8 @@ serve(async (req) => {
       .insert({ name: householdName })
       .select()
       .single()
-    if (householdError) throw householdError
+    if (householdError) throw new Error(`Failed to create household: ${householdError.message}`)
+    if (!householdData) throw new Error('Household created but no data was returned.')
 
     // 2. Create the admin user
     const { data: adminAuthData, error: adminAuthError } = await supabaseAdmin.auth.admin.createUser({
@@ -45,7 +46,7 @@ serve(async (req) => {
       password: adminPassword,
       email_confirm: true,
     })
-    if (adminAuthError) throw adminAuthError
+    if (adminAuthError) throw new Error(`Failed to create admin user: ${adminAuthError.message}`)
     const adminUser = adminAuthData.user
 
     // 3. Create the admin's profile
@@ -57,7 +58,7 @@ serve(async (req) => {
         role: 'admin',
         household_id: householdData.id,
       })
-    if (adminProfileError) throw adminProfileError
+    if (adminProfileError) throw new Error(`Failed to create admin profile: ${adminProfileError.message}`)
 
     // 4. Create the shared family dashboard user
     const { data: familyAuthData, error: familyAuthError } = await supabaseAdmin.auth.admin.createUser({
@@ -65,7 +66,7 @@ serve(async (req) => {
         password: familyPassword,
         email_confirm: true,
     })
-    if (familyAuthError) throw familyAuthError
+    if (familyAuthError) throw new Error(`Failed to create family user: ${familyAuthError.message}`)
     const familyUser = familyAuthData.user
 
     // 5. Create the family dashboard's profile
@@ -74,10 +75,10 @@ serve(async (req) => {
       .insert({
         id: familyUser.id,
         full_name: `${householdName} Family`,
-        role: 'dashboard', // 'dashboard' role will now signify the family dashboard
+        role: 'dashboard',
         household_id: householdData.id,
       })
-    if (familyProfileError) throw familyProfileError
+    if (familyProfileError) throw new Error(`Failed to create family profile: ${familyProfileError.message}`)
 
     // 6. Create non-user member profiles
     if (members && Array.isArray(members) && members.length > 0) {
@@ -92,7 +93,7 @@ serve(async (req) => {
         const { error: membersError } = await supabaseAdmin
           .from('members')
           .insert(memberInserts)
-        if (membersError) throw membersError
+        if (membersError) throw new Error(`Failed to create members: ${membersError.message}`)
       }
     }
 

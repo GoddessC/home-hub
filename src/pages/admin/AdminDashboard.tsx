@@ -100,7 +100,11 @@ const AdminDashboard = () => {
   // Alarm Mutations
   const addAlarmMutation = useMutation({
     mutationFn: async (newAlarm: AlarmFormValues) => {
-        const { error } = await supabase.from('alarms').insert(newAlarm);
+        if (!profile?.household_id) throw new Error("Household not found for user.");
+        const { error } = await supabase.from('alarms').insert({
+            ...newAlarm,
+            household_id: profile.household_id,
+        });
         if (error) throw new Error(error.message);
     },
     onSuccess: () => {

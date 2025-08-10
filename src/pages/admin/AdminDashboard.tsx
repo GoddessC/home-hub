@@ -17,6 +17,17 @@ import { UserNav } from '@/components/layout/UserNav';
 import { UserManagementList } from '@/components/users/UserManagementList';
 import { AddUserDialog, AddUserFormValues } from '@/components/users/AddUserDialog';
 
+// Define argument types for mutations to avoid parser errors with inline types
+type UpdateChoreArgs = {
+  id: string;
+  updates: Partial<Chore>;
+};
+
+type UpdateAlarmArgs = {
+  id: string;
+  updates: Partial<Alarm>;
+};
+
 const AdminDashboard = () => {
   const { user, profile } = useAuth();
   const queryClient = useQueryClient();
@@ -102,7 +113,7 @@ const AdminDashboard = () => {
   });
 
   const updateChoreMutation = useMutation({
-    mutationFn: async ({ id, updates }: { id: string; updates: Partial<Chore> }) => {
+    mutationFn: async ({ id, updates }: UpdateChoreArgs) => {
       const { error } = await supabase.from('chores').update(updates).eq('id', id);
       if (error) throw new Error(error.message);
     },
@@ -149,7 +160,7 @@ const AdminDashboard = () => {
   });
 
   const updateAlarmMutation = useMutation({
-    mutationFn: async ({ id, updates }: { id: string; updates: Partial<Alarm> }) => {
+    mutationFn: async ({ id, updates }: UpdateAlarmArgs) => {
         const { error } = await supabase.from('alarms').update(updates).eq('id', id);
         if (error) throw new Error(error.message);
     },
@@ -258,7 +269,7 @@ const AdminDashboard = () => {
                         <CardContent className="space-y-4">
                             <Skeleton className="h-20 w-full" />
                             <Skeleton className="h-20 w-full" />
-                        </CardContent>
+                        </Content>
                     </Card>
                 ) : (
                     <AlarmList

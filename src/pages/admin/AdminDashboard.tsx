@@ -10,7 +10,7 @@ import { Profile } from '@/context/AuthContext';
 import { showSuccess, showError } from '@/utils/toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { UserPointsList } from '@/components/users/UserPointsList';
+import { YearlyUserPointsList } from '@/components/users/YearlyUserPointsList';
 import { AddAlarmDialog, AlarmFormValues } from '@/components/alarms/AddAlarmDialog';
 import { AlarmList, Alarm } from '@/components/alarms/AlarmList';
 import { UserNav } from '@/components/layout/UserNav';
@@ -221,7 +221,7 @@ const AdminDashboard = () => {
                 </CardContent>
               </Card>
             ) : (
-              <UserPointsList profiles={profiles || []} />
+              <YearlyUserPointsList profiles={profiles || []} />
             )}
           </div>
         </div>

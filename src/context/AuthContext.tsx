@@ -8,6 +8,7 @@ export interface Profile {
   avatar_url: string;
   role: 'admin' | 'dashboard';
   points?: number;
+  yearly_points?: number;
 }
 
 interface AuthContextType {

@@ -52,7 +52,7 @@ const Register = () => {
       });
 
       if (error) {
-        throw new Error(error.message);
+        throw error;
       }
       
       dismissToast(toastId);
@@ -61,7 +61,9 @@ const Register = () => {
 
     } catch (error: any) {
       dismissToast(toastId);
-      const errorMessage = error.context?.error_description || error.message || 'An unknown error occurred.';
+      console.error("Full error from household creation:", error);
+      
+      const errorMessage = error.context?.error || error.message || 'An unknown error occurred.';
       showError(`Registration failed: ${errorMessage}`);
     }
   };

@@ -31,6 +31,22 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
+    // --- Pre-creation Validation ---
+    if (adminEmail.toLowerCase() === familyEmail.toLowerCase()) {
+      throw new Error('Admin and Family emails cannot be the same.');
+    }
+
+    const { data: { user: existingAdminUser } } = await supabaseAdmin.auth.admin.getUserByEmail(adminEmail);
+    if (existingAdminUser) {
+      throw new Error('An account with the provided admin email already exists.');
+    }
+
+    const { data: { user: existingFamilyUser } } = await supabaseAdmin.auth.admin.getUserByEmail(familyEmail);
+    if (existingFamilyUser) {
+      throw new Error('An account with the provided family email already exists.');
+    }
+    // --- End Validation ---
+
     // 1. Create the household
     const { data: householdData, error: householdError } = await supabaseAdmin
       .from('households')

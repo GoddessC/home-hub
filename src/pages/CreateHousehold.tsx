@@ -9,6 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { showSuccess, showError } from '@/utils/toast';
 import { useAuth } from '@/context/AuthContext';
 import { useQueryClient } from '@tanstack/react-query';
+import { cn } from '@/lib/utils';
 
 const householdSchema = z.object({
   name: z.string().min(3, 'Household name must be at least 3 characters.'),
@@ -68,7 +69,12 @@ const CreateHousehold = () => {
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             <div className="space-y-2">
               <Label htmlFor="name">Household Name</Label>
-              <Input id="name" {...register('name')} placeholder="e.g., The Smith Family" />
+              <Input 
+                id="name" 
+                {...register('name')} 
+                placeholder="e.g., The Smith Family" 
+                className={cn(errors.name && "border-destructive focus-visible:ring-destructive")}
+              />
               {errors.name && <p className="text-red-500 text-sm">{errors.name.message}</p>}
             </div>
             <Button type="submit" className="w-full" disabled={isSubmitting}>

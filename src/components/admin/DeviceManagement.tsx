@@ -12,6 +12,7 @@ import { showSuccess, showError } from '@/utils/toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format } from 'date-fns';
 import { Trash2 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 const pairSchema = z.object({
   code: z.string().min(8, 'Code must be 8 characters.').max(8, 'Code must be 8 characters.'),
@@ -31,7 +32,7 @@ export const DeviceManagement = () => {
     queryKey: ['devices', household?.id],
     queryFn: async () => {
       if (!household?.id) return [];
-      const { data, error } = await supabase.from('devices').select('*').eq('household_id', household.id).eq('revoked_at', null);
+      const { data, error } = await supabase.from('devices').select('*').eq('household_id', household.id).filter('revoked_at', 'is', null);
       if (error) throw error;
       return data;
     },
@@ -82,12 +83,21 @@ export const DeviceManagement = () => {
           <form onSubmit={handleSubmit((data) => pairMutation.mutate(data))} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="code">Pairing Code</Label>
-              <Input id="code" {...register('code')} className="font-mono uppercase" />
+              <Input 
+                id="code" 
+                {...register('code')} 
+                className={cn("font-mono uppercase", errors.code && "border-destructive focus-visible:ring-destructive")}
+              />
               {errors.code && <p className="text-red-500 text-sm">{errors.code.message}</p>}
             </div>
             <div className="space-y-2">
               <Label htmlFor="displayName">Device Name</Label>
-              <Input id="displayName" {...register('displayName')} placeholder="e.g., Kitchen Display" />
+              <Input 
+                id="displayName" 
+                {...register('displayName')} 
+                placeholder="e.g., Kitchen Display" 
+                className={cn(errors.displayName && "border-destructive focus-visible:ring-destructive")}
+              />
               {errors.displayName && <p className="text-red-500 text-sm">{errors.displayName.message}</p>}
             </div>
             <Button type="submit" disabled={pairMutation.isPending || isSubmitting}>

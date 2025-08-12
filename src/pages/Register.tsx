@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { showSuccess, showError } from '@/utils/toast';
+import { cn } from '@/lib/utils';
 
 const registerSchema = z.object({
   email: z.string().email('A valid email is required.'),
@@ -17,7 +18,7 @@ const registerSchema = z.object({
 type RegisterFormValues = z.infer<typeof registerSchema>;
 
 const Register = () => {
-  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<RegisterFormValues>({
+  const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
   });
 
@@ -31,6 +32,7 @@ const Register = () => {
       showError(error.message);
     } else {
       showSuccess('Registration successful! Please check your email to verify your account.');
+      reset(); // Clear the form on success
     }
   };
 
@@ -47,12 +49,22 @@ const Register = () => {
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" {...register('email')} />
+              <Input 
+                id="email" 
+                type="email" 
+                {...register('email')} 
+                className={cn(errors.email && "border-destructive focus-visible:ring-destructive")}
+              />
               {errors.email && <p className="text-red-500 text-sm">{errors.email.message}</p>}
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
-              <Input id="password" type="password" {...register('password')} />
+              <Input 
+                id="password" 
+                type="password" 
+                {...register('password')} 
+                className={cn(errors.password && "border-destructive focus-visible:ring-destructive")}
+              />
               {errors.password && <p className="text-red-500 text-sm">{errors.password.message}</p>}
             </div>
             <Button type="submit" className="w-full" disabled={isSubmitting}>

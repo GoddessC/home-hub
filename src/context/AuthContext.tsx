@@ -10,7 +10,7 @@ export interface Household {
 }
 
 export interface Member {
-  id: string;
+  id:string;
   household_id: string;
   user_id: string | null;
   full_name: string;
@@ -64,12 +64,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
         if(error) setDevice(null); // Not paired yet
     } else {
-        const { data: memberData } = await supabase.from('members').select('*, households(*)').eq('user_id', currentUser.id).single();
+        // Step 1: Fetch the user's member record
+        const { data: memberData } = await supabase
+            .from('members')
+            .select('*')
+            .eq('user_id', currentUser.id)
+            .single();
+
         if (memberData) {
             setMember(memberData);
-            // The household data is now nested inside the member data
-            setHousehold(memberData.households as Household | null);
+            // Step 2: Use the member record to fetch the household
+            const { data: householdData } = await supabase
+                .from('households')
+                .select('*')
+                .eq('id', memberData.household_id)
+                .single();
+            setHousehold(householdData || null);
         }
+        
+        // Step 3: Fetch the user's public profile
         const { data: profileData } = await supabase.from('profiles').select('*').eq('id', currentUser.id).single();
         setProfile(profileData || null);
     }

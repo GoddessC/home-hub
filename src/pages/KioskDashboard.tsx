@@ -7,6 +7,7 @@ import { Member } from '@/context/AuthContext';
 import { MemberChoreCard } from '@/components/dashboard/MemberChoreCard';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format } from 'date-fns';
+import { AnnouncementPanel } from '@/components/dashboard/AnnouncementPanel';
 
 type ChoreLog = {
   id: string;
@@ -61,6 +62,9 @@ const KioskDashboard = () => {
         </div>
       </header>
       <main className="flex-grow container mx-auto p-4 md:p-8">
+        <div className="mb-8">
+          <AnnouncementPanel />
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {isLoadingMembers || isLoadingChores ? (
             Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-64 w-full bg-gray-700" />)

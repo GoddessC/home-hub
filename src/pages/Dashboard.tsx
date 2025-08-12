@@ -9,6 +9,7 @@ import { Member } from '@/context/AuthContext';
 import { MemberChoreCard } from '@/components/dashboard/MemberChoreCard';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format } from 'date-fns';
+import { AnnouncementPanel } from '@/components/dashboard/AnnouncementPanel';
 
 type ChoreLog = {
   id: string;
@@ -70,6 +71,10 @@ const Dashboard = () => {
         <div className="text-left mb-8">
             <h2 className="text-4xl font-bold">Welcome, {profile?.full_name || user?.email}</h2>
             <p className="text-gray-600 mt-2">Here's what's happening in your household today.</p>
+        </div>
+
+        <div className="mb-8">
+          <AnnouncementPanel />
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

@@ -20,6 +20,12 @@ export interface Device {
     display_name: string;
 }
 
+export interface Profile {
+  id: string;
+  full_name: string | null;
+  avatar_url: string | null;
+}
+
 interface AuthContextType {
   session: Session | null;
   user: User | null;
@@ -27,6 +33,7 @@ interface AuthContextType {
   member: Member | null;
   household: Household | null;
   device: Device | null;
+  profile: Profile | null;
   loading: boolean;
   signOut: () => Promise<void>;
   signInAsKiosk: () => Promise<void>;
@@ -41,6 +48,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [member, setMember] = useState<Member | null>(null);
   const [household, setHousehold] = useState<Household | null>(null);
   const [device, setDevice] = useState<Device | null>(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
 
   const fetchUserData = async (currentUser: User) => {
@@ -59,6 +67,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             const { data: householdData } = await supabase.from('households').select('*').eq('id', memberData.household_id).single();
             setHousehold(householdData);
         }
+        const { data: profileData } = await supabase.from('profiles').select('*').eq('id', currentUser.id).single();
+        setProfile(profileData || null);
     }
   };
 
@@ -89,6 +99,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setMember(null);
         setHousehold(null);
         setDevice(null);
+        setProfile(null);
 
         if (currentUser) {
           await fetchUserData(currentUser);
@@ -116,7 +127,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setLoading(false);
   }
 
-  const value = { session, user, isAnonymous, member, household, device, loading, signOut, signInAsKiosk };
+  const value = { session, user, isAnonymous, member, household, device, profile, loading, signOut, signInAsKiosk };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

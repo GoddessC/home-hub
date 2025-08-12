@@ -3,9 +3,10 @@ import { MadeWithDyad } from '@/components/made-with-dyad';
 import { UserNav } from '@/components/layout/UserNav';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { ChoreTracker } from '@/components/dashboard/ChoreTracker';
 
 const Dashboard = () => {
-  const { user, household, member } = useAuth();
+  const { user, household, member, profile } = useAuth();
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
@@ -24,11 +25,13 @@ const Dashboard = () => {
           </div>
         </div>
       </header>
-      <main className="flex-grow container mx-auto p-4">
-        <div className="text-center">
-            <h2 className="text-4xl font-bold">Welcome, {user?.email}</h2>
-            <p className="text-gray-600 mt-2">This is your main household dashboard. The 'tiles' data would be displayed here.</p>
-            {/* TileGrid component would go here */}
+      <main className="flex-grow container mx-auto p-4 md:p-8">
+        <div className="text-left mb-8">
+            <h2 className="text-4xl font-bold">Welcome, {profile?.full_name || user?.email}</h2>
+            <p className="text-gray-600 mt-2">Here's what's happening in your household today.</p>
+        </div>
+        <div className="max-w-2xl mx-auto">
+          <ChoreTracker />
         </div>
       </main>
       <MadeWithDyad />

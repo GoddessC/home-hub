@@ -5,12 +5,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { showSuccess, showError } from '@/utils/toast';
 import { cn } from '@/lib/utils';
 
 const registerSchema = z.object({
+  fullName: z.string().min(2, 'Please enter your full name.'),
   email: z.string().email('A valid email is required.'),
   password: z.string().min(8, 'Password must be at least 8 characters.'),
 });
@@ -18,6 +19,7 @@ const registerSchema = z.object({
 type RegisterFormValues = z.infer<typeof registerSchema>;
 
 const Register = () => {
+  const navigate = useNavigate();
   const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
   });
@@ -26,13 +28,19 @@ const Register = () => {
     const { error } = await supabase.auth.signUp({
       email: data.email,
       password: data.password,
+      options: {
+        data: {
+          full_name: data.fullName,
+        }
+      }
     });
 
     if (error) {
       showError(error.message);
     } else {
       showSuccess('Registration successful! Please check your email to verify your account.');
-      reset(); // Clear the form on success
+      reset();
+      navigate('/login');
     }
   };
 
@@ -47,6 +55,16 @@ const Register = () => {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+            <div className="space-y-2">
+              <Label htmlFor="fullName">Full Name</Label>
+              <Input 
+                id="fullName" 
+                type="text" 
+                {...register('fullName')} 
+                className={cn(errors.fullName && "border-destructive focus-visible:ring-destructive")}
+              />
+              {errors.fullName && <p className="text-red-500 text-sm">{errors.fullName.message}</p>}
+            </div>
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input 

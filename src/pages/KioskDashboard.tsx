@@ -1,6 +1,7 @@
 import { useAuth } from '@/context/AuthContext';
 import { MadeWithDyad } from '@/components/made-with-dyad';
 import { Button } from '@/components/ui/button';
+import { ChoreTracker } from '@/components/dashboard/ChoreTracker';
 
 const KioskDashboard = () => {
   const { device, household, signOut } = useAuth();
@@ -18,11 +19,9 @@ const KioskDashboard = () => {
           </div>
         </div>
       </header>
-      <main className="flex-grow container mx-auto p-4">
-        <div className="text-center">
-            <h2 className="text-4xl font-bold">Kiosk Dashboard</h2>
-            <p className="text-gray-400 mt-2">This is where household data (tiles) will be displayed.</p>
-            {/* TileGrid component would go here */}
+      <main className="flex-grow container mx-auto p-4 md:p-8">
+        <div className="max-w-2xl mx-auto">
+            <ChoreTracker />
         </div>
       </main>
       <MadeWithDyad />

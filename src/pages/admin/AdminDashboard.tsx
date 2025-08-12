@@ -4,6 +4,7 @@ import { MadeWithDyad } from '@/components/made-with-dyad';
 import { Link } from 'react-router-dom';
 import { UserNav } from '@/components/layout/UserNav';
 import { DeviceManagement } from '@/components/admin/DeviceManagement';
+import { ChoreManagement } from '@/components/admin/ChoreManagement';
 
 const AdminDashboard = () => {
   const { household } = useAuth();
@@ -23,13 +24,13 @@ const AdminDashboard = () => {
           </div>
         </div>
       </header>
-      <main className="flex-grow container mx-auto p-4">
+      <main className="flex-grow container mx-auto p-4 md:p-8">
         <h2 className="text-3xl font-bold mb-2">Admin Panel for {household?.name}</h2>
-        <p className="text-muted-foreground mb-6">Manage your household settings and devices.</p>
+        <p className="text-muted-foreground mb-6">Manage your household settings, devices, and chores.</p>
         
         <div className="grid grid-cols-1 gap-8">
             <DeviceManagement />
-            {/* Other admin sections can be added here */}
+            <ChoreManagement />
         </div>
       </main>
       <MadeWithDyad />

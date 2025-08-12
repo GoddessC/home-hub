@@ -10,6 +10,7 @@ import { showSuccess, showError } from '@/utils/toast';
 import { useAuth } from '@/context/AuthContext';
 import { useQueryClient } from '@tanstack/react-query';
 import { cn } from '@/lib/utils';
+import { useNavigate } from 'react-router-dom';
 
 const householdSchema = z.object({
   name: z.string().min(3, 'Household name must be at least 3 characters.'),
@@ -20,6 +21,7 @@ type HouseholdFormValues = z.infer<typeof householdSchema>;
 const CreateHousehold = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<HouseholdFormValues>({
     resolver: zodResolver(householdSchema),
   });
@@ -47,9 +49,12 @@ const CreateHousehold = () => {
 
       if (memberError) throw memberError;
 
-      showSuccess('Household created successfully!');
+      showSuccess("Household created! Now, let's pair your first kiosk.");
       // Invalidate queries to force AuthContext to refetch user data
       queryClient.invalidateQueries();
+      
+      // Redirect to the admin page to pair a device
+      navigate('/admin');
 
     } catch (error: any) {
       showError(`Failed to create household: ${error.message}`);

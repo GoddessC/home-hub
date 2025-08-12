@@ -5,6 +5,7 @@ import { Link } from 'react-router-dom';
 import { UserNav } from '@/components/layout/UserNav';
 import { DeviceManagement } from '@/components/admin/DeviceManagement';
 import { ChoreManagement } from '@/components/admin/ChoreManagement';
+import { MemberManagement } from '@/components/admin/MemberManagement';
 
 const AdminDashboard = () => {
   const { household } = useAuth();
@@ -29,6 +30,7 @@ const AdminDashboard = () => {
         <p className="text-muted-foreground mb-6">Manage your household settings, devices, and chores.</p>
         
         <div className="grid grid-cols-1 gap-8">
+            <MemberManagement />
             <DeviceManagement />
             <ChoreManagement />
         </div>

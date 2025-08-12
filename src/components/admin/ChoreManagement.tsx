@@ -8,19 +8,17 @@ import { showSuccess, showError } from '@/utils/toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { PlusCircle, Trash2 } from 'lucide-react';
 import { AssignChoreDialog } from './AssignChoreDialog';
-import { format } from 'date-fns';
 
-type MemberWithProfile = {
-  user_id: string;
+type Member = {
+  id: string;
+  full_name: string;
   role: string;
-  profiles: {
-    full_name: string | null;
-  } | null;
 };
 
 type ChoreLog = {
   id: string;
   completed_at: string | null;
+  member_id: string;
   chores: {
     title: string;
     points: number;
@@ -30,7 +28,7 @@ type ChoreLog = {
 export const ChoreManagement = () => {
   const { household } = useAuth();
   const queryClient = useQueryClient();
-  const [selectedMember, setSelectedMember] = useState<MemberWithProfile | null>(null);
+  const [selectedMember, setSelectedMember] = useState<Member | null>(null);
   const [isDialogOpen, setDialogOpen] = useState(false);
 
   const { data: members, isLoading: isLoadingMembers } = useQuery({
@@ -39,10 +37,10 @@ export const ChoreManagement = () => {
       if (!household?.id) return [];
       const { data, error } = await supabase
         .from('members')
-        .select('user_id, role, profiles(full_name)')
+        .select('id, full_name, role')
         .eq('household_id', household.id);
       if (error) throw error;
-      return data as MemberWithProfile[];
+      return data as Member[];
     },
     enabled: !!household?.id,
   });
@@ -53,11 +51,11 @@ export const ChoreManagement = () => {
       if (!household?.id) return [];
       const { data, error } = await supabase
         .from('chore_log')
-        .select('id, user_id, completed_at, chores(title, points)')
+        .select('id, member_id, completed_at, chores(title, points)')
         .eq('household_id', household.id)
         .eq('due_date', new Date().toISOString().slice(0, 10));
       if (error) throw error;
-      return data;
+      return data as ChoreLog[];
     },
     enabled: !!household?.id,
   });
@@ -74,13 +72,13 @@ export const ChoreManagement = () => {
     onError: (error: Error) => showError(error.message),
   });
 
-  const handleAddChoreClick = (member: MemberWithProfile) => {
+  const handleAddChoreClick = (member: Member) => {
     setSelectedMember(member);
     setDialogOpen(true);
   };
 
-  const getChoresForMember = (userId: string) => {
-    return (chores as ChoreLog[])?.filter((chore: any) => chore.user_id === userId) || [];
+  const getChoresForMember = (memberId: string) => {
+    return chores?.filter((chore) => chore.member_id === memberId) || [];
   };
 
   if (isLoadingMembers) {
@@ -95,9 +93,9 @@ export const ChoreManagement = () => {
       </CardHeader>
       <CardContent className="space-y-6">
         {members?.map(member => (
-          <div key={member.user_id}>
+          <div key={member.id}>
             <div className="flex justify-between items-center mb-2">
-              <h4 className="font-semibold text-lg">{member.profiles?.full_name || 'Unnamed Member'}</h4>
+              <h4 className="font-semibold text-lg">{member.full_name}</h4>
               <Button variant="outline" size="sm" onClick={() => handleAddChoreClick(member)}>
                 <PlusCircle className="h-4 w-4 mr-2" />
                 Assign Chore
@@ -105,7 +103,7 @@ export const ChoreManagement = () => {
             </div>
             {isLoadingChores ? <Skeleton className="h-10 w-full" /> : (
               <ul className="space-y-2">
-                {getChoresForMember(member.user_id).map(chore => (
+                {getChoresForMember(member.id).map(chore => (
                   <li key={chore.id} className="flex items-center justify-between p-3 bg-secondary rounded-lg text-sm">
                     <span className={`${chore.completed_at ? 'line-through text-muted-foreground' : ''}`}>
                       {chore.chores?.title} ({chore.chores?.points} pt)
@@ -115,7 +113,7 @@ export const ChoreManagement = () => {
                     </Button>
                   </li>
                 ))}
-                {getChoresForMember(member.user_id).length === 0 && (
+                {getChoresForMember(member.id).length === 0 && (
                   <p className="text-sm text-muted-foreground">No chores assigned for today.</p>
                 )}
               </ul>

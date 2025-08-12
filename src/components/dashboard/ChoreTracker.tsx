@@ -17,41 +17,41 @@ type ChoreLog = {
 };
 
 export const ChoreTracker = () => {
-  const { user } = useAuth();
+  const { member } = useAuth();
   const queryClient = useQueryClient();
 
   const { data: chores, isLoading: isLoadingChores } = useQuery({
-    queryKey: ['my_chores', user?.id, 'today'],
+    queryKey: ['my_chores', member?.id, 'today'],
     queryFn: async () => {
-      if (!user) return [];
+      if (!member) return [];
       const { data, error } = await supabase
         .from('chore_log')
         .select('id, completed_at, chores(title, points)')
-        .eq('user_id', user.id)
+        .eq('member_id', member.id)
         .eq('due_date', new Date().toISOString().slice(0, 10));
       if (error) throw error;
       return data as ChoreLog[];
     },
-    enabled: !!user,
+    enabled: !!member,
   });
 
   const { data: weeklyScore, isLoading: isLoadingScore } = useQuery({
-    queryKey: ['my_score', user?.id],
+    queryKey: ['my_score', member?.id],
     queryFn: async () => {
-      if (!user) return 0;
+      if (!member) return 0;
       const weekStart = format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd'); // Monday
       const weekEnd = format(endOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd');
       const { data, error } = await supabase
         .from('chore_log')
         .select('chores(points)')
-        .eq('user_id', user.id)
+        .eq('member_id', member.id)
         .not('completed_at', 'is', null)
         .gte('due_date', weekStart)
         .lte('due_date', weekEnd);
       if (error) throw error;
       return data.reduce((acc, item) => acc + (item.chores?.points || 0), 0);
     },
-    enabled: !!user,
+    enabled: !!member,
   });
 
   const updateChoreMutation = useMutation({
@@ -75,7 +75,7 @@ export const ChoreTracker = () => {
         <CardTitle>Today's Chores</CardTitle>
         <div className="text-right">
           <p className="text-2xl font-bold">{isLoadingScore ? <Skeleton className="h-8 w-12" /> : weeklyScore}</p>
-          <p className="text-sm text-muted-foreground">Points this week</p>
+          <p className="text-muted-foreground">Points this week</p>
         </div>
       </CardHeader>
       <CardContent>

@@ -9,8 +9,10 @@ export interface Household {
 }
 
 export interface Member {
-  user_id: string;
+  id: string;
   household_id: string;
+  user_id: string | null;
+  full_name: string;
   role: 'OWNER' | 'ADULT' | 'CHILD';
 }
 

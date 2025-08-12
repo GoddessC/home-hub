@@ -6,7 +6,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/AuthContext';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { showSuccess, showError } from '@/utils/toast';
@@ -26,13 +25,13 @@ type AssignChoreValues = z.infer<typeof assignChoreSchema>;
 interface AssignChoreDialogProps {
   isOpen: boolean;
   setOpen: (isOpen: boolean) => void;
-  member: { user_id: string; profiles: { full_name: string | null } | null };
+  member: { id: string; full_name: string | null };
 }
 
 export const AssignChoreDialog = ({ isOpen, setOpen, member }: AssignChoreDialogProps) => {
   const { household } = useAuth();
   const queryClient = useQueryClient();
-  const { handleSubmit, control, setValue, watch, formState: { errors, isSubmitting } } = useForm<AssignChoreValues>({
+  const { handleSubmit, setValue, watch, formState: { errors, isSubmitting } } = useForm<AssignChoreValues>({
     resolver: zodResolver(assignChoreSchema),
     defaultValues: { dueDate: new Date() }
   });
@@ -55,7 +54,7 @@ export const AssignChoreDialog = ({ isOpen, setOpen, member }: AssignChoreDialog
       const { error } = await supabase.from('chore_log').insert({
         household_id: household.id,
         chore_id: values.choreId,
-        user_id: member.user_id,
+        member_id: member.id,
         due_date: format(values.dueDate, 'yyyy-MM-dd'),
       });
       if (error) throw error;
@@ -72,7 +71,7 @@ export const AssignChoreDialog = ({ isOpen, setOpen, member }: AssignChoreDialog
     <Dialog open={isOpen} onOpenChange={setOpen}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Assign Chore to {member.profiles?.full_name}</DialogTitle>
+          <DialogTitle>Assign Chore to {member.full_name}</DialogTitle>
           <DialogDescription>Select a chore and a due date.</DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit(data => assignMutation.mutate(data))} className="space-y-4">

@@ -19,7 +19,7 @@ const householdSchema = z.object({
 type HouseholdFormValues = z.infer<typeof householdSchema>;
 
 const CreateHousehold = () => {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<HouseholdFormValues>({
@@ -27,7 +27,7 @@ const CreateHousehold = () => {
   });
 
   const onSubmit = async (data: HouseholdFormValues) => {
-    if (!user) {
+    if (!user || !profile) {
       showError("You must be logged in to create a household.");
       return;
     }
@@ -45,16 +45,21 @@ const CreateHousehold = () => {
       // 2. Add the user as the OWNER
       const { error: memberError } = await supabase
         .from('members')
-        .insert({ user_id: user.id, household_id: householdData.id, role: 'OWNER' });
+        .insert({ 
+            user_id: user.id, 
+            household_id: householdData.id, 
+            role: 'OWNER',
+            full_name: profile.full_name || 'Household Owner'
+        });
 
       if (memberError) throw memberError;
 
       showSuccess("Household created! Now, let's pair your first kiosk.");
       // Invalidate queries to force AuthContext to refetch user data
-      queryClient.invalidateQueries();
+      await queryClient.invalidateQueries();
       
       // Redirect to the admin page to pair a device
-      navigate('/admin');
+      navigate('/admin', { replace: true });
 
     } catch (error: any) {
       showError(`Failed to create household: ${error.message}`);

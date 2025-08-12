@@ -33,10 +33,10 @@ const CreateHousehold = () => {
     }
 
     try {
-      // 1. Create the household
+      // 1. Create the household. The `created_by` field is now set automatically by the database.
       const { data: householdData, error: householdError } = await supabase
         .from('households')
-        .insert({ name: data.name, created_by: user.id })
+        .insert({ name: data.name })
         .select()
         .single();
 

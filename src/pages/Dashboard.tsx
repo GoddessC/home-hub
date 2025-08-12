@@ -3,10 +3,51 @@ import { MadeWithDyad } from '@/components/made-with-dyad';
 import { UserNav } from '@/components/layout/UserNav';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { ChoreTracker } from '@/components/dashboard/ChoreTracker';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { Member } from '@/context/AuthContext';
+import { MemberChoreCard } from '@/components/dashboard/MemberChoreCard';
+import { Skeleton } from '@/components/ui/skeleton';
+import { format } from 'date-fns';
+
+type ChoreLog = {
+  id: string;
+  completed_at: string | null;
+  member_id: string;
+  chores: {
+    title: string;
+    points: number;
+  } | null;
+};
 
 const Dashboard = () => {
-  const { user, household, member, profile } = useAuth();
+  const { user, household, profile, member } = useAuth();
+
+  const { data: members, isLoading: isLoadingMembers } = useQuery<Member[]>({
+    queryKey: ['members', household?.id],
+    queryFn: async () => {
+      if (!household?.id) return [];
+      const { data, error } = await supabase.from('members').select('*').eq('household_id', household.id).order('created_at');
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!household?.id,
+  });
+
+  const { data: chores, isLoading: isLoadingChores } = useQuery<ChoreLog[]>({
+    queryKey: ['chore_log', household?.id, 'today'],
+    queryFn: async () => {
+      if (!household?.id) return [];
+      const { data, error } = await supabase
+        .from('chore_log')
+        .select('id, member_id, completed_at, chores(title, points)')
+        .eq('household_id', household.id)
+        .eq('due_date', format(new Date(), 'yyyy-MM-dd'));
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!household?.id,
+  });
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
@@ -30,8 +71,16 @@ const Dashboard = () => {
             <h2 className="text-4xl font-bold">Welcome, {profile?.full_name || user?.email}</h2>
             <p className="text-gray-600 mt-2">Here's what's happening in your household today.</p>
         </div>
-        <div className="max-w-2xl mx-auto">
-          <ChoreTracker />
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {isLoadingMembers || isLoadingChores ? (
+            Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-64 w-full" />)
+          ) : (
+            members?.map(m => {
+              const memberChores = chores?.filter(c => c.member_id === m.id) || [];
+              return <MemberChoreCard key={m.id} member={m} chores={memberChores} />
+            })
+          )}
         </div>
       </main>
       <MadeWithDyad />

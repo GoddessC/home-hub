@@ -6,6 +6,7 @@ import { UserNav } from '@/components/layout/UserNav';
 import { DeviceManagement } from '@/components/admin/DeviceManagement';
 import { ChoreManagement } from '@/components/admin/ChoreManagement';
 import { MemberManagement } from '@/components/admin/MemberManagement';
+import { ChoreTemplateManagement } from '@/components/admin/ChoreTemplateManagement';
 
 const AdminDashboard = () => {
   const { household } = useAuth();
@@ -32,6 +33,7 @@ const AdminDashboard = () => {
         <div className="grid grid-cols-1 gap-8">
             <MemberManagement />
             <DeviceManagement />
+            <ChoreTemplateManagement />
             <ChoreManagement />
         </div>
       </main>

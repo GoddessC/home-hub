@@ -106,6 +106,7 @@ export const AssignChoreDialog = ({ isOpen, setOpen, member }: AssignChoreDialog
                   mode="single"
                   selected={dueDate}
                   onSelect={(date) => setValue('dueDate', date as Date)}
+                  disabled={{ before: new Date() }}
                   initialFocus
                 />
               </PopoverContent>

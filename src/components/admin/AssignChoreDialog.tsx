@@ -14,6 +14,7 @@ import { CalendarIcon } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { useState } from 'react';
 
 const assignChoreSchema = z.object({
   choreId: z.string().uuid('Please select a chore.'),
@@ -31,6 +32,7 @@ interface AssignChoreDialogProps {
 export const AssignChoreDialog = ({ isOpen, setOpen, member }: AssignChoreDialogProps) => {
   const { household } = useAuth();
   const queryClient = useQueryClient();
+  const [isCalendarOpen, setCalendarOpen] = useState(false);
   const { handleSubmit, setValue, watch, formState: { errors, isSubmitting } } = useForm<AssignChoreValues>({
     resolver: zodResolver(assignChoreSchema),
     defaultValues: { dueDate: new Date() }
@@ -51,18 +53,29 @@ export const AssignChoreDialog = ({ isOpen, setOpen, member }: AssignChoreDialog
   const assignMutation = useMutation({
     mutationFn: async (values: AssignChoreValues) => {
       if (!household) throw new Error('Household not found');
-      const { error } = await supabase.from('chore_log').insert({
+      const { data, error } = await supabase.from('chore_log').insert({
         household_id: household.id,
         chore_id: values.choreId,
         member_id: member.id,
         due_date: format(values.dueDate, 'yyyy-MM-dd'),
-      });
+      }).select('*, chores(title, points)').single();
       if (error) throw error;
+      return data;
     },
-    onSuccess: () => {
+    onSuccess: (newChore) => {
+      if (!newChore) return;
       showSuccess('Chore assigned!');
-      queryClient.invalidateQueries({ queryKey: ['chore_log'] });
-      queryClient.invalidateQueries({ queryKey: ['my_chores'] });
+
+      const queryKey = ['chore_log', household?.id, 'today'];
+      const newChoreDueDate = newChore.due_date;
+      const todayDate = format(new Date(), 'yyyy-MM-dd');
+
+      if (newChoreDueDate === todayDate) {
+        queryClient.setQueryData(queryKey, (oldData: any[] | undefined) => {
+          return oldData ? [...oldData, newChore] : [newChore];
+        });
+      }
+      
       setOpen(false);
     },
     onError: (error: Error) => showError(error.message),
@@ -92,7 +105,7 @@ export const AssignChoreDialog = ({ isOpen, setOpen, member }: AssignChoreDialog
           </div>
           <div>
             <Label>Due Date</Label>
-            <Popover>
+            <Popover open={isCalendarOpen} onOpenChange={setCalendarOpen}>
               <PopoverTrigger asChild>
                 <Button
                   variant={"outline"}
@@ -106,7 +119,10 @@ export const AssignChoreDialog = ({ isOpen, setOpen, member }: AssignChoreDialog
                 <Calendar
                   mode="single"
                   selected={dueDate}
-                  onSelect={(date) => setValue('dueDate', date as Date)}
+                  onSelect={(date) => {
+                    setValue('dueDate', date as Date);
+                    setCalendarOpen(false);
+                  }}
                   disabled={{ before: new Date() }}
                   initialFocus
                 />

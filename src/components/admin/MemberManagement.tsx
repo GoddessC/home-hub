@@ -10,8 +10,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { showSuccess, showError } from '@/utils/toast';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Trash2, UserPlus } from 'lucide-react';
+import { UserPlus } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { MemberStatsCard } from './MemberStatsCard';
 
 const memberSchema = z.object({
   fullName: z.string().min(2, 'Full name is required.'),
@@ -58,30 +59,16 @@ export const MemberManagement = () => {
     },
   });
 
-  const deleteMemberMutation = useMutation({
-    mutationFn: async (memberId: string) => {
-      const { error } = await supabase.from('members').delete().eq('id', memberId);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      showSuccess('Member removed.');
-      queryClient.invalidateQueries({ queryKey: ['members', household?.id] });
-    },
-    onError: (error: Error) => {
-      showError(`Failed to remove member: ${error.message}`);
-    }
-  });
-
   return (
     <Card>
       <CardHeader>
         <CardTitle>Household Members</CardTitle>
-        <CardDescription>Add or remove members from your household.</CardDescription>
+        <CardDescription>Add or remove members and view their point totals.</CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit((data) => addMemberMutation.mutate(data))} className="flex items-end gap-4 mb-6">
+        <form onSubmit={handleSubmit((data) => addMemberMutation.mutate(data))} className="flex items-end gap-4 mb-8">
           <div className="flex-grow space-y-2">
-            <Label htmlFor="fullName">Full Name</Label>
+            <Label htmlFor="fullName">New Member's Full Name</Label>
             <Input id="fullName" {...register('fullName')} placeholder="e.g., Jane Doe" className={cn(errors.fullName && "border-destructive")} />
             {errors.fullName && <p className="text-red-500 text-sm">{errors.fullName.message}</p>}
           </div>
@@ -90,27 +77,16 @@ export const MemberManagement = () => {
             Add Member
           </Button>
         </form>
-        <div className="space-y-3">
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {isLoading ? (
-            <div className="space-y-2"><Skeleton className="h-12 w-full" /><Skeleton className="h-12 w-full" /></div>
+            Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-36 w-full" />)
           ) : members && members.length > 0 ? (
-            <ul className="space-y-3">
-              {members.map(member => (
-                <li key={member.id} className="flex items-center justify-between p-3 bg-secondary rounded-lg">
-                  <div>
-                    <p className="font-medium">{member.full_name}</p>
-                    {member.role === 'OWNER' && <p className="text-xs text-muted-foreground">Owner</p>}
-                  </div>
-                  {member.role !== 'OWNER' && (
-                    <Button variant="ghost" size="icon" onClick={() => deleteMemberMutation.mutate(member.id)} disabled={deleteMemberMutation.isPending}>
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
-                  )}
-                </li>
-              ))}
-            </ul>
+            members.map(member => (
+              <MemberStatsCard key={member.id} member={member} />
+            ))
           ) : (
-            <p className="text-sm text-muted-foreground text-center py-4">No members added yet.</p>
+            <p className="text-sm text-muted-foreground text-center py-4 col-span-full">No members added yet.</p>
           )}
         </div>
       </CardContent>

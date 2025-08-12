@@ -19,7 +19,7 @@ const householdSchema = z.object({
 type HouseholdFormValues = z.infer<typeof householdSchema>;
 
 const CreateHousehold = () => {
-  const { user, profile } = useAuth();
+  const { user, household } = useAuth();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<HouseholdFormValues>({
@@ -27,42 +27,29 @@ const CreateHousehold = () => {
   });
 
   const onSubmit = async (data: HouseholdFormValues) => {
-    if (!user || !profile) {
-      showError("You must be logged in to create a household.");
+    if (!user || !household) {
+      showError("Could not find your household to update.");
       return;
     }
 
     try {
-      // 1. Create the household. The `created_by` field is now set automatically by the database.
-      const { data: householdData, error: householdError } = await supabase
+      // UPDATE the household name and mark setup as complete
+      const { error } = await supabase
         .from('households')
-        .insert({ name: data.name })
-        .select()
-        .single();
+        .update({ name: data.name, is_setup_complete: true })
+        .eq('id', household.id);
 
-      if (householdError) throw householdError;
+      if (error) throw error;
 
-      // 2. Add the user as the OWNER
-      const { error: memberError } = await supabase
-        .from('members')
-        .insert({ 
-            user_id: user.id, 
-            household_id: householdData.id, 
-            role: 'OWNER',
-            full_name: profile.full_name || 'Household Owner'
-        });
-
-      if (memberError) throw memberError;
-
-      showSuccess("Household created! Now, let's pair your first kiosk.");
+      showSuccess("Household setup complete!");
       // Invalidate queries to force AuthContext to refetch user data
       await queryClient.invalidateQueries();
       
-      // Redirect to the admin page to pair a device
-      navigate('/admin', { replace: true });
+      // Redirect to the dashboard
+      navigate('/', { replace: true });
 
     } catch (error: any) {
-      showError(`Failed to create household: ${error.message}`);
+      showError(`Failed to update household: ${error.message}`);
     }
   };
 
@@ -70,9 +57,9 @@ const CreateHousehold = () => {
     <div className="flex justify-center items-center min-h-screen bg-gray-100 py-12">
       <Card className="w-full max-w-md">
         <CardHeader>
-          <CardTitle className="text-2xl">Create Your Household</CardTitle>
+          <CardTitle className="text-2xl">Welcome! Let's Set Up Your Household</CardTitle>
           <CardDescription>
-            Give your household a name to get started.
+            Give your household a name to get started. You can change this later.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -84,11 +71,12 @@ const CreateHousehold = () => {
                 {...register('name')} 
                 placeholder="e.g., The Smith Family" 
                 className={cn(errors.name && "border-destructive focus-visible:ring-destructive")}
+                defaultValue={household?.name}
               />
               {errors.name && <p className="text-red-500 text-sm">{errors.name.message}</p>}
             </div>
             <Button type="submit" className="w-full" disabled={isSubmitting}>
-              {isSubmitting ? 'Creating...' : 'Create Household'}
+              {isSubmitting ? 'Saving...' : 'Save and Continue'}
             </Button>
           </form>
         </CardContent>

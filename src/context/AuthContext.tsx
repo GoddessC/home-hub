@@ -6,6 +6,7 @@ import { showError } from '@/utils/toast';
 export interface Household {
   id: string;
   name: string;
+  is_setup_complete: boolean;
 }
 
 export interface Member {
@@ -63,11 +64,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
         if(error) setDevice(null); // Not paired yet
     } else {
-        const { data: memberData } = await supabase.from('members').select('*').eq('user_id', currentUser.id).single();
+        const { data: memberData } = await supabase.from('members').select('*, households(*)').eq('user_id', currentUser.id).single();
         if (memberData) {
             setMember(memberData);
-            const { data: householdData } = await supabase.from('households').select('*').eq('id', memberData.household_id).single();
-            setHousehold(householdData);
+            // The household data is now nested inside the member data
+            setHousehold(memberData.households as Household | null);
         }
         const { data: profileData } = await supabase.from('profiles').select('*').eq('id', currentUser.id).single();
         setProfile(profileData || null);

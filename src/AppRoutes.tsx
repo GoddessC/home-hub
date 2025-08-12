@@ -45,7 +45,8 @@ const AppRoutes = () => {
   }
 
   // Authenticated Human User
-  if (!household || !member) {
+  // If household exists but setup is not complete, force to setup page
+  if (household && !household.is_setup_complete) {
     return (
         <Routes>
             <Route path="/create-household" element={<CreateHousehold />} />
@@ -54,17 +55,29 @@ const AppRoutes = () => {
     )
   }
 
+  // If setup is complete, show the main app
+  if (household && member) {
+    return (
+      <Routes>
+        <Route path="/" element={<Dashboard />} />
+        {member.role === 'OWNER' && (
+          <Route path="/admin" element={<AdminDashboard />} />
+        )}
+        <Route path="/login" element={<Navigate to="/" replace />} />
+        <Route path="/register" element={<Navigate to="/" replace />} />
+        <Route path="/create-household" element={<Navigate to="/" replace />} />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    );
+  }
+
+  // Fallback for when user is logged in but data is missing
   return (
-    <Routes>
-      <Route path="/" element={<Dashboard />} />
-      {member.role === 'OWNER' && (
-        <Route path="/admin" element={<AdminDashboard />} />
-      )}
-      <Route path="/login" element={<Navigate to="/" replace />} />
-      <Route path="/register" element={<Navigate to="/" replace />} />
-      <Route path="/create-household" element={<Navigate to="/" replace />} />
-      <Route path="*" element={<NotFound />} />
-    </Routes>
+    <div className="flex items-center justify-center h-screen">
+      <div className="text-center">
+        <p className="text-xl">Finalizing your account setup...</p>
+      </div>
+    </div>
   );
 };
 

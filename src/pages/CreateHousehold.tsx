@@ -41,12 +41,12 @@ const CreateHousehold = () => {
 
       if (error) throw error;
 
-      showSuccess("Household setup complete!");
+      showSuccess("Household setup complete! Redirecting to Admin Panel...");
       // Invalidate queries to force AuthContext to refetch user data
       await queryClient.invalidateQueries();
       
-      // Redirect to the dashboard
-      navigate('/', { replace: true });
+      // Redirect to the admin dashboard
+      navigate('/admin', { replace: true });
 
     } catch (error: any) {
       showError(`Failed to update household: ${error.message}`);

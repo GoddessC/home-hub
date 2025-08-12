@@ -62,6 +62,7 @@ export const AssignChoreDialog = ({ isOpen, setOpen, member }: AssignChoreDialog
     onSuccess: () => {
       showSuccess('Chore assigned!');
       queryClient.invalidateQueries({ queryKey: ['chore_log'] });
+      queryClient.invalidateQueries({ queryKey: ['my_chores'] });
       setOpen(false);
     },
     onError: (error: Error) => showError(error.message),

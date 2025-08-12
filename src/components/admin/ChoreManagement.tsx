@@ -8,6 +8,7 @@ import { showSuccess, showError } from '@/utils/toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { PlusCircle, Trash2 } from 'lucide-react';
 import { AssignChoreDialog } from './AssignChoreDialog';
+import { format } from 'date-fns';
 
 type Member = {
   id: string;
@@ -53,7 +54,7 @@ export const ChoreManagement = () => {
         .from('chore_log')
         .select('id, member_id, completed_at, chores(title, points)')
         .eq('household_id', household.id)
-        .eq('due_date', new Date().toISOString().slice(0, 10));
+        .eq('due_date', format(new Date(), 'yyyy-MM-dd'));
       if (error) throw error;
       return data as ChoreLog[];
     },

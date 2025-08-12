@@ -28,7 +28,7 @@ export const ChoreTracker = () => {
         .from('chore_log')
         .select('id, completed_at, chores(title, points)')
         .eq('member_id', member.id)
-        .eq('due_date', new Date().toISOString().slice(0, 10));
+        .eq('due_date', format(new Date(), 'yyyy-MM-dd'));
       if (error) throw error;
       return data as ChoreLog[];
     },

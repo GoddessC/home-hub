@@ -8,6 +8,7 @@ import { ChoreManagement } from '@/components/admin/ChoreManagement';
 import { MemberManagement } from '@/components/admin/MemberManagement';
 import { ChoreTemplateManagement } from '@/components/admin/ChoreTemplateManagement';
 import { AnnouncementManagement } from '@/components/admin/AnnouncementManagement';
+import { HouseholdSettings } from '@/components/admin/HouseholdSettings';
 
 const AdminDashboard = () => {
   const { household } = useAuth();
@@ -32,6 +33,7 @@ const AdminDashboard = () => {
         <p className="text-muted-foreground mb-6">Manage your household settings, devices, and chores.</p>
         
         <div className="grid grid-cols-1 gap-8">
+            <HouseholdSettings />
             <AnnouncementManagement />
             <MemberManagement />
             <DeviceManagement />

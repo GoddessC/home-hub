@@ -7,6 +7,7 @@ export interface Household {
   id: string;
   name: string;
   is_setup_complete: boolean;
+  chore_reset_day: number;
 }
 
 export interface Member {

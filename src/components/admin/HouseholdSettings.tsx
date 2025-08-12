@@ -1,0 +1,89 @@
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/context/AuthContext';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { showSuccess, showError } from '@/utils/toast';
+
+const settingsSchema = z.object({
+  chore_reset_day: z.coerce.number().min(0).max(6),
+});
+type SettingsFormValues = z.infer<typeof settingsSchema>;
+
+const daysOfWeek = [
+  { value: 0, label: 'Sunday' },
+  { value: 1, label: 'Monday' },
+  { value: 2, label: 'Tuesday' },
+  { value: 3, label: 'Wednesday' },
+  { value: 4, label: 'Thursday' },
+  { value: 5, label: 'Friday' },
+  { value: 6, label: 'Saturday' },
+];
+
+export const HouseholdSettings = () => {
+  const { household } = useAuth();
+  const queryClient = useQueryClient();
+
+  const { handleSubmit, setValue, watch, formState: { isSubmitting, isDirty } } = useForm<SettingsFormValues>({
+    resolver: zodResolver(settingsSchema),
+    values: {
+      chore_reset_day: household?.chore_reset_day ?? 0,
+    },
+  });
+  const chore_reset_day = watch('chore_reset_day');
+
+  const updateSettingsMutation = useMutation({
+    mutationFn: async (values: SettingsFormValues) => {
+      if (!household) throw new Error("Household not found.");
+      const { error } = await supabase
+        .from('households')
+        .update({ chore_reset_day: values.chore_reset_day })
+        .eq('id', household.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      showSuccess('Settings updated successfully!');
+      queryClient.invalidateQueries(); // Invalidate all to refetch auth context
+    },
+    onError: (error: Error) => {
+      showError(`Failed to update settings: ${error.message}`);
+    },
+  });
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Household Settings</CardTitle>
+        <CardDescription>Manage general settings for your household.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handleSubmit((data) => updateSettingsMutation.mutate(data))} className="space-y-4">
+          <div className="space-y-2">
+            <Label>Weekly Chore & Point Reset Day</Label>
+            <Select onValueChange={(value) => setValue('chore_reset_day', Number(value), { shouldDirty: true })} value={String(chore_reset_day)}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Select a day" />
+              </SelectTrigger>
+              <SelectContent>
+                {daysOfWeek.map(day => (
+                  <SelectItem key={day.value} value={String(day.value)}>{day.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-sm text-muted-foreground">
+              The day on which weekly point totals are reset to zero.
+            </p>
+          </div>
+          <Button type="submit" disabled={updateSettingsMutation.isPending || isSubmitting || !isDirty}>
+            {updateSettingsMutation.isPending ? 'Saving...' : 'Save Settings'}
+          </Button>
+        </form>
+      </CardContent>
+    </Card>
+  );
+};

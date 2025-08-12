@@ -5,7 +5,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Skeleton } from '@/components/ui/skeleton';
 import { showError } from '@/utils/toast';
 import { startOfWeek, endOfWeek, format } from 'date-fns';
-import { Member } from '@/context/AuthContext';
+import { Member, useAuth } from '@/context/AuthContext';
 
 type ChoreLog = {
   id: string;
@@ -23,12 +23,15 @@ interface MemberChoreCardProps {
 
 export const MemberChoreCard = ({ member, chores }: MemberChoreCardProps) => {
   const queryClient = useQueryClient();
+  const { household } = useAuth();
 
   const { data: weeklyScore, isLoading: isLoadingScore } = useQuery({
     queryKey: ['member_score', member.id],
     queryFn: async () => {
-      const weekStart = format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd');
-      const weekEnd = format(endOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd');
+      const weekStartsOn = (household?.chore_reset_day as (0 | 1 | 2 | 3 | 4 | 5 | 6)) ?? 0;
+      const weekStart = format(startOfWeek(new Date(), { weekStartsOn }), 'yyyy-MM-dd');
+      const weekEnd = format(endOfWeek(new Date(), { weekStartsOn }), 'yyyy-MM-dd');
+      
       const { data, error } = await supabase
         .from('chore_log')
         .select('chores(points)')
@@ -39,7 +42,7 @@ export const MemberChoreCard = ({ member, chores }: MemberChoreCardProps) => {
       if (error) throw error;
       return data.reduce((acc, item) => acc + (item.chores?.points || 0), 0);
     },
-    enabled: !!member,
+    enabled: !!member && !!household,
   });
 
   const updateChoreMutation = useMutation({

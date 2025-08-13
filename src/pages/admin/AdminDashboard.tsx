@@ -3,7 +3,6 @@ import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import { UserNav } from '@/components/layout/UserNav';
 import { DeviceManagement } from '@/components/admin/DeviceManagement';
-import { ChoreManagement } from '@/components/admin/ChoreManagement';
 import { MemberManagement } from '@/components/admin/MemberManagement';
 import { ChoreTemplateManagement } from '@/components/admin/ChoreTemplateManagement';
 import { AnnouncementManagement } from '@/components/admin/AnnouncementManagement';
@@ -40,7 +39,6 @@ const AdminDashboard = () => {
                 <MemberManagement />
                 <DeviceManagement />
                 <ChoreTemplateManagement />
-                <ChoreManagement />
             </div>
             <div className="lg:col-span-1 space-y-8">
                 <HouseholdSettings />

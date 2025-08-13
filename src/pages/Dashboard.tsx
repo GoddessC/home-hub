@@ -1,5 +1,4 @@
 import { useAuth } from '@/context/AuthContext';
-import { MadeWithDyad } from '@/components/made-with-dyad';
 import { UserNav } from '@/components/layout/UserNav';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';

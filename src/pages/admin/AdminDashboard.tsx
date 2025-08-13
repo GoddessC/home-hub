@@ -1,6 +1,5 @@
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
-import { MadeWithDyad } from '@/components/made-with-dyad';
 import { Link } from 'react-router-dom';
 import { UserNav } from '@/components/layout/UserNav';
 import { DeviceManagement } from '@/components/admin/DeviceManagement';
@@ -47,7 +46,6 @@ const AdminDashboard = () => {
             </div>
         </div>
       </main>
-      <MadeWithDyad />
     </div>
   );
 };

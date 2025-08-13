@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 export interface Household {
   id: string;
@@ -51,6 +51,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     const getSession = async () => {
@@ -105,6 +106,33 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     enabled: !authLoading && !!user,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
+
+  const householdId = data?.household?.id;
+
+  useEffect(() => {
+    if (!householdId) return;
+
+    const channel = supabase
+      .channel(`household-updates-${householdId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'households',
+          filter: `id=eq.${householdId}`,
+        },
+        () => {
+          // When the household data changes, invalidate the authData query to refetch
+          queryClient.invalidateQueries({ queryKey: ['authData'] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [householdId, queryClient]);
 
   const signOut = async () => {
     await supabase.auth.signOut();

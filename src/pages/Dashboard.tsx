@@ -88,7 +88,6 @@ const Dashboard = () => {
           )}
         </div>
       </main>
-      <MadeWithDyad />
     </div>
   );
 };

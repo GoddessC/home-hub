@@ -9,7 +9,7 @@ import { startOfWeek, endOfWeek, format } from 'date-fns';
 import { Member, useAuth } from '@/context/AuthContext';
 import { Button } from '../ui/button';
 import { FeelingsCheckinDialog } from './FeelingsCheckinDialog';
-import { PlusCircle } from 'lucide-react';
+import { PlusCircle, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 type ChoreLog = {
@@ -162,9 +162,23 @@ export const MemberDashboardPanel = ({ member, chores }: MemberDashboardPanelPro
             <div className="w-full h-full flex flex-col cursor-default" onClick={(e) => e.stopPropagation()}>
               <CardHeader className="flex flex-row items-start justify-between">
                 <CardTitle>{member.full_name}</CardTitle>
-                <div className="text-right">
-                  <p className="text-2xl font-bold">{isLoadingScore ? <Skeleton className="h-8 w-12" /> : weeklyScore}</p>
-                  <p className="text-xs text-muted-foreground">Points this week</p>
+                <div className="flex items-start gap-2">
+                    <div className="text-right">
+                        <p className="text-2xl font-bold">{isLoadingScore ? <Skeleton className="h-8 w-12" /> : weeklyScore}</p>
+                        <p className="text-xs text-muted-foreground">Points this week</p>
+                    </div>
+                    <Button
+                        variant="secondary"
+                        size="icon"
+                        className="h-8 w-8 shrink-0"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            setIsExpanded(false);
+                        }}
+                    >
+                        <X className="h-4 w-4" />
+                        <span className="sr-only">Close</span>
+                    </Button>
                 </div>
               </CardHeader>
               <CardContent className="flex-grow flex flex-col justify-between">

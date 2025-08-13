@@ -1,5 +1,4 @@
 import { useAuth } from '@/context/AuthContext';
-import { MadeWithDyad } from '@/components/made-with-dyad';
 import { Button } from '@/components/ui/button';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -120,7 +119,6 @@ const KioskDashboard = () => {
             </Button>
         </Link>
       )}
-      <MadeWithDyad />
     </div>
   );
 };

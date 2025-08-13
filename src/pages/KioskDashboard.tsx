@@ -2,7 +2,6 @@ import { useAuth, Member } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { MemberChoreCard } from '@/components/dashboard/MemberChoreCard';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format } from 'date-fns';
 import { AnnouncementPanel } from '@/components/dashboard/AnnouncementPanel';
@@ -11,7 +10,7 @@ import { Leaf, Shield } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { UserNav } from '@/components/layout/UserNav';
-import { FeelingsPanel } from '@/components/dashboard/FeelingsPanel';
+import { MemberDashboardPanel } from '@/components/dashboard/MemberDashboardPanel';
 
 type ChoreLog = {
   id: string;
@@ -120,13 +119,14 @@ const KioskDashboard = () => {
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {isLoadingMembers || isLoadingChores ? (
-            Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className={cn("h-64 w-full", isAnonymous && "bg-gray-700")} />)
+            Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className={cn("h-96 w-full", isAnonymous && "bg-gray-700")} />)
           ) : (
             members?.map(m => (
-              <div key={m.id} className="flex flex-col gap-6">
-                <MemberChoreCard member={m} chores={chores?.filter(c => c.member_id === m.id) || []} />
-                <FeelingsPanel member={m} />
-              </div>
+              <MemberDashboardPanel 
+                key={m.id} 
+                member={m} 
+                chores={chores?.filter(c => c.member_id === m.id) || []} 
+              />
             ))
           )}
         </div>

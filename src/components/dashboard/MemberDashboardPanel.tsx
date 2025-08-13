@@ -1,14 +1,13 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Skeleton } from '@/components/ui/skeleton';
 import { showError } from '@/utils/toast';
-import { startOfWeek, endOfWeek, format, isToday } from 'date-fns';
+import { startOfWeek, endOfWeek, format } from 'date-fns';
 import { Member, useAuth } from '@/context/AuthContext';
 import { Button } from '../ui/button';
-import { Separator } from '../ui/separator';
 import { FeelingsCheckinDialog } from './FeelingsCheckinDialog';
 
 type ChoreLog = {
@@ -76,24 +75,73 @@ export const MemberDashboardPanel = ({ member, chores }: MemberDashboardPanelPro
   });
 
   // --- Feelings-related hooks ---
-  const { data: lastLog } = useQuery({
-    queryKey: ['last_feeling_log', member.id],
+  const { data: todaysLogs } = useQuery({
+    queryKey: ['todays_feeling_logs', member.id],
     queryFn: async () => {
+      const today = new Date();
+      const startOfToday = new Date(today.setHours(0, 0, 0, 0)).toISOString();
+      const endOfToday = new Date(today.setHours(23, 59, 59, 999)).toISOString();
+
       const { data, error } = await supabase
         .from('feelings_log')
         .select('feeling, created_at')
         .eq('member_id', member.id)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single();
-      if (error && error.code !== 'PGRST116') throw error;
+        .gte('created_at', startOfToday)
+        .lte('created_at', endOfToday)
+        .order('created_at', { ascending: false });
+      if (error) throw error;
       return data;
     },
     enabled: !!member && (household?.is_feelings_enabled ?? false),
+    refetchInterval: 60000, // Refetch every minute to update check-in availability
   });
 
-  const lastLogIsToday = lastLog && isToday(new Date(lastLog.created_at));
-  const lastFeelingEmoji = lastLogIsToday ? feelingMeta[lastLog.feeling as keyof typeof feelingMeta]?.emoji : null;
+  const checkinStatus = useMemo(() => {
+    const lastLog = todaysLogs?.[0];
+    const lastFeelingEmoji = lastLog ? feelingMeta[lastLog.feeling as keyof typeof feelingMeta]?.emoji : null;
+
+    if (!household || !household.is_feelings_enabled) {
+      return { showButton: false, lastFeelingEmoji: null };
+    }
+
+    const { feelings_morning_time, feelings_evening_time } = household;
+    const now = new Date();
+
+    const parseTime = (timeStr: string | null): Date | null => {
+      if (!timeStr) return null;
+      const [hours, minutes] = timeStr.split(':');
+      const date = new Date();
+      date.setHours(parseInt(hours, 10), parseInt(minutes, 10), 0, 0);
+      return date;
+    };
+
+    const morningTime = parseTime(feelings_morning_time);
+    const eveningTime = parseTime(feelings_evening_time);
+
+    const hasLoggedinWindow = (start: Date, end: Date | null) => {
+      return todaysLogs?.some(log => {
+        const logTime = new Date(log.created_at);
+        const endTime = end || new Date(new Date().setHours(23, 59, 59, 999));
+        return logTime >= start && logTime < endTime;
+      }) ?? false;
+    };
+
+    let showButton = false;
+
+    if (morningTime && now >= morningTime && (!eveningTime || now < eveningTime)) {
+      if (!hasLoggedinWindow(morningTime, eveningTime)) {
+        showButton = true;
+      }
+    }
+
+    if (eveningTime && now >= eveningTime) {
+      if (!hasLoggedinWindow(eveningTime, null)) {
+        showButton = true;
+      }
+    }
+
+    return { showButton, lastFeelingEmoji };
+  }, [todaysLogs, household]);
 
   return (
     <>
@@ -132,14 +180,24 @@ export const MemberDashboardPanel = ({ member, chores }: MemberDashboardPanelPro
           {household?.is_feelings_enabled && (
             <div className="mt-4 pt-4 border-t">
               <h4 className="mb-2 text-sm font-medium text-muted-foreground">Feelings Check-in</h4>
-              <div className="flex flex-col items-center justify-center gap-4">
-                {lastFeelingEmoji ? (
+              <div className="flex flex-col items-center justify-center gap-4 min-h-[116px]">
+                {checkinStatus.lastFeelingEmoji && (
                   <div className="text-center">
-                    <p className="text-sm text-muted-foreground">Today you're feeling:</p>
-                    <p className="text-6xl">{lastFeelingEmoji}</p>
+                    <p className="text-sm text-muted-foreground">Last check-in today:</p>
+                    <p className="text-6xl">{checkinStatus.lastFeelingEmoji}</p>
                   </div>
-                ) : (
-                  <Button onClick={() => setFeelingsDialogOpen(true)}>Log My Feeling</Button>
+                )}
+
+                {checkinStatus.showButton && (
+                  <Button onClick={() => setFeelingsDialogOpen(true)}>
+                    {checkinStatus.lastFeelingEmoji ? 'Check-in Again' : 'Log My Feeling'}
+                  </Button>
+                )}
+
+                {!checkinStatus.lastFeelingEmoji && !checkinStatus.showButton && (
+                  <p className="text-sm text-muted-foreground text-center py-4">
+                    Come back later for the next check-in!
+                  </p>
                 )}
               </div>
             </div>

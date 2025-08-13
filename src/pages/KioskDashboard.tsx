@@ -11,6 +11,7 @@ import { Leaf, Shield } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { UserNav } from '@/components/layout/UserNav';
+import { FeelingsPanel } from '@/components/dashboard/FeelingsPanel';
 
 type ChoreLog = {
   id: string;
@@ -121,10 +122,12 @@ const KioskDashboard = () => {
           {isLoadingMembers || isLoadingChores ? (
             Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className={cn("h-64 w-full", isAnonymous && "bg-gray-700")} />)
           ) : (
-            members?.map(m => {
-              const memberChores = chores?.filter(c => c.member_id === m.id) || [];
-              return <MemberChoreCard key={m.id} member={m} chores={memberChores} />
-            })
+            members?.map(m => (
+              <div key={m.id} className="flex flex-col gap-6">
+                <MemberChoreCard member={m} chores={chores?.filter(c => c.member_id === m.id) || []} />
+                <FeelingsPanel member={m} />
+              </div>
+            ))
           )}
         </div>
       </main>

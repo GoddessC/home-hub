@@ -38,16 +38,10 @@ export const CalmCornerManagement = () => {
         .update({ is_calm_corner_enabled: isEnabled })
         .eq('id', household.id);
       if (error) throw error;
-      return isEnabled;
     },
-    onSuccess: (isEnabled) => {
+    onSuccess: (_, isEnabled) => {
       showSuccess(`Calm Corner ${isEnabled ? 'enabled' : 'disabled'}.`);
-      queryClient.invalidateQueries({ queryKey: ['auth_household'] });
-      // Optimistically update the household data in auth context
-      queryClient.setQueryData(['auth_household'], (old: any) => ({
-          ...old,
-          is_calm_corner_enabled: isEnabled
-      }));
+      queryClient.invalidateQueries({ queryKey: ['authData'] });
     },
     onError: (error: Error) => showError(error.message),
   });
@@ -73,7 +67,7 @@ export const CalmCornerManagement = () => {
           <Label htmlFor="calm-corner-switch" className="font-medium">Enable Calm Corner</Label>
           <Switch
             id="calm-corner-switch"
-            checked={household?.is_calm_corner_enabled}
+            checked={household?.is_calm_corner_enabled ?? false}
             onCheckedChange={(checked) => updateSettingMutation.mutate(checked)}
             disabled={updateSettingMutation.isPending}
           />

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { showError, showSuccess } from '@/utils/toast';
@@ -78,17 +78,10 @@ export const MemberStatsCard = ({ member }: MemberStatsCardProps) => {
                     {member.role === 'ADULT' && <CardDescription>Adult</CardDescription>}
                     {member.role === 'CHILD' && <CardDescription>Child</CardDescription>}
                 </div>
-                <div className="flex items-center gap-2">
-                    <Button variant="outline" size="sm" onClick={() => setAssignChoreOpen(true)}>
-                        <PlusCircle className="h-4 w-4 mr-2" />
-                        Assign
-                    </Button>
-                    {member.role !== 'OWNER' && (
-                        <Button variant="ghost" size="icon" onClick={() => deleteMemberMutation.mutate(member.id)} disabled={deleteMemberMutation.isPending}>
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
-                    )}
-                </div>
+                <Button variant="outline" size="sm" onClick={() => setAssignChoreOpen(true)}>
+                    <PlusCircle className="h-4 w-4 mr-2" />
+                    Assign
+                </Button>
             </CardHeader>
             <CardContent className="flex justify-around text-center">
                 <div>
@@ -101,6 +94,13 @@ export const MemberStatsCard = ({ member }: MemberStatsCardProps) => {
                 </div>
             </CardContent>
         </div>
+        {member.role !== 'OWNER' && (
+            <CardFooter className="flex justify-end p-4 pt-0">
+                <Button variant="ghost" size="icon" onClick={() => deleteMemberMutation.mutate(member.id)} disabled={deleteMemberMutation.isPending}>
+                    <Trash2 className="h-4 w-4 text-destructive" />
+                </Button>
+            </CardFooter>
+        )}
       </Card>
       <AssignChoreDialog
         isOpen={isAssignChoreOpen}

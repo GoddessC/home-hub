@@ -72,22 +72,23 @@ export const MemberStatsCard = ({ member }: MemberStatsCardProps) => {
       <Card className="flex flex-col justify-between">
         <div>
             <CardHeader className="flex flex-row items-start justify-between">
-                <div className="flex items-center gap-2">
-                    <Button variant="ghost" size="icon" onClick={() => setAssignChoreOpen(true)}>
-                        <PlusCircle className="h-5 w-5 text-muted-foreground" />
-                    </Button>
-                    <div>
-                        <CardTitle>{member.full_name}</CardTitle>
-                        {member.role === 'OWNER' && <CardDescription>Owner</CardDescription>}
-                        {member.role === 'ADULT' && <CardDescription>Adult</CardDescription>}
-                        {member.role === 'CHILD' && <CardDescription>Child</CardDescription>}
-                    </div>
+                <div>
+                    <CardTitle>{member.full_name}</CardTitle>
+                    {member.role === 'OWNER' && <CardDescription>Owner</CardDescription>}
+                    {member.role === 'ADULT' && <CardDescription>Adult</CardDescription>}
+                    {member.role === 'CHILD' && <CardDescription>Child</CardDescription>}
                 </div>
-                {member.role !== 'OWNER' && (
-                    <Button variant="ghost" size="icon" onClick={() => deleteMemberMutation.mutate(member.id)} disabled={deleteMemberMutation.isPending}>
-                        <Trash2 className="h-4 w-4 text-destructive" />
+                <div className="flex items-center gap-2">
+                    <Button variant="outline" size="sm" onClick={() => setAssignChoreOpen(true)}>
+                        <PlusCircle className="h-4 w-4 mr-2" />
+                        Assign
                     </Button>
-                )}
+                    {member.role !== 'OWNER' && (
+                        <Button variant="ghost" size="icon" onClick={() => deleteMemberMutation.mutate(member.id)} disabled={deleteMemberMutation.isPending}>
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                    )}
+                </div>
             </CardHeader>
             <CardContent className="flex justify-around text-center">
                 <div>

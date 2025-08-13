@@ -1,6 +1,6 @@
 import { useAuth, Member } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format } from 'date-fns';
@@ -11,6 +11,8 @@ import { useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { UserNav } from '@/components/layout/UserNav';
 import { MemberDashboardPanel } from '@/components/dashboard/MemberDashboardPanel';
+import { TeamQuestPanel } from '@/components/dashboard/TeamQuestPanel';
+import { QuestCompleteCelebration } from '@/components/dashboard/QuestCompleteCelebration';
 
 type ChoreLog = {
   id: string;
@@ -24,7 +26,38 @@ type ChoreLog = {
 
 const KioskDashboard = () => {
   const { device, household, signOut, isAnonymous, member } = useAuth();
+  const queryClient = useQueryClient();
   const [isPulsing, setIsPulsing] = useState(false);
+  const [showQuestCelebration, setShowQuestCelebration] = useState(false);
+
+  // Listen for quest completions
+  useEffect(() => {
+    if (!household) return;
+    const channel = supabase
+      .channel('quest-completion-listener')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'quests',
+          filter: `household_id=eq.${household.id}`,
+        },
+        (payload) => {
+          if (payload.new.status === 'COMPLETED' && payload.old.status === 'ACTIVE') {
+            setShowQuestCelebration(true);
+            // Invalidate queries to update points and remove quest panel
+            queryClient.invalidateQueries({ queryKey: ['active_quest', household.id] });
+            queryClient.invalidateQueries({ queryKey: ['member_score'] });
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [household, queryClient]);
 
   useEffect(() => {
     if (!household || !isAnonymous) return;
@@ -88,6 +121,7 @@ const KioskDashboard = () => {
 
   return (
     <div className={cn("flex flex-col min-h-screen", isAnonymous ? "bg-gray-900 text-white dark" : "bg-gray-50")}>
+      {showQuestCelebration && <QuestCompleteCelebration onComplete={() => setShowQuestCelebration(false)} />}
       <header className={cn("p-4 sticky top-0 z-40", isAnonymous ? "bg-gray-800 shadow-md" : "bg-white shadow-sm")}>
         <div className="container mx-auto flex justify-between items-center">
           <h1 className={cn("text-2xl font-bold", isAnonymous ? "" : "text-gray-800")}>
@@ -114,10 +148,11 @@ const KioskDashboard = () => {
         </div>
       </header>
       <main className="flex-grow container mx-auto p-4 md:p-8">
-        <div className="mb-8">
+        <div className="space-y-8">
+          <TeamQuestPanel />
           <AnnouncementPanel />
         </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 mt-8">
           {isLoadingMembers || isLoadingChores ? (
             Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className={cn("h-48 w-full rounded-lg", isAnonymous && "bg-gray-700")} />)
           ) : (

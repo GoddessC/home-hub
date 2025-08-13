@@ -43,16 +43,23 @@ export const FeelingsCheckinDialog = ({ isOpen, setOpen, member }: FeelingsCheck
   const mutation = useMutation({
     mutationFn: async ({ feeling, context }: { feeling: string; context: string | null }) => {
       if (!household) throw new Error("Household not found");
-      const { error } = await supabase.from('feelings_log').insert({
+      const { data, error } = await supabase.from('feelings_log').insert({
         household_id: household.id,
         member_id: member.id,
         feeling,
         context,
-      });
+      }).select('feeling, created_at').single();
       if (error) throw error;
+      return data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['feelings_log', household?.id] });
+    onSuccess: (newLog) => {
+      if (!newLog) return;
+      // Manually update the query cache for an instant UI change
+      queryClient.setQueryData(['todays_feeling_logs', member.id], (oldData: any[] | undefined) => {
+        const newLogs = oldData ? [newLog, ...oldData] : [newLog];
+        return newLogs;
+      });
+
       setStep(3); // Move to confirmation step
       setTimeout(() => {
         handleClose();

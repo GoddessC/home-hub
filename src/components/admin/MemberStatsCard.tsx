@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { showError, showSuccess } from '@/utils/toast';
@@ -72,11 +72,16 @@ export const MemberStatsCard = ({ member }: MemberStatsCardProps) => {
       <Card className="flex flex-col justify-between">
         <div>
             <CardHeader className="flex flex-row items-start justify-between">
-                <div>
-                    <CardTitle>{member.full_name}</CardTitle>
-                    {member.role === 'OWNER' && <CardDescription>Owner</CardDescription>}
-                    {member.role === 'ADULT' && <CardDescription>Adult</CardDescription>}
-                    {member.role === 'CHILD' && <CardDescription>Child</CardDescription>}
+                <div className="flex items-center gap-2">
+                    <Button variant="ghost" size="icon" onClick={() => setAssignChoreOpen(true)}>
+                        <PlusCircle className="h-5 w-5 text-muted-foreground" />
+                    </Button>
+                    <div>
+                        <CardTitle>{member.full_name}</CardTitle>
+                        {member.role === 'OWNER' && <CardDescription>Owner</CardDescription>}
+                        {member.role === 'ADULT' && <CardDescription>Adult</CardDescription>}
+                        {member.role === 'CHILD' && <CardDescription>Child</CardDescription>}
+                    </div>
                 </div>
                 {member.role !== 'OWNER' && (
                     <Button variant="ghost" size="icon" onClick={() => deleteMemberMutation.mutate(member.id)} disabled={deleteMemberMutation.isPending}>
@@ -95,16 +100,6 @@ export const MemberStatsCard = ({ member }: MemberStatsCardProps) => {
                 </div>
             </CardContent>
         </div>
-        <CardFooter>
-            <Button
-                variant="outline"
-                className="w-full"
-                onClick={() => setAssignChoreOpen(true)}
-            >
-                <PlusCircle className="mr-2 h-4 w-4" />
-                Assign Chore
-            </Button>
-        </CardFooter>
       </Card>
       <AssignChoreDialog
         isOpen={isAssignChoreOpen}

@@ -111,13 +111,14 @@ const KioskDashboard = () => {
             })
           )}
         </div>
-  
-          <Link to="/kiosk/calm-corner" className="fixed bottom-6 right-6 z-50" onClick={() => setIsPulsing(false)}>
-              <Button variant="secondary" size="lg" className={cn("rounded-full h-16 w-16 shadow-lg bg-green-500 hover:bg-green-600 text-white", isPulsing && "animate-pulse")}>
-                  <Leaf size={32} />
-              </Button>
-          </Link>
       </main>
+      {household?.is_calm_corner_enabled && (
+        <Link to="/kiosk/calm-corner" className="fixed bottom-6 right-6 z-50" onClick={() => setIsPulsing(false)}>
+            <Button variant="secondary" size="lg" className={cn("rounded-full h-16 w-16 shadow-lg bg-green-500 hover:bg-green-600 text-white", isPulsing && "animate-pulse")}>
+                <Leaf size={32} />
+            </Button>
+        </Link>
+      )}
     </div>
   );
 };

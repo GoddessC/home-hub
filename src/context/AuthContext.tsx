@@ -10,6 +10,10 @@ export interface Household {
   chore_reset_day: number;
   chore_reset_frequency: string;
   is_calm_corner_enabled: boolean;
+  is_feelings_enabled: boolean;
+  feelings_morning_time: string | null;
+  feelings_evening_time: string | null;
+  feelings_notify_on_negative: boolean;
 }
 
 export interface Member {

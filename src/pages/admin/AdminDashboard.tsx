@@ -9,6 +9,7 @@ import { ChoreTemplateManagement } from '@/components/admin/ChoreTemplateManagem
 import { AnnouncementManagement } from '@/components/admin/AnnouncementManagement';
 import { HouseholdSettings } from '@/components/admin/HouseholdSettings';
 import { CalmCornerManagement } from '@/components/admin/CalmCornerManagement';
+import { FeelingsManagement } from '@/components/admin/FeelingsManagement';
 
 const AdminDashboard = () => {
   const { household } = useAuth();
@@ -35,6 +36,7 @@ const AdminDashboard = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2 space-y-8">
                 <AnnouncementManagement />
+                <FeelingsManagement />
                 <MemberManagement />
                 <DeviceManagement />
                 <ChoreTemplateManagement />

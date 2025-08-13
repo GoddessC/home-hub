@@ -111,11 +111,13 @@ const KioskDashboard = () => {
             })
           )}
         </div>
+
+        <Button variant="secondary" size="lg" className={cn("rounded-full h-16 w-16 shadow-lg bg-green-500 hover:bg-green-600 text-white", isPulsing && "animate-pulse")}>
+                yes
+            </Button>
       </main>
  
-            <Button variant="secondary" size="lg" className={cn("rounded-full h-16 w-16 shadow-lg bg-green-500 hover:bg-green-600 text-white", isPulsing && "animate-pulse")}>
-                <Leaf size={32} />
-            </Button>
+            
         
     </div>
   );

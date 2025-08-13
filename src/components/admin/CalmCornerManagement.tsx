@@ -42,6 +42,13 @@ export const CalmCornerManagement = () => {
     onSuccess: (_, isEnabled) => {
       showSuccess(`Calm Corner ${isEnabled ? 'enabled' : 'disabled'}.`);
       queryClient.invalidateQueries({ queryKey: ['authData'] });
+      if (household) {
+        const channel = supabase.channel(`household-updates-${household.id}`);
+        channel.send({
+            type: 'broadcast',
+            event: 'household_settings_updated',
+        });
+      }
     },
     onError: (error: Error) => showError(error.message),
   });

@@ -112,8 +112,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     if (!householdId || !user?.id) return;
 
-    const channel = supabase
-      .channel(`household-updates-${householdId}`)
+    const channel = supabase.channel(`household-updates-${householdId}`);
+
+    channel
       .on(
         'postgres_changes',
         {
@@ -123,9 +124,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           filter: `id=eq.${householdId}`,
         },
         () => {
-          // Invalidate the query. This will cause a refetch, ensuring the
-          // latest data is displayed.
           queryClient.invalidateQueries({ queryKey: ['authData', user.id] });
+        }
+      )
+      .on(
+        'broadcast',
+        { event: 'household_settings_updated' },
+        () => {
+            queryClient.invalidateQueries({ queryKey: ['authData', user.id] });
         }
       )
       .subscribe();

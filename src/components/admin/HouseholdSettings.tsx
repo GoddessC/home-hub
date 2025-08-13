@@ -63,6 +63,13 @@ export const HouseholdSettings = () => {
     onSuccess: () => {
       showSuccess('Settings updated successfully!');
       queryClient.invalidateQueries(); // Invalidate all to refetch auth context
+      if (household) {
+        const channel = supabase.channel(`household-updates-${household.id}`);
+        channel.send({
+            type: 'broadcast',
+            event: 'household_settings_updated',
+        });
+      }
     },
     onError: (error: Error) => {
       showError(`Failed to update settings: ${error.message}`);

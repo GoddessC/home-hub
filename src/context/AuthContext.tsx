@@ -122,21 +122,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           table: 'households',
           filter: `id=eq.${householdId}`,
         },
-        (payload) => {
-          // Manually update the query cache to avoid a refetch and ensure UI updates
-          queryClient.setQueryData(['authData', user.id], (oldData: any) => {
-            if (!oldData) return oldData;
-
-            const updatedHousehold = { ...oldData.household, ...payload.new };
-            const newData = { ...oldData, household: updatedHousehold };
-
-            // If it's a kiosk, the household object is also nested. Update it too.
-            if (newData.device) {
-              newData.device = { ...newData.device, household: updatedHousehold };
-            }
-
-            return newData;
-          });
+        () => {
+          // Invalidate the query. This will cause a refetch, ensuring the
+          // latest data is displayed.
+          queryClient.invalidateQueries({ queryKey: ['authData', user.id] });
         }
       )
       .subscribe();

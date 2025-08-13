@@ -42,6 +42,9 @@ const KioskDashboard = () => {
         (payload) => {
           if (!payload.new.acknowledged_at) {
             setIsPulsing(true);
+            const audio = new Audio('/ding.mp3');
+            audio.play().catch(e => console.error("Could not play audio:", e));
+            
             supabase
               .from('calm_corner_suggestions')
               .update({ acknowledged_at: new Date().toISOString() })

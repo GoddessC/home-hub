@@ -9,6 +9,7 @@ import { MemberManagement } from '@/components/admin/MemberManagement';
 import { ChoreTemplateManagement } from '@/components/admin/ChoreTemplateManagement';
 import { AnnouncementManagement } from '@/components/admin/AnnouncementManagement';
 import { HouseholdSettings } from '@/components/admin/HouseholdSettings';
+import { CalmCornerManagement } from '@/components/admin/CalmCornerManagement';
 
 const AdminDashboard = () => {
   const { household } = useAuth();
@@ -32,13 +33,18 @@ const AdminDashboard = () => {
         <h2 className="text-3xl font-bold mb-2">Admin Panel for {household?.name}</h2>
         <p className="text-muted-foreground mb-6">Manage your household settings, devices, and chores.</p>
         
-        <div className="grid grid-cols-1 gap-8">
-            <HouseholdSettings />
-            <AnnouncementManagement />
-            <MemberManagement />
-            <DeviceManagement />
-            <ChoreTemplateManagement />
-            <ChoreManagement />
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="lg:col-span-2 space-y-8">
+                <AnnouncementManagement />
+                <MemberManagement />
+                <DeviceManagement />
+                <ChoreTemplateManagement />
+                <ChoreManagement />
+            </div>
+            <div className="lg:col-span-1 space-y-8">
+                <HouseholdSettings />
+                <CalmCornerManagement />
+            </div>
         </div>
       </main>
       <MadeWithDyad />

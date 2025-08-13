@@ -8,6 +8,10 @@ import { MemberChoreCard } from '@/components/dashboard/MemberChoreCard';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format } from 'date-fns';
 import { AnnouncementPanel } from '@/components/dashboard/AnnouncementPanel';
+import { Link } from 'react-router-dom';
+import { Leaf } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { cn } from '@/lib/utils';
 
 type ChoreLog = {
   id: string;
@@ -21,6 +25,39 @@ type ChoreLog = {
 
 const KioskDashboard = () => {
   const { device, household, signOut } = useAuth();
+  const [isPulsing, setIsPulsing] = useState(false);
+
+  useEffect(() => {
+    if (!household) return;
+
+    const channel = supabase
+      .channel('calm-corner-suggestions')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'calm_corner_suggestions',
+          filter: `household_id=eq.${household.id}`,
+        },
+        (payload) => {
+          if (!payload.new.acknowledged_at) {
+            setIsPulsing(true);
+            // Acknowledge the suggestion so it doesn't pulse forever
+            supabase
+              .from('calm_corner_suggestions')
+              .update({ acknowledged_at: new Date().toISOString() })
+              .eq('id', payload.new.id)
+              .then();
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [household]);
 
   const { data: members, isLoading: isLoadingMembers } = useQuery<Member[]>({
     queryKey: ['members', household?.id],
@@ -76,6 +113,13 @@ const KioskDashboard = () => {
           )}
         </div>
       </main>
+      {household?.is_calm_corner_enabled && (
+        <Link to="/kiosk/calm-corner" className="fixed bottom-6 right-6" onClick={() => setIsPulsing(false)}>
+            <Button variant="secondary" size="lg" className={cn("rounded-full h-16 w-16 shadow-lg bg-green-500 hover:bg-green-600 text-white", isPulsing && "animate-pulse")}>
+                <Leaf size={32} />
+            </Button>
+        </Link>
+      )}
       <MadeWithDyad />
     </div>
   );

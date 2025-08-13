@@ -8,6 +8,7 @@ import NotFound from './pages/NotFound';
 import CreateHousehold from './pages/CreateHousehold';
 import KioskPairingPage from './pages/KioskPairingPage';
 import KioskDashboard from './pages/KioskDashboard';
+import KioskCalmCorner from './pages/KioskCalmCorner';
 
 const AppRoutes = () => {
   const { session, loading, isAnonymous, household, member, device } = useAuth();
@@ -39,6 +40,7 @@ const AppRoutes = () => {
         <Routes>
             <Route path="/kiosk/pair" element={device ? <Navigate to="/kiosk" replace /> : <KioskPairingPage />} />
             <Route path="/kiosk" element={device ? <KioskDashboard /> : <Navigate to="/kiosk/pair" replace />} />
+            <Route path="/kiosk/calm-corner" element={device ? <KioskCalmCorner /> : <Navigate to="/kiosk/pair" replace />} />
             <Route path="*" element={<Navigate to="/kiosk/pair" replace />} />
         </Routes>
     )

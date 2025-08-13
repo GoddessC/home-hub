@@ -9,6 +9,7 @@ export interface Household {
   is_setup_complete: boolean;
   chore_reset_day: number;
   chore_reset_frequency: string;
+  is_calm_corner_enabled: boolean;
 }
 
 export interface Member {

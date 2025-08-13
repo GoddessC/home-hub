@@ -1,16 +1,16 @@
-import { useAuth } from '@/context/AuthContext';
+import { useAuth, Member } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Member } from '@/context/AuthContext';
 import { MemberChoreCard } from '@/components/dashboard/MemberChoreCard';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format } from 'date-fns';
 import { AnnouncementPanel } from '@/components/dashboard/AnnouncementPanel';
 import { Link } from 'react-router-dom';
-import { Leaf } from 'lucide-react';
+import { Leaf, Shield } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
+import { UserNav } from '@/components/layout/UserNav';
 
 type ChoreLog = {
   id: string;
@@ -23,11 +23,11 @@ type ChoreLog = {
 };
 
 const KioskDashboard = () => {
-  const { device, household, signOut } = useAuth();
+  const { device, household, signOut, isAnonymous, member } = useAuth();
   const [isPulsing, setIsPulsing] = useState(false);
 
   useEffect(() => {
-    if (!household) return;
+    if (!household || !isAnonymous) return;
 
     const channel = supabase
       .channel('calm-corner-suggestions')
@@ -42,7 +42,6 @@ const KioskDashboard = () => {
         (payload) => {
           if (!payload.new.acknowledged_at) {
             setIsPulsing(true);
-            // Acknowledge the suggestion so it doesn't pulse forever
             supabase
               .from('calm_corner_suggestions')
               .update({ acknowledged_at: new Date().toISOString() })
@@ -56,7 +55,7 @@ const KioskDashboard = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [household]);
+  }, [household, isAnonymous]);
 
   const { data: members, isLoading: isLoadingMembers } = useQuery<Member[]>({
     queryKey: ['members', household?.id],
@@ -85,16 +84,30 @@ const KioskDashboard = () => {
   });
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-900 text-white">
-      <header className="p-4 bg-gray-800 shadow-md">
+    <div className={cn("flex flex-col min-h-screen", isAnonymous ? "bg-gray-900 text-white dark" : "bg-gray-50")}>
+      <header className={cn("p-4 sticky top-0 z-40", isAnonymous ? "bg-gray-800 shadow-md" : "bg-white shadow-sm")}>
         <div className="container mx-auto flex justify-between items-center">
-          <h1 className="text-2xl font-bold">
-            {household?.name || 'Kiosk Mode'}
+          <h1 className={cn("text-2xl font-bold", isAnonymous ? "" : "text-gray-800")}>
+            {household?.name || (isAnonymous ? 'Kiosk Mode' : 'Dashboard')}
           </h1>
-          <div className="flex items-center space-x-4">
-            <span className="text-sm text-gray-400">{device?.display_name}</span>
-            <Button variant="destructive" onClick={signOut}>Exit Kiosk Mode</Button>
-          </div>
+          {isAnonymous ? (
+            <div className="flex items-center space-x-4">
+              <span className="text-sm text-gray-400">{device?.display_name}</span>
+              <Button variant="destructive" onClick={signOut}>Exit Kiosk Mode</Button>
+            </div>
+          ) : (
+            <div className="flex items-center space-x-4">
+              {member?.role === 'OWNER' && (
+                <Button asChild variant="outline">
+                  <Link to="/admin">
+                    <Shield className="mr-2 h-4 w-4" />
+                    Admin Panel
+                  </Link>
+                </Button>
+              )}
+              <UserNav />
+            </div>
+          )}
         </div>
       </header>
       <main className="flex-grow container mx-auto p-4 md:p-8">
@@ -103,7 +116,7 @@ const KioskDashboard = () => {
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {isLoadingMembers || isLoadingChores ? (
-            Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-64 w-full bg-gray-700" />)
+            Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className={cn("h-64 w-full", isAnonymous && "bg-gray-700")} />)
           ) : (
             members?.map(m => {
               const memberChores = chores?.filter(c => c.member_id === m.id) || [];
@@ -113,7 +126,7 @@ const KioskDashboard = () => {
         </div>
       </main>
  
-      {household?.is_calm_corner_enabled && (
+      {isAnonymous && household?.is_calm_corner_enabled && (
         <Link to="/kiosk/calm-corner" className="fixed bottom-8 right-8">
             <Button 
                 variant="secondary" 

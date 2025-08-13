@@ -2,7 +2,6 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
 import Login from './pages/Login';
 import Register from './pages/Register';
-import Dashboard from './pages/Dashboard';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import NotFound from './pages/NotFound';
 import CreateHousehold from './pages/CreateHousehold';
@@ -61,7 +60,7 @@ const AppRoutes = () => {
   if (household && member) {
     return (
       <Routes>
-        <Route path="/" element={<Dashboard />} />
+        <Route path="/" element={<KioskDashboard />} />
         {member.role === 'OWNER' && (
           <Route path="/admin" element={<AdminDashboard />} />
         )}

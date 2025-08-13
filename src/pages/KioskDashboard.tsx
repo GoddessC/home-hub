@@ -113,20 +113,22 @@ const KioskDashboard = () => {
         </div>
       </main>
  
-      <Link to="/kiosk/calm-corner" className="fixed bottom-8 right-8">
-          <Button 
-              variant="secondary" 
-              size="lg" 
-              className={cn(
-                  "rounded-full h-20 w-20 shadow-lg bg-green-500 hover:bg-green-600 text-white flex flex-col items-center justify-center gap-1 transition-transform transform hover:scale-110", 
-                  isPulsing && "animate-pulse"
-              )}
-              onClick={() => setIsPulsing(false)}
-          >
-              <Leaf className="h-8 w-8" />
-              <span className="text-xs font-semibold">Calm Corner</span>
-          </Button>
-      </Link>
+      {household?.is_calm_corner_enabled && (
+        <Link to="/kiosk/calm-corner" className="fixed bottom-8 right-8">
+            <Button 
+                variant="secondary" 
+                size="lg" 
+                className={cn(
+                    "rounded-full h-20 w-20 shadow-lg bg-green-500 hover:bg-green-600 text-white flex flex-col items-center justify-center gap-1 transition-transform transform hover:scale-110", 
+                    isPulsing && "animate-pulse"
+                )}
+                onClick={() => setIsPulsing(false)}
+            >
+                <Leaf className="h-8 w-8" />
+                <span className="text-xs font-semibold">Calm Corner</span>
+            </Button>
+        </Link>
+      )}
     </div>
   );
 };

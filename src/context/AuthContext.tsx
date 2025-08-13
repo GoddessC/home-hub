@@ -110,7 +110,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const householdId = data?.household?.id;
 
   useEffect(() => {
-    if (!householdId) return;
+    if (!householdId || !user?.id) return;
 
     const channel = supabase
       .channel(`household-updates-${householdId}`)
@@ -122,9 +122,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           table: 'households',
           filter: `id=eq.${householdId}`,
         },
-        () => {
-          // When the household data changes, invalidate the authData query to refetch
-          queryClient.invalidateQueries({ queryKey: ['authData'] });
+        (payload) => {
+          // Manually update the query cache to avoid a refetch and ensure UI updates
+          queryClient.setQueryData(['authData', user.id], (oldData: any) => {
+            if (!oldData) return oldData;
+
+            const updatedHousehold = { ...oldData.household, ...payload.new };
+            const newData = { ...oldData, household: updatedHousehold };
+
+            // If it's a kiosk, the household object is also nested. Update it too.
+            if (newData.device) {
+              newData.device = { ...newData.device, household: updatedHousehold };
+            }
+
+            return newData;
+          });
         }
       )
       .subscribe();
@@ -132,7 +144,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [householdId, queryClient]);
+  }, [householdId, user?.id, queryClient]);
 
   const signOut = async () => {
     await supabase.auth.signOut();

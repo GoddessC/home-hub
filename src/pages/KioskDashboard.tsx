@@ -117,9 +117,9 @@ const KioskDashboard = () => {
         <div className="mb-8">
           <AnnouncementPanel />
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
           {isLoadingMembers || isLoadingChores ? (
-            Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className={cn("h-96 w-full", isAnonymous && "bg-gray-700")} />)
+            Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className={cn("h-48 w-full rounded-lg", isAnonymous && "bg-gray-700")} />)
           ) : (
             members?.map(m => (
               <MemberDashboardPanel 

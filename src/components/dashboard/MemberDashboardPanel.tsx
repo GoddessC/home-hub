@@ -9,6 +9,8 @@ import { startOfWeek, endOfWeek, format } from 'date-fns';
 import { Member, useAuth } from '@/context/AuthContext';
 import { Button } from '../ui/button';
 import { FeelingsCheckinDialog } from './FeelingsCheckinDialog';
+import { PlusCircle } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 type ChoreLog = {
   id: string;
@@ -35,10 +37,10 @@ interface MemberDashboardPanelProps {
 
 export const MemberDashboardPanel = ({ member, chores }: MemberDashboardPanelProps) => {
   const queryClient = useQueryClient();
-  const { household } = useAuth();
+  const { household, isAnonymous } = useAuth();
   const [isFeelingsDialogOpen, setFeelingsDialogOpen] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
 
-  // --- Chore-related hooks ---
   const { data: weeklyScore, isLoading: isLoadingScore } = useQuery({
     queryKey: ['member_score', member.id],
     queryFn: async () => {
@@ -74,7 +76,6 @@ export const MemberDashboardPanel = ({ member, chores }: MemberDashboardPanelPro
     onError: (error: Error) => showError(error.message),
   });
 
-  // --- Feelings-related hooks ---
   const { data: todaysLogs } = useQuery({
     queryKey: ['todays_feeling_logs', member.id],
     queryFn: async () => {
@@ -93,7 +94,7 @@ export const MemberDashboardPanel = ({ member, chores }: MemberDashboardPanelPro
       return data;
     },
     enabled: !!member && (household?.is_feelings_enabled ?? false),
-    refetchInterval: 60000, // Refetch every minute to update check-in availability
+    refetchInterval: 60000,
   });
 
   const checkinStatus = useMemo(() => {
@@ -127,17 +128,11 @@ export const MemberDashboardPanel = ({ member, chores }: MemberDashboardPanelPro
     };
 
     let showButton = false;
-
     if (morningTime && now >= morningTime && (!eveningTime || now < eveningTime)) {
-      if (!hasLoggedinWindow(morningTime, eveningTime)) {
-        showButton = true;
-      }
+      if (!hasLoggedinWindow(morningTime, eveningTime)) showButton = true;
     }
-
     if (eveningTime && now >= eveningTime) {
-      if (!hasLoggedinWindow(eveningTime, null)) {
-        showButton = true;
-      }
+      if (!hasLoggedinWindow(eveningTime, null)) showButton = true;
     }
 
     return { showButton, lastFeelingEmoji };
@@ -145,65 +140,72 @@ export const MemberDashboardPanel = ({ member, chores }: MemberDashboardPanelPro
 
   return (
     <>
-      <Card className="w-full flex flex-col">
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>{member.full_name}</CardTitle>
-          <div className="text-right">
-            <p className="text-2xl font-bold">{isLoadingScore ? <Skeleton className="h-8 w-12" /> : weeklyScore}</p>
-            <p className="text-xs text-muted-foreground">Points this week</p>
-          </div>
-        </CardHeader>
-        <CardContent className="flex-grow flex flex-col justify-between">
-          <div>
-            <h4 className="mb-2 text-sm font-medium text-muted-foreground">Today's Chores</h4>
-            {chores.length > 0 ? (
-              <ul className="space-y-3">
-                {chores.map(chore => (
-                  <li key={chore.id} className="flex items-center space-x-3 p-3 rounded-md bg-background">
-                    <Checkbox
-                      id={`${member.id}-${chore.id}`}
-                      checked={!!chore.completed_at}
-                      onCheckedChange={(checked) => updateChoreMutation.mutate({ choreId: chore.id, isCompleted: !!checked })}
-                    />
-                    <label htmlFor={`${member.id}-${chore.id}`} className="flex-grow text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                      {chore.chores?.title}
-                    </label>
-                    <span className="font-semibold text-primary">+{chore.chores?.points} pt</span>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="text-sm text-muted-foreground text-center py-4">No chores for today!</p>
-            )}
-          </div>
-
-          {household?.is_feelings_enabled && (
-            <div className="mt-4 pt-4 border-t">
-              <h4 className="mb-2 text-sm font-medium text-muted-foreground">Feelings Check-in</h4>
-              <div className="flex flex-col items-center justify-center gap-4 min-h-[116px]">
-                {checkinStatus.lastFeelingEmoji && (
-                  <div className="text-center">
-                    <p className="text-sm text-muted-foreground">Last check-in today:</p>
-                    <p className="text-6xl">{checkinStatus.lastFeelingEmoji}</p>
+      <div className={cn("transition-all duration-300 ease-in-out", isExpanded ? "col-span-full md:col-span-2 lg:col-span-2" : "col-span-1")}>
+        <Card
+          className={cn(
+            "w-full flex flex-col cursor-pointer transition-all duration-300 ease-in-out",
+            isAnonymous ? "dark:bg-gray-800 dark:hover:bg-gray-700" : "bg-white hover:bg-gray-50",
+            isExpanded ? "min-h-[24rem]" : "aspect-square items-center justify-center text-center"
+          )}
+          onClick={() => setIsExpanded(!isExpanded)}
+        >
+          {!isExpanded ? (
+            <div className="flex flex-col items-center justify-center p-2">
+              <h3 className="font-bold text-lg mb-2">{member.full_name}</h3>
+              {checkinStatus.lastFeelingEmoji ? (
+                <div className="text-5xl">{checkinStatus.lastFeelingEmoji}</div>
+              ) : (
+                <PlusCircle className="h-12 w-12 text-muted-foreground" />
+              )}
+            </div>
+          ) : (
+            <div className="w-full h-full flex flex-col cursor-default" onClick={(e) => e.stopPropagation()}>
+              <CardHeader className="flex flex-row items-start justify-between">
+                <CardTitle>{member.full_name}</CardTitle>
+                <div className="text-right">
+                  <p className="text-2xl font-bold">{isLoadingScore ? <Skeleton className="h-8 w-12" /> : weeklyScore}</p>
+                  <p className="text-xs text-muted-foreground">Points this week</p>
+                </div>
+              </CardHeader>
+              <CardContent className="flex-grow flex flex-col justify-between">
+                <div>
+                  <h4 className="mb-2 text-sm font-medium text-muted-foreground">Today's Chores</h4>
+                  {chores.length > 0 ? (
+                    <ul className="space-y-3">
+                      {chores.map(chore => (
+                        <li key={chore.id} className="flex items-center space-x-3 p-3 rounded-md bg-background">
+                          <Checkbox
+                            id={`${member.id}-${chore.id}`}
+                            checked={!!chore.completed_at}
+                            onCheckedChange={(checked) => updateChoreMutation.mutate({ choreId: chore.id, isCompleted: !!checked })}
+                          />
+                          <label htmlFor={`${member.id}-${chore.id}`} className="flex-grow text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                            {chore.chores?.title}
+                          </label>
+                          <span className="font-semibold text-primary">+{chore.chores?.points} pt</span>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="text-sm text-muted-foreground text-center py-4">No chores for today!</p>
+                  )}
+                </div>
+                {household?.is_feelings_enabled && (
+                  <div className="mt-4 pt-4 border-t">
+                    <div className="flex flex-col items-center justify-center gap-4 min-h-[60px]">
+                      {checkinStatus.showButton && (
+                        <Button onClick={(e) => { e.stopPropagation(); setFeelingsDialogOpen(true); }}>
+                          {checkinStatus.lastFeelingEmoji ? 'Check-in Again' : 'Log My Feeling'}
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 )}
-
-                {checkinStatus.showButton && (
-                  <Button onClick={() => setFeelingsDialogOpen(true)}>
-                    {checkinStatus.lastFeelingEmoji ? 'Check-in Again' : 'Log My Feeling'}
-                  </Button>
-                )}
-
-                {!checkinStatus.lastFeelingEmoji && !checkinStatus.showButton && (
-                  <p className="text-sm text-muted-foreground text-center py-4">
-                    Come back later for the next check-in!
-                  </p>
-                )}
-              </div>
+              </CardContent>
             </div>
           )}
-        </CardContent>
-      </Card>
+        </Card>
+      </div>
       <FeelingsCheckinDialog
         isOpen={isFeelingsDialogOpen}
         setOpen={setFeelingsDialogOpen}

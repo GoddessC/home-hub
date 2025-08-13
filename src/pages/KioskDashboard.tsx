@@ -126,7 +126,7 @@ const KioskDashboard = () => {
         </div>
       </main>
  
-      {isAnonymous && household?.is_calm_corner_enabled && (
+      {household?.is_calm_corner_enabled && (
         <Link to="/kiosk/calm-corner" className="fixed bottom-8 right-8">
             <Button 
                 variant="secondary" 

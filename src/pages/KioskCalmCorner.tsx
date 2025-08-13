@@ -16,7 +16,7 @@ const DURATION_SECONDS = TOTAL_CYCLES * 16;
 
 const KioskCalmCorner = () => {
   const navigate = useNavigate();
-  const { household } = useAuth();
+  const { household, isAnonymous } = useAuth();
   const [phaseIndex, setPhaseIndex] = useState(0);
   const [cycleCount, setCycleCount] = useState(0);
   const [isFinished, setIsFinished] = useState(false);
@@ -33,7 +33,8 @@ const KioskCalmCorner = () => {
   const handleExit = () => {
     if (isExiting) return;
     setIsExiting(true);
-    setTimeout(() => navigate('/kiosk'), 1000); // Allow fade-out animation
+    const exitPath = isAnonymous ? '/kiosk' : '/';
+    setTimeout(() => navigate(exitPath, { replace: true }), 1000); // Allow fade-out animation
   };
 
   useEffect(() => {
@@ -58,7 +59,7 @@ const KioskCalmCorner = () => {
     }, currentPhase.duration);
 
     return () => clearTimeout(timer);
-  }, [phaseIndex, cycleCount, isFinished]);
+  }, [phaseIndex, cycleCount, isFinished, handleExit]);
 
   return (
     <div className={`fixed inset-0 flex flex-col items-center justify-center text-white transition-opacity duration-1000 ${isExiting ? 'opacity-0' : 'opacity-100'}`}>

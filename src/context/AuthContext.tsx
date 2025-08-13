@@ -56,38 +56,54 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchUserData = async (currentUser: User) => {
+  const signOut = async () => {
+    await supabase.auth.signOut();
+  };
+
+  const fetchUserData = async (currentUser: User, retries = 3, delay = 500) => {
     if (currentUser.is_anonymous) {
-        const { data: deviceData, error } = await supabase.from('devices').select('*').eq('kiosk_user_id', currentUser.id).single();
+        const { data: deviceData, error } = await supabase.from('devices').select('*, household:households(*)').eq('kiosk_user_id', currentUser.id).single();
         if (deviceData) {
             setDevice(deviceData);
-            const { data: householdData } = await supabase.from('households').select('*').eq('id', deviceData.household_id).single();
-            setHousehold(householdData);
+            setHousehold(deviceData.household);
+        } else if (error && error.code !== 'PGRST116') {
+            showError("Error fetching kiosk data.");
+            setDevice(null);
+            setHousehold(null);
+        } else {
+            setDevice(null);
+            setHousehold(null);
         }
-        if(error) setDevice(null); // Not paired yet
-    } else {
-        // Step 1: Fetch the user's member record
-        const { data: memberData } = await supabase
+        return;
+    }
+
+    for (let i = 0; i < retries; i++) {
+        const { data: memberData, error: memberError } = await supabase
             .from('members')
-            .select('*')
+            .select('*, household:households(*)')
             .eq('user_id', currentUser.id)
             .single();
 
         if (memberData) {
+            const { data: profileData } = await supabase.from('profiles').select('*').eq('id', currentUser.id).single();
+            
             setMember(memberData);
-            // Step 2: Use the member record to fetch the household
-            const { data: householdData } = await supabase
-                .from('households')
-                .select('*')
-                .eq('id', memberData.household_id)
-                .single();
-            setHousehold(householdData || null);
+            setHousehold(memberData.household);
+            setProfile(profileData || null);
+            return; // Success
         }
-        
-        // Step 3: Fetch the user's public profile
-        const { data: profileData } = await supabase.from('profiles').select('*').eq('id', currentUser.id).single();
-        setProfile(profileData || null);
+
+        if (memberError && memberError.code !== 'PGRST116') {
+            console.error(`Attempt ${i + 1} to fetch user data failed:`, memberError.message);
+        }
+
+        if (i < retries - 1) {
+            await new Promise(res => setTimeout(res, delay));
+        }
     }
+
+    showError("Could not load your account details. Please try logging in again.");
+    await signOut();
   };
 
   useEffect(() => {
@@ -113,7 +129,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setUser(currentUser);
         setIsAnonymous(currentUser?.is_anonymous ?? false);
         
-        // Reset state
         setMember(null);
         setHousehold(null);
         setDevice(null);
@@ -130,10 +145,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       authListener.subscription.unsubscribe();
     };
   }, []);
-
-  const signOut = async () => {
-    await supabase.auth.signOut();
-  };
 
   const signInAsKiosk = async () => {
     setLoading(true);

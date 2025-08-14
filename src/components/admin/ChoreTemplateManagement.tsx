@@ -1,43 +1,33 @@
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
+import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { showSuccess, showError } from '@/utils/toast';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Trash2, PlusCircle, Pencil } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { useState } from 'react';
-import { EditChoreTemplateDialog } from './EditChoreTemplateDialog';
+import { Trash2, PlusCircle, Pencil, Repeat, Repeat1 } from 'lucide-react';
+import { ChoreTemplateForm, ChoreTemplateFormValues } from './ChoreTemplateForm';
 
-const choreTemplateSchema = z.object({
-  title: z.string().min(3, 'Title must be at least 3 characters.'),
-  points: z.coerce.number().min(0, 'Points must be a positive number.'),
-});
-type ChoreTemplateFormValues = z.infer<typeof choreTemplateSchema>;
-
-interface ChoreTemplate {
+type ChoreTemplate = ChoreTemplateFormValues & {
   id: string;
-  title: string;
-  points: number;
   household_id: string;
   created_at: string;
+};
+
+const recurrenceText = {
+    NONE: 'One-time only',
+    DAILY: 'Daily',
+    WEEKDAYS: 'Weekdays',
+    WEEKLY: 'Weekly'
 }
 
 export const ChoreTemplateManagement = () => {
   const { household } = useAuth();
   const queryClient = useQueryClient();
-  const [isEditDialogOpen, setEditDialogOpen] = useState(false);
+  const [isFormOpen, setFormOpen] = useState(false);
   const [selectedChore, setSelectedChore] = useState<ChoreTemplate | null>(null);
-
-  const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<ChoreTemplateFormValues>({
-    resolver: zodResolver(choreTemplateSchema),
-  });
 
   const { data: choreTemplates, isLoading } = useQuery<ChoreTemplate[]>({
     queryKey: ['chore_templates', household?.id],
@@ -55,27 +45,22 @@ export const ChoreTemplateManagement = () => {
     enabled: !!household?.id,
   });
 
-  const addChoreTemplateMutation = useMutation({
+  const upsertMutation = useMutation({
     mutationFn: async (values: ChoreTemplateFormValues) => {
       if (!household) throw new Error("Household not found.");
-      const { error } = await supabase.from('chores').insert({
-        household_id: household.id,
-        title: values.title,
-        points: values.points,
-      });
+      const { error } = await supabase.from('chores').upsert({ ...values, household_id: household.id });
       if (error) throw error;
     },
-    onSuccess: () => {
-      showSuccess('Chore template created!');
+    onSuccess: (_, values) => {
+      showSuccess(`Chore template "${values.title}" saved!`);
       queryClient.invalidateQueries({ queryKey: ['chore_templates', household?.id] });
-      reset();
+      setFormOpen(false);
+      setSelectedChore(null);
     },
-    onError: (error: Error) => {
-      showError(`Failed to create template: ${error.message}`);
-    },
+    onError: (error: Error) => showError(error.message),
   });
 
-  const deleteChoreTemplateMutation = useMutation({
+  const deleteMutation = useMutation({
     mutationFn: async (templateId: string) => {
       const { error } = await supabase.from('chores').delete().eq('id', templateId);
       if (error) throw error;
@@ -84,76 +69,76 @@ export const ChoreTemplateManagement = () => {
       showSuccess('Chore template deleted.');
       queryClient.invalidateQueries({ queryKey: ['chore_templates', household?.id] });
     },
-    onError: (error: Error) => {
-      showError(`Failed to delete template: ${error.message}`);
-    }
+    onError: (error: Error) => showError(error.message),
   });
 
-  const handleEditClick = (chore: ChoreTemplate) => {
+  const handleEdit = (chore: ChoreTemplate) => {
     setSelectedChore(chore);
-    setEditDialogOpen(true);
+    setFormOpen(true);
+  };
+
+  const handleCreate = () => {
+    setSelectedChore(null);
+    setFormOpen(true);
   };
 
   return (
     <>
       <Card>
-        <CardHeader>
-          <CardTitle>Chore Templates</CardTitle>
-          <CardDescription>Create and manage the master list of chores for your household.</CardDescription>
+        <CardHeader className="flex-row items-center justify-between">
+          <div>
+            <CardTitle>Chore Templates</CardTitle>
+            <CardDescription>Create and manage the master list of chores for your household.</CardDescription>
+          </div>
+          <Button onClick={handleCreate}>
+            <PlusCircle className="h-4 w-4 mr-2" />
+            Create Template
+          </Button>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit((data) => addChoreTemplateMutation.mutate(data))} className="flex items-end gap-4 mb-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 flex-grow">
-              <div className="space-y-2">
-                <Label htmlFor="title">Chore Title</Label>
-                <Input id="title" {...register('title')} placeholder="e.g., Wash Dishes" className={cn(errors.title && "border-destructive")} />
-                {errors.title && <p className="text-red-500 text-sm">{errors.title.message}</p>}
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="points">Points</Label>
-                <Input id="points" type="number" {...register('points')} placeholder="e.g., 10" className={cn(errors.points && "border-destructive")} />
-                {errors.points && <p className="text-red-500 text-sm">{errors.points.message}</p>}
-              </div>
-            </div>
-            <Button type="submit" disabled={addChoreTemplateMutation.isPending || isSubmitting}>
-              <PlusCircle className="h-4 w-4 mr-2" />
-              Add Template
-            </Button>
-          </form>
-          <div className="space-y-3">
-            <h4 className="text-sm font-medium text-muted-foreground">Existing Templates</h4>
-            {isLoading ? (
-              <div className="space-y-2"><Skeleton className="h-12 w-full" /><Skeleton className="h-12 w-full" /></div>
-            ) : choreTemplates && choreTemplates.length > 0 ? (
-              <ul className="space-y-3">
-                {choreTemplates.map(template => (
-                  <li key={template.id} className="flex items-center justify-between p-3 bg-secondary rounded-lg">
+          {isLoading ? (
+            <div className="space-y-2"><Skeleton className="h-16 w-full" /><Skeleton className="h-16 w-full" /></div>
+          ) : choreTemplates && choreTemplates.length > 0 ? (
+            <ul className="space-y-3">
+              {choreTemplates.map(template => (
+                <li key={template.id} className="flex items-center justify-between p-3 bg-secondary rounded-lg">
+                  <div className="flex items-center gap-3">
+                    {template.recurrence_type === 'NONE' ? <Repeat1 className="h-5 w-5 text-muted-foreground" /> : <Repeat className="h-5 w-5 text-blue-600" />}
                     <div>
-                      <p className="font-medium">{template.title}</p>
-                      <p className="text-xs text-muted-foreground">{template.points} points</p>
+                        <p className="font-medium">{template.title}</p>
+                        <p className="text-xs text-muted-foreground">{template.points} points · {recurrenceText[template.recurrence_type as keyof typeof recurrenceText]}</p>
                     </div>
-                    <div className="flex items-center">
-                      <Button variant="ghost" size="icon" onClick={() => handleEditClick(template)}>
-                          <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="icon" onClick={() => deleteChoreTemplateMutation.mutate(template.id)} disabled={deleteChoreTemplateMutation.isPending}>
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="text-sm text-muted-foreground text-center py-4">No chore templates created yet. Add one above to get started.</p>
-            )}
-          </div>
+                  </div>
+                  <div className="flex items-center">
+                    <Button variant="ghost" size="icon" onClick={() => handleEdit(template)}>
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" size="icon" onClick={() => deleteMutation.mutate(template.id)} disabled={deleteMutation.isPending}>
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-sm text-muted-foreground text-center py-4">No chore templates created yet. Add one to get started.</p>
+          )}
         </CardContent>
       </Card>
-      <EditChoreTemplateDialog
-        isOpen={isEditDialogOpen}
-        setOpen={setEditDialogOpen}
-        chore={selectedChore}
-      />
+      <Dialog open={isFormOpen} onOpenChange={setFormOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{selectedChore ? 'Edit Chore Template' : 'Create New Template'}</DialogTitle>
+            <DialogDescription>Set the chore details and recurrence schedule.</DialogDescription>
+          </DialogHeader>
+          <ChoreTemplateForm
+            onSubmit={(data) => upsertMutation.mutate(data)}
+            onCancel={() => setFormOpen(false)}
+            defaultValues={selectedChore ?? undefined}
+            isSubmitting={upsertMutation.isPending}
+          />
+        </DialogContent>
+      </Dialog>
     </>
   );
 };

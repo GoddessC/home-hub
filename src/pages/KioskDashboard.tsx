@@ -73,16 +73,20 @@ const KioskDashboard = () => {
   });
 
   const { data: chores, isLoading: isLoadingChores } = useQuery<ChoreLog[]>({
-    queryKey: ['chore_log', household?.id, 'today'],
+    queryKey: ['daily_chores', household?.id, format(new Date(), 'yyyy-MM-dd')],
     queryFn: async () => {
       if (!household?.id) return [];
+      // This RPC function creates chore logs for today if they don't exist,
+      // and then returns all logs for today (both recurring and manually assigned).
       const { data, error } = await supabase
-        .from('chore_log')
-        .select('id, member_id, completed_at, chores(title, points)')
-        .eq('household_id', household.id)
-        .eq('due_date', format(new Date(), 'yyyy-MM-dd'));
+        .rpc('get_or_create_daily_chores', {
+          p_household_id: household.id,
+          p_for_date: format(new Date(), 'yyyy-MM-dd'),
+        })
+        .select('id, member_id, completed_at, chores(title, points)');
+      
       if (error) throw error;
-      return data;
+      return data as ChoreLog[];
     },
     enabled: !!household?.id,
   });

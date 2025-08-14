@@ -40,6 +40,7 @@ export const TeamQuestPanel = () => {
         .select('id, name, reward_points_each, quest_sub_tasks(*, members(id, full_name))')
         .eq('household_id', household.id)
         .eq('status', 'ACTIVE')
+        .order('created_at', { ascending: false })
         .limit(1)
         .single();
       

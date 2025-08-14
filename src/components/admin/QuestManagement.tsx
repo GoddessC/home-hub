@@ -59,32 +59,15 @@ export const QuestManagement = () => {
     mutationFn: async (values: QuestFormValues) => {
       if (!household || !user) throw new Error("Not authorized");
 
-      // Insert the main quest
-      const { data: questData, error: questError } = await supabase
-        .from('quests')
-        .insert({
-          household_id: household.id,
-          created_by: user.id,
-          name: values.name,
-          reward_points_each: values.reward_points_each,
-        })
-        .select()
-        .single();
+      const { error } = await supabase.rpc('create_new_quest', {
+        p_household_id: household.id,
+        p_created_by: user.id,
+        p_name: values.name,
+        p_reward_points_each: values.reward_points_each,
+        p_sub_tasks: values.sub_tasks,
+      });
 
-      if (questError) throw questError;
-
-      // Insert the sub-tasks
-      const subTasksToInsert = values.sub_tasks.map(task => ({
-        quest_id: questData.id,
-        ...task,
-      }));
-      const { error: subTaskError } = await supabase.from('quest_sub_tasks').insert(subTasksToInsert);
-
-      if (subTaskError) {
-        // Clean up if sub-task insertion fails
-        await supabase.from('quests').delete().eq('id', questData.id);
-        throw subTaskError;
-      }
+      if (error) throw error;
     },
     onSuccess: () => {
       showSuccess('Team Quest launched!');

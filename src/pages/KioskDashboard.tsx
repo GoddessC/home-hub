@@ -29,6 +29,7 @@ const KioskDashboard = () => {
   const queryClient = useQueryClient();
   const [isPulsing, setIsPulsing] = useState(false);
   const [completedQuest, setCompletedQuest] = useState<Quest | null>(null);
+  const [isCelebrating, setIsCelebrating] = useState(false);
 
   // Listen for quest completions
   useEffect(() => {
@@ -44,9 +45,10 @@ const KioskDashboard = () => {
           filter: `household_id=eq.${household.id}`,
         },
         async (payload) => {
-          // The `old` record isn't always available, so we check if the new status is COMPLETED
-          // and the old status was NOT completed. This is a more robust way to detect the change.
-          if (payload.new.status === 'COMPLETED' && payload.old?.status !== 'COMPLETED') {
+          // Check if a quest was just completed and we are not already celebrating.
+          if (payload.new.status === 'COMPLETED' && !isCelebrating) {
+            setIsCelebrating(true); // Lock to prevent re-triggering
+
             // Fetch full quest details to pass to celebration component
             const { data: fullQuestData } = await supabase
                 .from('quests')
@@ -71,7 +73,7 @@ const KioskDashboard = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [household, queryClient]);
+  }, [household, queryClient, isCelebrating]);
 
   useEffect(() => {
     if (!household || !isAnonymous) return;
@@ -133,9 +135,14 @@ const KioskDashboard = () => {
     enabled: !!household?.id,
   });
 
+  const handleCelebrationComplete = () => {
+    setCompletedQuest(null);
+    setIsCelebrating(false); // Unlock after celebration
+  };
+
   return (
     <div className={cn("flex flex-col min-h-screen", isAnonymous ? "bg-gray-900 text-white dark" : "bg-gray-50")}>
-      {completedQuest && <QuestCompleteCelebration quest={completedQuest} onComplete={() => setCompletedQuest(null)} />}
+      {completedQuest && <QuestCompleteCelebration quest={completedQuest} onComplete={handleCelebrationComplete} />}
       <header className={cn("p-4 sticky top-0 z-40", isAnonymous ? "bg-gray-800 shadow-md" : "bg-white shadow-sm")}>
         <div className="container mx-auto flex justify-between items-center">
           <h1 className={cn("text-2xl font-bold", isAnonymous ? "" : "text-gray-800")}>

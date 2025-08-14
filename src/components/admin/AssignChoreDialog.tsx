@@ -43,7 +43,11 @@ export const AssignChoreDialog = ({ isOpen, setOpen, member }: AssignChoreDialog
     queryKey: ['chore_templates', household?.id],
     queryFn: async () => {
       if (!household?.id) return [];
-      const { data, error } = await supabase.from('chores').select('*').eq('household_id', household.id);
+      const { data, error } = await supabase
+        .from('chores')
+        .select('*')
+        .eq('household_id', household.id)
+        .eq('is_internal', false);
       if (error) throw error;
       return data;
     },

@@ -43,7 +43,12 @@ export const ChoreTemplateManagement = () => {
     queryKey: ['chore_templates', household?.id],
     queryFn: async () => {
       if (!household?.id) return [];
-      const { data, error } = await supabase.from('chores').select('*').eq('household_id', household.id).order('created_at');
+      const { data, error } = await supabase
+        .from('chores')
+        .select('*')
+        .eq('household_id', household.id)
+        .eq('is_internal', false)
+        .order('created_at');
       if (error) throw error;
       return data;
     },

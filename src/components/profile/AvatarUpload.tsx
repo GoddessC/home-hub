@@ -50,7 +50,7 @@ export const AvatarUpload = ({ onUpload }: AvatarUploadProps) => {
     } catch (error: any) {
       showError(`Upload failed: ${error.message}`);
     } finally {
-      dismissToast(toastId);
+      dismissToast(String(toastId));
       setIsUploading(false);
       event.target.value = ''; // Reset file input
     }

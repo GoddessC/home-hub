@@ -22,6 +22,7 @@ export interface Member {
   user_id: string | null;
   full_name: string;
   role: 'OWNER' | 'ADULT' | 'CHILD';
+  avatar_url?: string | null;
 }
 
 export interface Device {
@@ -34,6 +35,7 @@ export interface Profile {
   id: string;
   full_name: string | null;
   avatar_url: string | null;
+  role?: 'admin' | string;
 }
 
 interface AuthContextType {

@@ -48,8 +48,6 @@ export const TeamQuestPanel = ({ quest, isLoading }: TeamQuestPanelProps) => {
       return data;
     },
     onSuccess: (updatedSubTask) => {
-      // Manually update the query data to reflect the change instantly
-      // This prevents the panel from disappearing before the celebration animation
       queryClient.setQueryData(['active_quest', household?.id], (oldData: Quest | undefined | null) => {
         if (!oldData) return oldData;
         
@@ -66,14 +64,15 @@ export const TeamQuestPanel = ({ quest, isLoading }: TeamQuestPanelProps) => {
     onError: (error: Error) => showError(error.message),
   });
 
-  const { progress, completedCount, totalCount } = useMemo(() => {
-    if (!quest) return { progress: 0, completedCount: 0, totalCount: 0 };
+  const { progress, completedCount, totalCount, isComplete } = useMemo(() => {
+    if (!quest) return { progress: 0, completedCount: 0, totalCount: 0, isComplete: false };
     const total = quest.quest_sub_tasks.length;
     const completed = quest.quest_sub_tasks.filter(t => t.is_completed).length;
     return {
       progress: total > 0 ? (completed / total) * 100 : 0,
       completedCount: completed,
       totalCount: total,
+      isComplete: total > 0 && completed === total,
     };
   }, [quest]);
 
@@ -82,11 +81,18 @@ export const TeamQuestPanel = ({ quest, isLoading }: TeamQuestPanelProps) => {
   }
 
   if (!quest) {
-    return null; // Don't render anything if there's no active quest
+    return null;
   }
 
   return (
-    <Card className="w-full bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-900/30 dark:to-indigo-900/30 border-purple-200 dark:border-purple-800">
+    <Card className="relative w-full bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-900/30 dark:to-indigo-900/30 border-purple-200 dark:border-purple-800 overflow-hidden">
+      {isComplete && (
+        <div className="absolute inset-0 bg-green-500/95 z-10 flex items-center justify-center animate-fade-in">
+          <h2 className="text-5xl font-bold text-white" style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.3)' }}>
+            Completed!
+          </h2>
+        </div>
+      )}
       <CardHeader>
         <CardTitle className="flex items-center gap-3 text-purple-800 dark:text-purple-200">
           <Rocket className="h-6 w-6" />

@@ -10,6 +10,7 @@ import { HouseholdSettings } from '@/components/admin/HouseholdSettings';
 import { CalmCornerManagement } from '@/components/admin/CalmCornerManagement';
 import { FeelingsManagement } from '@/components/admin/FeelingsManagement';
 import { QuestManagement } from '@/components/admin/QuestManagement';
+import { AlarmManagement } from '@/components/admin/AlarmManagement';
 
 const AdminDashboard = () => {
   const { household } = useAuth();
@@ -35,6 +36,7 @@ const AdminDashboard = () => {
         
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2 space-y-8">
+                <AlarmManagement />
                 <QuestManagement />
                 <AnnouncementManagement />
                 <FeelingsManagement />

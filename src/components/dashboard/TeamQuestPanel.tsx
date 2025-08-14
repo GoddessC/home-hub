@@ -7,6 +7,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { showError } from '@/utils/toast';
 import { Rocket } from 'lucide-react';
 import { useMemo } from 'react';
+import { useAuth } from '@/context/AuthContext';
 
 // Define and export types so they can be shared
 export type SubTask = {
@@ -33,18 +34,34 @@ interface TeamQuestPanelProps {
 
 export const TeamQuestPanel = ({ quest, isLoading }: TeamQuestPanelProps) => {
   const queryClient = useQueryClient();
+  const { household } = useAuth();
 
   const updateSubTaskMutation = useMutation({
     mutationFn: async ({ subTaskId, isCompleted }: { subTaskId: string, isCompleted: boolean }) => {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('quest_sub_tasks')
         .update({ is_completed: isCompleted, completed_at: isCompleted ? new Date().toISOString() : null })
-        .eq('id', subTaskId);
+        .eq('id', subTaskId)
+        .select('*, members(id, full_name)')
+        .single();
       if (error) throw error;
+      return data;
     },
-    onSuccess: () => {
-      // Invalidate quest data to show the checkmark, but the celebration logic is handled in the parent.
-      queryClient.invalidateQueries({ queryKey: ['active_quest'] });
+    onSuccess: (updatedSubTask) => {
+      // Manually update the query data to reflect the change instantly
+      // This prevents the panel from disappearing before the celebration animation
+      queryClient.setQueryData(['active_quest', household?.id], (oldData: Quest | undefined | null) => {
+        if (!oldData) return oldData;
+        
+        const newSubTasks = oldData.quest_sub_tasks.map(task => 
+          task.id === updatedSubTask.id ? updatedSubTask : task
+        );
+
+        return {
+          ...oldData,
+          quest_sub_tasks: newSubTasks,
+        };
+      });
     },
     onError: (error: Error) => showError(error.message),
   });

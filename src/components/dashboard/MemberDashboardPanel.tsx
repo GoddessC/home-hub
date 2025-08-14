@@ -143,21 +143,26 @@ export const MemberDashboardPanel = ({ member, chores }: MemberDashboardPanelPro
       <div className={cn("transition-all duration-300 ease-in-out", isExpanded ? "col-span-full md:col-span-2 lg:col-span-2" : "col-span-1")}>
         <Card
           className={cn(
-            "w-full flex flex-col cursor-pointer transition-all duration-300 ease-in-out",
+            "w-full flex flex-col cursor-pointer transition-all duration-300 ease-in-out relative",
             isAnonymous ? "dark:bg-gray-800 dark:hover:bg-gray-700" : "bg-white hover:bg-gray-50",
             isExpanded ? "min-h-[24rem]" : "aspect-square items-center justify-center text-center"
           )}
           onClick={() => setIsExpanded(!isExpanded)}
         >
           {!isExpanded ? (
-            <div className="flex flex-col items-center justify-center p-2">
-              <h3 className="font-bold text-lg mb-2">{member.full_name}</h3>
-              {checkinStatus.lastFeelingEmoji ? (
-                <div className="text-5xl">{checkinStatus.lastFeelingEmoji}</div>
-              ) : (
-                <PlusCircle className="h-12 w-12 text-muted-foreground" />
-              )}
-            </div>
+            <>
+              <div className="absolute top-2 right-2 bg-primary text-primary-foreground rounded-full px-2 py-1 text-xs font-bold z-10">
+                {isLoadingScore ? <Skeleton className="h-4 w-8 bg-primary/50" /> : `${weeklyScore} pts`}
+              </div>
+              <div className="flex flex-col items-center justify-center p-2">
+                <h3 className="font-bold text-lg mb-2">{member.full_name}</h3>
+                {checkinStatus.lastFeelingEmoji ? (
+                  <div className="text-5xl">{checkinStatus.lastFeelingEmoji}</div>
+                ) : (
+                  <PlusCircle className="h-12 w-12 text-muted-foreground" />
+                )}
+              </div>
+            </>
           ) : (
             <div className="w-full h-full flex flex-col cursor-default" onClick={(e) => e.stopPropagation()}>
               <CardHeader className="flex flex-row items-start justify-between">

@@ -9,7 +9,8 @@ import { showError } from '@/utils/toast';
 import { Rocket } from 'lucide-react';
 import { useMemo } from 'react';
 
-type SubTask = {
+// Define and export types so they can be shared
+export type SubTask = {
   id: string;
   description: string;
   is_completed: boolean;
@@ -19,9 +20,10 @@ type SubTask = {
   } | null;
 };
 
-type Quest = {
+export type Quest = {
   id: string;
   name: string;
+  reward_points_each: number;
   quest_sub_tasks: SubTask[];
 };
 
@@ -35,7 +37,7 @@ export const TeamQuestPanel = () => {
       if (!household?.id) return null;
       const { data, error } = await supabase
         .from('quests')
-        .select('id, name, quest_sub_tasks(*, members(id, full_name))')
+        .select('id, name, reward_points_each, quest_sub_tasks(*, members(id, full_name))')
         .eq('household_id', household.id)
         .eq('status', 'ACTIVE')
         .limit(1)
@@ -56,7 +58,7 @@ export const TeamQuestPanel = () => {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['active_quest', household?.id] });
+      // No need to invalidate here, the trigger will cause a broadcast that KioskDashboard listens to.
     },
     onError: (error: Error) => showError(error.message),
   });
@@ -103,7 +105,7 @@ export const TeamQuestPanel = () => {
                 id={`subtask-${task.id}`}
                 checked={task.is_completed}
                 onCheckedChange={(checked) => updateSubTaskMutation.mutate({ subTaskId: task.id, isCompleted: !!checked })}
-                disabled={task.is_completed}
+                disabled={task.is_completed || updateSubTaskMutation.isPending}
               />
               <label htmlFor={`subtask-${task.id}`} className="flex-grow text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
                 {task.description}

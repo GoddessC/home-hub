@@ -11,7 +11,7 @@ import { useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { UserNav } from '@/components/layout/UserNav';
 import { MemberDashboardPanel } from '@/components/dashboard/MemberDashboardPanel';
-import { TeamQuestPanel } from '@/components/dashboard/TeamQuestPanel';
+import { TeamQuestPanel, Quest } from '@/components/dashboard/TeamQuestPanel';
 import { QuestCompleteCelebration } from '@/components/dashboard/QuestCompleteCelebration';
 
 type ChoreLog = {
@@ -28,7 +28,7 @@ const KioskDashboard = () => {
   const { device, household, signOut, isAnonymous, member } = useAuth();
   const queryClient = useQueryClient();
   const [isPulsing, setIsPulsing] = useState(false);
-  const [showQuestCelebration, setShowQuestCelebration] = useState(false);
+  const [completedQuest, setCompletedQuest] = useState<Quest | null>(null);
 
   // Listen for quest completions
   useEffect(() => {
@@ -43,12 +43,24 @@ const KioskDashboard = () => {
           table: 'quests',
           filter: `household_id=eq.${household.id}`,
         },
-        (payload) => {
+        async (payload) => {
           if (payload.new.status === 'COMPLETED' && payload.old.status === 'ACTIVE') {
-            setShowQuestCelebration(true);
+            // Fetch full quest details to pass to celebration component
+            const { data: fullQuestData } = await supabase
+                .from('quests')
+                .select('id, name, reward_points_each, quest_sub_tasks(*, members(id, full_name))')
+                .eq('id', payload.new.id)
+                .single();
+            
+            if (fullQuestData) {
+                setCompletedQuest(fullQuestData);
+            }
+
             // Invalidate queries to update points and remove quest panel
             queryClient.invalidateQueries({ queryKey: ['active_quest', household.id] });
             queryClient.invalidateQueries({ queryKey: ['member_score'] });
+            queryClient.invalidateQueries({ queryKey: ['member_weekly_score'] });
+            queryClient.invalidateQueries({ queryKey: ['member_all_time_score'] });
           }
         }
       )
@@ -121,7 +133,7 @@ const KioskDashboard = () => {
 
   return (
     <div className={cn("flex flex-col min-h-screen", isAnonymous ? "bg-gray-900 text-white dark" : "bg-gray-50")}>
-      {showQuestCelebration && <QuestCompleteCelebration onComplete={() => setShowQuestCelebration(false)} />}
+      {completedQuest && <QuestCompleteCelebration quest={completedQuest} onComplete={() => setCompletedQuest(null)} />}
       <header className={cn("p-4 sticky top-0 z-40", isAnonymous ? "bg-gray-800 shadow-md" : "bg-white shadow-sm")}>
         <div className="container mx-auto flex justify-between items-center">
           <h1 className={cn("text-2xl font-bold", isAnonymous ? "" : "text-gray-800")}>

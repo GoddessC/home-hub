@@ -45,11 +45,9 @@ const KioskDashboard = () => {
           filter: `household_id=eq.${household.id}`,
         },
         async (payload) => {
-          // Check if a quest was just completed and we are not already celebrating.
           if (payload.new.status === 'COMPLETED' && !isCelebrating) {
             setIsCelebrating(true); // Lock to prevent re-triggering
 
-            // Fetch full quest details to pass to celebration component
             const { data: fullQuestData } = await supabase
                 .from('quests')
                 .select('id, name, reward_points_each, quest_sub_tasks(*, members(id, full_name))')
@@ -59,12 +57,6 @@ const KioskDashboard = () => {
             if (fullQuestData) {
                 setCompletedQuest(fullQuestData);
             }
-
-            // Invalidate queries to update points and remove quest panel
-            queryClient.invalidateQueries({ queryKey: ['active_quest', household.id] });
-            queryClient.invalidateQueries({ queryKey: ['member_score'] });
-            queryClient.invalidateQueries({ queryKey: ['member_weekly_score'] });
-            queryClient.invalidateQueries({ queryKey: ['member_all_time_score'] });
           }
         }
       )
@@ -73,7 +65,7 @@ const KioskDashboard = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [household, queryClient, isCelebrating]);
+  }, [household, isCelebrating]);
 
   useEffect(() => {
     if (!household || !isAnonymous) return;
@@ -138,7 +130,31 @@ const KioskDashboard = () => {
   const handleCelebrationComplete = () => {
     setCompletedQuest(null);
     setIsCelebrating(false); // Unlock after celebration
+    // Invalidate queries to update points and remove quest panel AFTER animation
+    queryClient.invalidateQueries({ queryKey: ['active_quest', household?.id] });
+    queryClient.invalidateQueries({ queryKey: ['member_score'] });
+    queryClient.invalidateQueries({ queryKey: ['member_weekly_score'] });
+    queryClient.invalidateQueries({ queryKey: ['member_all_time_score'] });
   };
+
+  const { data: activeQuest, isLoading: isLoadingQuest } = useQuery<Quest | null>({
+    queryKey: ['active_quest', household?.id],
+    queryFn: async () => {
+      if (!household?.id) return null;
+      const { data, error } = await supabase
+        .from('quests')
+        .select('id, name, reward_points_each, quest_sub_tasks(*, members(id, full_name))')
+        .eq('household_id', household.id)
+        .eq('status', 'ACTIVE')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+      
+      if (error && error.code !== 'PGRST116') throw error;
+      return data;
+    },
+    enabled: !!household?.id,
+  });
 
   return (
     <div className={cn("flex flex-col min-h-screen", isAnonymous ? "bg-gray-900 text-white dark" : "bg-gray-50")}>
@@ -170,7 +186,7 @@ const KioskDashboard = () => {
       </header>
       <main className="flex-grow container mx-auto p-4 md:p-8">
         <div className="space-y-8">
-          <TeamQuestPanel />
+          <TeamQuestPanel quest={activeQuest} isLoading={isLoadingQuest} />
           <AnnouncementPanel />
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 mt-8">

@@ -1,6 +1,5 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/context/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -27,28 +26,13 @@ export type Quest = {
   quest_sub_tasks: SubTask[];
 };
 
-export const TeamQuestPanel = () => {
-  const { household } = useAuth();
-  const queryClient = useQueryClient();
+interface TeamQuestPanelProps {
+    quest: Quest | null | undefined;
+    isLoading: boolean;
+}
 
-  const { data: quest, isLoading } = useQuery<Quest | null>({
-    queryKey: ['active_quest', household?.id],
-    queryFn: async () => {
-      if (!household?.id) return null;
-      const { data, error } = await supabase
-        .from('quests')
-        .select('id, name, reward_points_each, quest_sub_tasks(*, members(id, full_name))')
-        .eq('household_id', household.id)
-        .eq('status', 'ACTIVE')
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single();
-      
-      if (error && error.code !== 'PGRST116') throw error;
-      return data;
-    },
-    enabled: !!household?.id,
-  });
+export const TeamQuestPanel = ({ quest, isLoading }: TeamQuestPanelProps) => {
+  const queryClient = useQueryClient();
 
   const updateSubTaskMutation = useMutation({
     mutationFn: async ({ subTaskId, isCompleted }: { subTaskId: string, isCompleted: boolean }) => {
@@ -59,10 +43,8 @@ export const TeamQuestPanel = () => {
       if (error) throw error;
     },
     onSuccess: () => {
-      // This will refetch the quest data after any sub-task is updated.
-      // If it was the last task, the trigger will have marked the quest as 'COMPLETED',
-      // so the refetch will return null and the panel will disappear.
-      queryClient.invalidateQueries({ queryKey: ['active_quest', household?.id] });
+      // Invalidate quest data to show the checkmark, but the celebration logic is handled in the parent.
+      queryClient.invalidateQueries({ queryKey: ['active_quest'] });
     },
     onError: (error: Error) => showError(error.message),
   });

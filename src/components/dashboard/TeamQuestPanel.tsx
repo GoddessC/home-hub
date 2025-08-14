@@ -58,7 +58,10 @@ export const TeamQuestPanel = () => {
       if (error) throw error;
     },
     onSuccess: () => {
-      // No need to invalidate here, the trigger will cause a broadcast that KioskDashboard listens to.
+      // This will refetch the quest data after any sub-task is updated.
+      // If it was the last task, the trigger will have marked the quest as 'COMPLETED',
+      // so the refetch will return null and the panel will disappear.
+      queryClient.invalidateQueries({ queryKey: ['active_quest', household?.id] });
     },
     onError: (error: Error) => showError(error.message),
   });

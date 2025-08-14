@@ -22,7 +22,7 @@ export type SubTask = {
 };
 
 export type Quest = {
-  id: string;
+  id:string;
   name: string;
   reward_points_each: number;
   quest_sub_tasks: SubTask[];

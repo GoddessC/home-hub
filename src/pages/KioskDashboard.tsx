@@ -1,6 +1,6 @@
 import { useAuth, Member } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format } from 'date-fns';
@@ -25,40 +25,7 @@ type ChoreLog = {
 
 const KioskDashboard = () => {
   const { device, household, signOut, isAnonymous, member } = useAuth();
-  const queryClient = useQueryClient();
   const [isPulsing, setIsPulsing] = useState(false);
-
-  // Listen for quest completions
-  useEffect(() => {
-    if (!household) return;
-    const channel = supabase
-      .channel('quest-completion-listener')
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'quests',
-          filter: `household_id=eq.${household.id}`,
-        },
-        (payload) => {
-          if (payload.new.status === 'COMPLETED') {
-            // After a delay, refetch data to remove the panel and update points
-            setTimeout(() => {
-                queryClient.invalidateQueries({ queryKey: ['active_quest', household.id] });
-                queryClient.invalidateQueries({ queryKey: ['member_score'] });
-                queryClient.invalidateQueries({ queryKey: ['member_weekly_score'] });
-                queryClient.invalidateQueries({ queryKey: ['member_all_time_score'] });
-            }, 2000); // 2-second delay to show completion message
-          }
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [household, queryClient]);
 
   useEffect(() => {
     if (!household || !isAnonymous) return;

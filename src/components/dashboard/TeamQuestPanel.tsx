@@ -6,9 +6,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Skeleton } from '@/components/ui/skeleton';
 import { showError } from '@/utils/toast';
 import { Rocket } from 'lucide-react';
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { ConfettiCelebration } from '../effects/ConfettiCelebration';
 
 // Define and export types so they can be shared
 export type SubTask = {
@@ -36,7 +35,6 @@ interface TeamQuestPanelProps {
 export const TeamQuestPanel = ({ quest, isLoading }: TeamQuestPanelProps) => {
   const queryClient = useQueryClient();
   const { household } = useAuth();
-  const [showConfetti, setShowConfetti] = useState(false);
 
   const updateSubTaskMutation = useMutation({
     mutationFn: async ({ subTaskId, isCompleted }: { subTaskId: string, isCompleted: boolean }) => {
@@ -78,15 +76,6 @@ export const TeamQuestPanel = ({ quest, isLoading }: TeamQuestPanelProps) => {
     };
   }, [quest]);
 
-  useEffect(() => {
-    if (isComplete && !showConfetti) {
-      const timer = setTimeout(() => {
-        setShowConfetti(true);
-      }, 500);
-      return () => clearTimeout(timer);
-    }
-  }, [isComplete, showConfetti]);
-
   if (isLoading) {
     return <Skeleton className="h-48 w-full" />;
   }
@@ -97,7 +86,6 @@ export const TeamQuestPanel = ({ quest, isLoading }: TeamQuestPanelProps) => {
 
   return (
     <>
-      {showConfetti && <ConfettiCelebration onComplete={() => setShowConfetti(false)} />}
       <Card className="relative w-full bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-900/30 dark:to-indigo-900/30 border-purple-200 dark:border-purple-800 overflow-hidden">
         {isComplete && (
           <div className="absolute inset-0 bg-green-500/95 z-10 flex items-center justify-center animate-fade-in">

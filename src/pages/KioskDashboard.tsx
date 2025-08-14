@@ -49,7 +49,7 @@ const KioskDashboard = () => {
                 queryClient.invalidateQueries({ queryKey: ['member_score'] });
                 queryClient.invalidateQueries({ queryKey: ['member_weekly_score'] });
                 queryClient.invalidateQueries({ queryKey: ['member_all_time_score'] });
-            }, 8000); // 8-second delay to show celebration
+            }, 2000); // 2-second delay to show completion message
           }
         }
       )

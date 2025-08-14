@@ -44,7 +44,9 @@ const KioskDashboard = () => {
           filter: `household_id=eq.${household.id}`,
         },
         async (payload) => {
-          if (payload.new.status === 'COMPLETED' && payload.old.status === 'ACTIVE') {
+          // The `old` record isn't always available, so we check if the new status is COMPLETED
+          // and the old status was NOT completed. This is a more robust way to detect the change.
+          if (payload.new.status === 'COMPLETED' && payload.old?.status !== 'COMPLETED') {
             // Fetch full quest details to pass to celebration component
             const { data: fullQuestData } = await supabase
                 .from('quests')

@@ -6,8 +6,9 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Skeleton } from '@/components/ui/skeleton';
 import { showError } from '@/utils/toast';
 import { Rocket } from 'lucide-react';
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
+import { ConfettiCelebration } from '../effects/ConfettiCelebration';
 
 // Define and export types so they can be shared
 export type SubTask = {
@@ -35,6 +36,7 @@ interface TeamQuestPanelProps {
 export const TeamQuestPanel = ({ quest, isLoading }: TeamQuestPanelProps) => {
   const queryClient = useQueryClient();
   const { household } = useAuth();
+  const [showConfetti, setShowConfetti] = useState(false);
 
   const updateSubTaskMutation = useMutation({
     mutationFn: async ({ subTaskId, isCompleted }: { subTaskId: string, isCompleted: boolean }) => {
@@ -76,6 +78,15 @@ export const TeamQuestPanel = ({ quest, isLoading }: TeamQuestPanelProps) => {
     };
   }, [quest]);
 
+  useEffect(() => {
+    if (isComplete && !showConfetti) {
+      const timer = setTimeout(() => {
+        setShowConfetti(true);
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [isComplete, showConfetti]);
+
   if (isLoading) {
     return <Skeleton className="h-48 w-full" />;
   }
@@ -85,45 +96,48 @@ export const TeamQuestPanel = ({ quest, isLoading }: TeamQuestPanelProps) => {
   }
 
   return (
-    <Card className="relative w-full bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-900/30 dark:to-indigo-900/30 border-purple-200 dark:border-purple-800 overflow-hidden">
-      {isComplete && (
-        <div className="absolute inset-0 bg-green-500/95 z-10 flex items-center justify-center animate-fade-in">
-          <h2 className="text-5xl font-bold text-white" style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.3)' }}>
-            Completed!
-          </h2>
-        </div>
-      )}
-      <CardHeader>
-        <CardTitle className="flex items-center gap-3 text-purple-800 dark:text-purple-200">
-          <Rocket className="h-6 w-6" />
-          <span>Team Quest: {quest.name}</span>
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div>
-          <div className="flex justify-between items-center mb-1 text-sm font-medium text-purple-700 dark:text-purple-300">
-            <span>Progress</span>
-            <span>{completedCount} / {totalCount} Tasks</span>
+    <>
+      {showConfetti && <ConfettiCelebration onComplete={() => setShowConfetti(false)} />}
+      <Card className="relative w-full bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-900/30 dark:to-indigo-900/30 border-purple-200 dark:border-purple-800 overflow-hidden">
+        {isComplete && (
+          <div className="absolute inset-0 bg-green-500/95 z-10 flex items-center justify-center animate-fade-in">
+            <h2 className="text-5xl font-bold text-white" style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.3)' }}>
+              Completed!
+            </h2>
           </div>
-          <Progress value={progress} className="[&>*]:bg-purple-500" />
-        </div>
-        <div className="space-y-3">
-          {quest.quest_sub_tasks.map(task => (
-            <div key={task.id} className="flex items-center space-x-3 p-3 rounded-md bg-background/50">
-              <Checkbox
-                id={`subtask-${task.id}`}
-                checked={task.is_completed}
-                onCheckedChange={(checked) => updateSubTaskMutation.mutate({ subTaskId: task.id, isCompleted: !!checked })}
-                disabled={task.is_completed || updateSubTaskMutation.isPending}
-              />
-              <label htmlFor={`subtask-${task.id}`} className="flex-grow text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                {task.description}
-              </label>
-              <span className="text-xs font-semibold text-muted-foreground">{task.members?.full_name}</span>
+        )}
+        <CardHeader>
+          <CardTitle className="flex items-center gap-3 text-purple-800 dark:text-purple-200">
+            <Rocket className="h-6 w-6" />
+            <span>Team Quest: {quest.name}</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div>
+            <div className="flex justify-between items-center mb-1 text-sm font-medium text-purple-700 dark:text-purple-300">
+              <span>Progress</span>
+              <span>{completedCount} / {totalCount} Tasks</span>
             </div>
-          ))}
-        </div>
-      </CardContent>
-    </Card>
+            <Progress value={progress} className="[&>*]:bg-purple-500" />
+          </div>
+          <div className="space-y-3">
+            {quest.quest_sub_tasks.map(task => (
+              <div key={task.id} className="flex items-center space-x-3 p-3 rounded-md bg-background/50">
+                <Checkbox
+                  id={`subtask-${task.id}`}
+                  checked={task.is_completed}
+                  onCheckedChange={(checked) => updateSubTaskMutation.mutate({ subTaskId: task.id, isCompleted: !!checked })}
+                  disabled={task.is_completed || updateSubTaskMutation.isPending}
+                />
+                <label htmlFor={`subtask-${task.id}`} className="flex-grow text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                  {task.description}
+                </label>
+                <span className="text-xs font-semibold text-muted-foreground">{task.members?.full_name}</span>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    </>
   );
 };

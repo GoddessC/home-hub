@@ -11,7 +11,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Link } from "react-router-dom";
-import { LogOut, User as UserIcon, Shield } from "lucide-react";
+import { LogOut, User as UserIcon, Shield, Palette } from "lucide-react";
 
 export function UserNav() {
   const { user, profile, signOut } = useAuth();
@@ -56,6 +56,12 @@ export function UserNav() {
             <DropdownMenuItem>
               <UserIcon className="mr-2 h-4 w-4" />
               <span>Profile</span>
+            </DropdownMenuItem>
+          </Link>
+          <Link to="/avatar-builder">
+            <DropdownMenuItem>
+              <Palette className="mr-2 h-4 w-4" />
+              <span>Avatar Builder</span>
             </DropdownMenuItem>
           </Link>
           {role === 'admin' && (

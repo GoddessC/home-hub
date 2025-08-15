@@ -11,7 +11,7 @@ import { CalmCornerManagement } from '@/components/admin/CalmCornerManagement';
 import { FeelingsManagement } from '@/components/admin/FeelingsManagement';
 import { QuestManagement } from '@/components/admin/QuestManagement';
 import { AlarmManagement } from '@/components/admin/AlarmManagement';
-import { StoreManagement } from '@/components/admin/StoreManagement';
+import { WeatherSettings } from '@/components/admin/WeatherSettings';
 
 const AdminDashboard = () => {
   const { household } = useAuth();
@@ -37,7 +37,6 @@ const AdminDashboard = () => {
         
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2 space-y-8">
-                <StoreManagement />
                 <AlarmManagement />
                 <QuestManagement />
                 <AnnouncementManagement />
@@ -48,12 +47,10 @@ const AdminDashboard = () => {
             </div>
             <div className="lg:col-span-1 space-y-8">
                 <HouseholdSettings />
+                <WeatherSettings />
                 <CalmCornerManagement />
             </div>
         </div>
       </main>
     </div>
   );
-};
-
-export default AdminDashboard;

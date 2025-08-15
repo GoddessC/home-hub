@@ -65,7 +65,7 @@ const AppRoutes = () => {
         {member.role === 'OWNER' && (
           <Route path="/admin" element={<AdminDashboard />} />
         )}
-        <Route path="/avatar-builder" element={<AvatarBuilderPage />} />
+        <Route path="/avatar-builder/:memberId" element={<AvatarBuilderPage />} />
         <Route path="/kiosk/calm-corner" element={<KioskCalmCorner />} />
         <Route path="/login" element={<Navigate to="/" replace />} />
         <Route path="/register" element={<Navigate to="/" replace />} />

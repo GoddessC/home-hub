@@ -33,7 +33,8 @@ type FeelingLog = {
   created_at: string;
   feeling: keyof typeof feelingMeta;
   context: keyof typeof contextMeta | null;
-  members: { full_name: string } | null;
+  // FIX: Changed type to handle cases where Supabase returns a single related record as an array.
+  members: { full_name: string } | { full_name: string }[] | null;
 };
 
 export const FeelingsChart = () => {
@@ -90,12 +91,15 @@ export const FeelingsChart = () => {
         <PopoverContent>
             <h4 className="font-bold mb-2">{format(date, 'PPP')}</h4>
             <ul className="space-y-2">
-                {dayLogs.map(log => (
-                    <li key={log.id} className="text-sm">
-                        <strong>{log.members?.full_name}:</strong> {feelingMeta[log.feeling]?.emoji} {log.feeling}
-                        {log.context && ` (About: ${contextMeta[log.context]?.emoji} ${contextMeta[log.context]?.text})`}
-                    </li>
-                ))}
+                {dayLogs.map(log => {
+                    const member = Array.isArray(log.members) ? log.members[0] : log.members;
+                    return (
+                        <li key={log.id} className="text-sm">
+                            <strong>{member?.full_name}:</strong> {feelingMeta[log.feeling]?.emoji} {log.feeling}
+                            {log.context && ` (About: ${contextMeta[log.context]?.emoji} ${contextMeta[log.context]?.text})`}
+                        </li>
+                    )
+                })}
             </ul>
         </PopoverContent>
       </Popover>

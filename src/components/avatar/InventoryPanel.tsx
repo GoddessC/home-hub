@@ -1,9 +1,12 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/context/AuthContext';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 import { DraggableAvatarItem } from './DraggableAvatarItem';
+
+interface InventoryPanelProps {
+  memberId: string | undefined;
+}
 
 // Mock inventory for now. In the future, this would come from the `member_avatar_inventory` table.
 const useMemberInventory = (memberId?: string) => {
@@ -18,9 +21,8 @@ const useMemberInventory = (memberId?: string) => {
   });
 };
 
-export const InventoryPanel = () => {
-  const { member } = useAuth();
-  const { data: items, isLoading } = useMemberInventory(member?.id);
+export const InventoryPanel = ({ memberId }: InventoryPanelProps) => {
+  const { data: items, isLoading } = useMemberInventory(memberId);
 
   const categories = Array.from(new Set(items?.map(item => item.category).filter(cat => cat !== 'base_body')));
 

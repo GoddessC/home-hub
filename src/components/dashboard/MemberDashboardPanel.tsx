@@ -9,17 +9,10 @@ import { startOfWeek, endOfWeek, format } from 'date-fns';
 import { Member, useAuth } from '@/context/AuthContext';
 import { Button } from '../ui/button';
 import { FeelingsCheckinDialog } from './FeelingsCheckinDialog';
-import { PlusCircle, X } from 'lucide-react';
+import { PlusCircle, X, Palette } from 'lucide-react';
 import { cn } from '@/lib/utils';
-
-type ChoreLog = {
-  id: string;
-  completed_at: string | null;
-  chores: {
-    title: string;
-    points: number;
-  } | null;
-};
+import { Link } from 'react-router-dom';
+import { ChoreLog } from '@/pages/KioskDashboard';
 
 const feelingMeta = {
   joyful: { emoji: '😄' },
@@ -56,7 +49,9 @@ export const MemberDashboardPanel = ({ member, chores }: MemberDashboardPanelPro
         .gte('due_date', weekStart)
         .lte('due_date', weekEnd);
       if (error) throw error;
-      return data.reduce((acc, item) => acc + (item.chores?.points || 0), 0);
+      // FIX: Supabase can return the joined table as an object or an array.
+      // This handles both cases to correctly sum the points.
+      return data.reduce((acc, item: any) => acc + (Array.isArray(item.chores) ? item.chores[0]?.points : item.chores?.points || 0), 0);
     },
     enabled: !!member && !!household,
   });
@@ -191,35 +186,44 @@ export const MemberDashboardPanel = ({ member, chores }: MemberDashboardPanelPro
                   <h4 className="mb-2 text-sm font-medium text-muted-foreground">Today's Chores</h4>
                   {chores.length > 0 ? (
                     <ul className="space-y-3">
-                      {chores.map(chore => (
-                        <li key={chore.id} className="flex items-center space-x-3 p-3 rounded-md bg-background">
-                          <Checkbox
-                            id={`${member.id}-${chore.id}`}
-                            checked={!!chore.completed_at}
-                            onCheckedChange={(checked) => updateChoreMutation.mutate({ choreId: chore.id, isCompleted: !!checked })}
-                          />
-                          <label htmlFor={`${member.id}-${chore.id}`} className="flex-grow text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                            {chore.chores?.title}
-                          </label>
-                          <span className="font-semibold text-primary">+{chore.chores?.points} pt</span>
-                        </li>
-                      ))}
+                      {chores.map(chore => {
+                        const choreData = Array.isArray(chore.chores) ? chore.chores[0] : chore.chores;
+                        return (
+                            <li key={chore.id} className="flex items-center space-x-3 p-3 rounded-md bg-background">
+                            <Checkbox
+                                id={`${member.id}-${chore.id}`}
+                                checked={!!chore.completed_at}
+                                onCheckedChange={(checked) => updateChoreMutation.mutate({ choreId: chore.id, isCompleted: !!checked })}
+                            />
+                            <label htmlFor={`${member.id}-${chore.id}`} className="flex-grow text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                                {choreData?.title}
+                            </label>
+                            <span className="font-semibold text-primary">+{choreData?.points} pt</span>
+                            </li>
+                        )
+                      })}
                     </ul>
                   ) : (
                     <p className="text-sm text-muted-foreground text-center py-4">No chores for today!</p>
                   )}
                 </div>
-                {household?.is_feelings_enabled && (
-                  <div className="mt-4 pt-4 border-t">
-                    <div className="flex flex-col items-center justify-center gap-4 min-h-[60px]">
-                      {checkinStatus.showButton && (
-                        <Button onClick={(e) => { e.stopPropagation(); setFeelingsDialogOpen(true); }}>
-                          {checkinStatus.lastFeelingEmoji ? 'Check-in Again' : 'Log My Feeling'}
-                        </Button>
-                      )}
+                <div className="mt-4 pt-4 border-t">
+                    <div className="flex items-center justify-center gap-4 flex-wrap">
+                        {household?.is_feelings_enabled && checkinStatus.showButton && (
+                            <Button onClick={(e) => { e.stopPropagation(); setFeelingsDialogOpen(true); }}>
+                                {checkinStatus.lastFeelingEmoji ? 'Check-in Again' : 'Log My Feeling'}
+                            </Button>
+                        )}
+                        {!isAnonymous && (
+                            <Button asChild variant="outline" onClick={(e) => e.stopPropagation()}>
+                                <Link to={`/avatar-builder/${member.id}`}>
+                                    <Palette className="mr-2 h-4 w-4" />
+                                    Edit Avatar
+                                </Link>
+                            </Button>
+                        )}
                     </div>
-                  </div>
-                )}
+                </div>
               </CardContent>
             </div>
           )}

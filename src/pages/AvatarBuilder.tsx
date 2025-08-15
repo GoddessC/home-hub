@@ -8,16 +8,33 @@ import { InventoryPanel } from '@/components/avatar/InventoryPanel';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { showSuccess, showError } from '@/utils/toast';
-import { Link } from 'react-router-dom';
+import { Link, useParams, useNavigate } from 'react-router-dom';
 
 type AvatarItem = { id: string; asset_url: string };
 type AvatarConfig = Record<string, AvatarItem | null>;
 
 export const AvatarBuilderPage = () => {
-  const { member } = useAuth();
+  const { memberId } = useParams<{ memberId: string }>();
+  const { household } = useAuth();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [equippedItems, setEquippedItems] = useState<AvatarConfig>({});
   const [isPoofing, setIsPoofing] = useState(false);
+
+  const { data: member, isLoading: isLoadingMember } = useQuery({
+    queryKey: ['member', memberId],
+    queryFn: async () => {
+      if (!memberId) return null;
+      const { data, error } = await supabase.from('members').select('*').eq('id', memberId).single();
+      if (error || !data || data.household_id !== household?.id) {
+        showError("You don't have permission to edit this member.");
+        navigate('/');
+        return null;
+      }
+      return data;
+    },
+    enabled: !!memberId && !!household,
+  });
 
   const { data: baseBody, isLoading: isLoadingBase } = useQuery({
     queryKey: ['avatar_base_body'],
@@ -29,14 +46,14 @@ export const AvatarBuilderPage = () => {
   });
 
   const { data: savedConfig, isLoading: isLoadingConfig } = useQuery({
-    queryKey: ['avatar_config', member?.id],
+    queryKey: ['avatar_config', memberId],
     queryFn: async () => {
-      if (!member) return null;
-      const { data, error } = await supabase.from('member_avatar_config').select('config').eq('member_id', member.id).single();
+      if (!memberId) return null;
+      const { data, error } = await supabase.from('member_avatar_config').select('config').eq('member_id', memberId).single();
       if (error && error.code !== 'PGRST116') throw error;
       return data?.config as AvatarConfig || {};
     },
-    enabled: !!member,
+    enabled: !!memberId,
   });
 
   useEffect(() => {
@@ -47,16 +64,16 @@ export const AvatarBuilderPage = () => {
 
   const saveMutation = useMutation({
     mutationFn: async (newConfig: AvatarConfig) => {
-      if (!member) throw new Error("No member selected");
+      if (!memberId) throw new Error("No member selected");
       const { error } = await supabase.from('member_avatar_config').upsert({
-        member_id: member.id,
+        member_id: memberId,
         config: newConfig,
       });
       if (error) throw error;
     },
     onSuccess: () => {
       showSuccess("Avatar saved!");
-      queryClient.invalidateQueries({ queryKey: ['avatar_config', member?.id] });
+      queryClient.invalidateQueries({ queryKey: ['avatar_config', memberId] });
     },
     onError: (error: Error) => showError(error.message),
   });
@@ -77,7 +94,7 @@ export const AvatarBuilderPage = () => {
     }
   };
 
-  if (isLoadingBase || isLoadingConfig) {
+  if (isLoadingBase || isLoadingConfig || isLoadingMember) {
     return <div className="container mx-auto p-8"><Skeleton className="w-full h-screen" /></div>;
   }
 
@@ -86,7 +103,7 @@ export const AvatarBuilderPage = () => {
       <div className="flex flex-col min-h-screen bg-gray-50">
         <header className="p-4 bg-white shadow-sm">
           <div className="container mx-auto flex justify-between items-center">
-            <h1 className="text-2xl font-bold text-gray-800">Avatar Builder</h1>
+            <h1 className="text-2xl font-bold text-gray-800">Avatar Builder for {member?.full_name}</h1>
             <div className="flex items-center gap-4">
                 <Button onClick={() => saveMutation.mutate(equippedItems)} disabled={saveMutation.isPending}>
                     {saveMutation.isPending ? 'Saving...' : 'Save Avatar'}
@@ -99,7 +116,7 @@ export const AvatarBuilderPage = () => {
         </header>
         <main className="flex-grow container mx-auto p-4 md:p-8">
           <div className="flex flex-col md:flex-row gap-8">
-            <InventoryPanel />
+            <InventoryPanel memberId={memberId} />
             <div className="flex-grow flex items-center justify-center">
               <AvatarCanvas
                 config={equippedItems}

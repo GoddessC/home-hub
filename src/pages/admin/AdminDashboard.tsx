@@ -11,7 +11,6 @@ import { CalmCornerManagement } from '@/components/admin/CalmCornerManagement';
 import { FeelingsManagement } from '@/components/admin/FeelingsManagement';
 import { QuestManagement } from '@/components/admin/QuestManagement';
 import { AlarmManagement } from '@/components/admin/AlarmManagement';
-import { AvatarItemManagement } from '@/components/admin/AvatarItemManagement';
 
 const AdminDashboard = () => {
   const { household } = useAuth();
@@ -39,7 +38,6 @@ const AdminDashboard = () => {
             <div className="lg:col-span-2 space-y-8">
                 <AlarmManagement />
                 <QuestManagement />
-                <AvatarItemManagement />
                 <AnnouncementManagement />
                 <FeelingsManagement />
                 <MemberManagement />

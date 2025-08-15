@@ -13,14 +13,19 @@ import { UserNav } from '@/components/layout/UserNav';
 import { MemberDashboardPanel } from '@/components/dashboard/MemberDashboardPanel';
 import { TeamQuestPanel, Quest } from '@/components/dashboard/TeamQuestPanel';
 
-type ChoreLog = {
+// FIX: Changed type to handle cases where Supabase returns a single related record as an array.
+// Exporting the type so it can be used in MemberDashboardPanel.
+export type ChoreLog = {
   id: string;
   completed_at: string | null;
   member_id: string;
   chores: {
     title: string;
     points: number;
-  } | null;
+  } | {
+    title: string;
+    points: number;
+  }[] | null;
 };
 
 const KioskDashboard = () => {

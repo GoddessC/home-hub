@@ -5,7 +5,7 @@ import { Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { useAuth } from "@/context/AuthContext";
-import { Member } from "@/context/AuthContext";
+import { Member, Profile } from "@/context/AuthContext";
 
 export interface Chore {
   id: string;
@@ -15,7 +15,8 @@ export interface Chore {
   due_date: string | null;
   is_completed: boolean;
   points: number;
-  members: Pick<Member, 'full_name' | 'avatar_url'> | null;
+  // FIX: Updated the Pick utility to correctly reference properties that exist on the Member type.
+  members: Pick<Member, 'full_name'> & { avatar_url?: string | null } | null;
 }
 
 interface ChoreListProps {
@@ -28,7 +29,7 @@ interface ChoreListProps {
 
 export const ChoreList = ({ chores, onUpdateChore, onDeleteChore, title = "Chore List", showAdminControls = false }: ChoreListProps) => {
   const { profile } = useAuth();
-  const isAdmin = profile?.role === 'admin' && showAdminControls;
+  const isAdmin = (profile as Profile & { role?: string })?.role === 'admin' && showAdminControls;
 
   if (!chores || chores.length === 0) {
     return (

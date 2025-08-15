@@ -14,6 +14,9 @@ export interface Household {
   feelings_morning_time: string | null;
   feelings_evening_time: string | null;
   feelings_notify_on_negative: boolean;
+  // FIX: Added missing properties to the Household type definition.
+  weather_location: string | null;
+  weather_units: string;
 }
 
 export interface Member {
@@ -34,6 +37,8 @@ export interface Profile {
   id: string;
   full_name: string | null;
   avatar_url: string | null;
+  // FIX: Added missing 'role' property to the Profile type definition.
+  role?: 'admin' | 'user';
 }
 
 interface AuthContextType {

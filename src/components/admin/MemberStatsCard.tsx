@@ -34,7 +34,9 @@ export const MemberStatsCard = ({ member }: MemberStatsCardProps) => {
         .gte('due_date', weekStart)
         .lte('due_date', weekEnd);
       if (error) throw error;
-      return data.reduce((acc, item) => acc + (item.chores?.points || 0), 0);
+      // FIX: Supabase can return the joined table as an object or an array.
+      // This handles both cases to correctly sum the points.
+      return data.reduce((acc, item: any) => acc + (Array.isArray(item.chores) ? item.chores[0]?.points : item.chores?.points || 0), 0);
     },
     enabled: !!member && !!household,
   });
@@ -48,7 +50,9 @@ export const MemberStatsCard = ({ member }: MemberStatsCardProps) => {
         .eq('member_id', member.id)
         .not('completed_at', 'is', null);
       if (error) throw error;
-      return data.reduce((acc, item) => acc + (item.chores?.points || 0), 0);
+      // FIX: Supabase can return the joined table as an object or an array.
+      // This handles both cases to correctly sum the points.
+      return data.reduce((acc, item: any) => acc + (Array.isArray(item.chores) ? item.chores[0]?.points : item.chores?.points || 0), 0);
     },
     enabled: !!member,
   });

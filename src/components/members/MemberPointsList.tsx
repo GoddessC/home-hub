@@ -3,7 +3,8 @@ import { Member } from "@/context/AuthContext";
 import { Trophy } from "lucide-react";
 
 interface MemberPointsListProps {
-  members: Member[];
+  // FIX: Added 'points' to the Member type to match the data structure.
+  members: (Member & { points?: number | null })[];
 }
 
 export const MemberPointsList = ({ members }: MemberPointsListProps) => {

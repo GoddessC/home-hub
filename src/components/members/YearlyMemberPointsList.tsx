@@ -3,7 +3,8 @@ import { Member } from "@/context/AuthContext";
 import { Award } from "lucide-react";
 
 interface YearlyMemberPointsListProps {
-  members: Member[];
+  // FIX: Added 'yearly_points' to the Member type to match the data structure.
+  members: (Member & { yearly_points?: number | null })[];
 }
 
 export const YearlyMemberPointsList = ({ members }: YearlyMemberPointsListProps) => {

@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Trash2 } from "lucide-react";
 
 interface MemberManagementListProps {
-  members: Member[];
+  // FIX: Added 'avatar_url' to the Member type to match the data structure.
+  members: (Member & { avatar_url?: string | null })[];
   onDeleteMember: (memberId: string) => void;
 }
 

@@ -8,6 +8,15 @@ interface InventoryPanelProps {
   memberId: string | undefined;
 }
 
+type AvatarItem = {
+    id: string;
+    name: string;
+    category: string;
+    asset_url: string;
+    points_cost: number;
+    created_at: string;
+}
+
 const useMemberInventory = (memberId?: string) => {
   return useQuery({
     queryKey: ['member_inventory_items', memberId],
@@ -22,7 +31,7 @@ const useMemberInventory = (memberId?: string) => {
       if (error) throw error;
       
       // The result is an array like [{ avatar_items: {...} }]. We need to extract the item details.
-      return data.map(inventoryEntry => inventoryEntry.avatar_items).filter(Boolean);
+      return data.map((inventoryEntry: { avatar_items: AvatarItem }) => inventoryEntry.avatar_items).filter(Boolean) as AvatarItem[];
     },
     enabled: !!memberId,
   });

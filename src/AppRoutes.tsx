@@ -67,7 +67,7 @@ const AppRoutes = () => {
           <Route path="/admin" element={<AdminDashboard />} />
         )}
         <Route path="/avatar-builder/:memberId" element={<AvatarBuilderPage />} />
-        <Route path="/store/:memberId" element={<StorePage />} />
+        <Route path="/store/:userId" element={<StorePage />} />
         <Route path="/kiosk/calm-corner" element={<KioskCalmCorner />} />
         <Route path="/login" element={<Navigate to="/" replace />} />
         <Route path="/register" element={<Navigate to="/" replace />} />

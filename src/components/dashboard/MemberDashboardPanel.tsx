@@ -214,7 +214,7 @@ export const MemberDashboardPanel = ({ member, chores }: MemberDashboardPanelPro
                                 {checkinStatus.lastFeelingEmoji ? 'Check-in Again' : 'Log My Feeling'}
                             </Button>
                         )}
-                        {!isAnonymous && member.user_id === user?.id && (
+                        {!isAnonymous && member.user_id && (
                           <>
                             <Button asChild variant="default" onClick={(e) => e.stopPropagation()}>
                                 <Link to={`/store/${member.user_id}`}>

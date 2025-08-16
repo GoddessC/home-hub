@@ -10,45 +10,39 @@ import {
   CloudSnow,
   CloudLightning,
   CloudFog,
-  CloudDrizzle,
+  Wind,
   Thermometer,
+  Moon,
 } from 'lucide-react';
 
-const weatherIconMap: { [key: string]: React.ElementType } = {
-  '01d': Sun, // clear sky day
-  '01n': Sun, // clear sky night (using Sun for simplicity)
-  '02d': Cloud, // few clouds day
-  '02n': Cloud, // few clouds night
-  '03d': Cloud, // scattered clouds
-  '03n': Cloud, // scattered clouds
-  '04d': Cloud, // broken clouds
-  '04n': Cloud, // broken clouds
-  '09d': CloudDrizzle, // shower rain
-  '09n': CloudDrizzle, // shower rain
-  '10d': CloudRain, // rain day
-  '10n': CloudRain, // rain night
-  '11d': CloudLightning, // thunderstorm
-  '11n': CloudLightning, // thunderstorm
-  '13d': CloudSnow, // snow
-  '13n': CloudSnow, // snow
-  '50d': CloudFog, // mist
-  '50n': CloudFog, // mist
+// Maps NWS shortForecast text (converted to lowercase) to Lucide icons
+const getWeatherIcon = (forecast: string, isDaytime: boolean): React.ElementType => {
+    const lowerForecast = forecast.toLowerCase();
+    if (lowerForecast.includes('thunderstorm')) return CloudLightning;
+    if (lowerForecast.includes('snow')) return CloudSnow;
+    if (lowerForecast.includes('rain') || lowerForecast.includes('showers')) return CloudRain;
+    if (lowerForecast.includes('windy') || lowerForecast.includes('breezy')) return Wind;
+    if (lowerForecast.includes('fog') || lowerForecast.includes('haze')) return CloudFog;
+    if (lowerForecast.includes('cloudy')) return Cloud;
+    if (lowerForecast.includes('sunny') || lowerForecast.includes('clear')) {
+        return isDaytime ? Sun : Moon;
+    }
+    if (lowerForecast.includes('partly cloudy') || lowerForecast.includes('mostly cloudy')) return Cloud;
+    return Thermometer; // Default icon
 };
+
 
 export const WeatherIcon = () => {
   const { household } = useAuth();
 
   const { data: weather, isLoading } = useQuery({
-    queryKey: ['weather_data', household?.id],
+    queryKey: ['weather_data_nws', household?.id],
     queryFn: async () => {
       if (!household?.weather_location) return null;
 
       try {
         const { data, error } = await supabase.functions.invoke('get-weather', {
-          body: {
-            location: household.weather_location,
-            units: household.weather_units,
-          },
+          body: { location: household.weather_location },
         });
         if (error) throw error;
         return data;
@@ -58,12 +52,12 @@ export const WeatherIcon = () => {
       }
     },
     enabled: !!household?.weather_location,
-    staleTime: 1000 * 60 * 15, // Refetch every 15 minutes
+    staleTime: 1000 * 60 * 30, // Refetch every 30 minutes
     refetchOnWindowFocus: false,
   });
 
   if (!household?.weather_location) {
-    return null; // Don't show anything if location isn't set
+    return null;
   }
 
   if (isLoading) {
@@ -71,10 +65,12 @@ export const WeatherIcon = () => {
   }
 
   if (!weather) {
-    return null; // Or show an error icon
+    return null;
   }
 
-  const IconComponent = weatherIconMap[weather.icon] || Thermometer;
+  // NWS icon URLs contain '/day/' or '/night/'
+  const isDaytime = weather.icon?.includes('/day/');
+  const IconComponent = getWeatherIcon(weather.description, isDaytime);
 
   return (
     <Tooltip>

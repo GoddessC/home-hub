@@ -106,14 +106,12 @@ export const AvatarBuilderPage = () => {
           <div className="container mx-auto flex justify-between items-center">
             <h1 className="text-2xl font-bold text-gray-800">Avatar Builder for {member?.full_name}</h1>
             <div className="flex items-center gap-4">
-                {member?.user_id && (
-                    <Button asChild>
-                        <Link to={`/store/${member.user_id}`}>
-                            <Store className="mr-2 h-4 w-4" />
-                            Rewards Store
-                        </Link>
-                    </Button>
-                )}
+                <Button asChild>
+                    <Link to={`/store/${memberId}`}>
+                        <Store className="mr-2 h-4 w-4" />
+                        Rewards Store
+                    </Link>
+                </Button>
                 <Button onClick={() => saveMutation.mutate(equippedItems)} disabled={saveMutation.isPending}>
                     {saveMutation.isPending ? 'Saving...' : 'Save Avatar'}
                 </Button>

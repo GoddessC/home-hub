@@ -12,9 +12,8 @@ import { cn } from '@/lib/utils';
 import { UserNav } from '@/components/layout/UserNav';
 import { MemberDashboardPanel } from '@/components/dashboard/MemberDashboardPanel';
 import { TeamQuestPanel, Quest } from '@/components/dashboard/TeamQuestPanel';
+import { WeatherIcon } from '@/components/dashboard/WeatherIcon';
 
-// FIX: Changed type to handle cases where Supabase returns a single related record as an array.
-// Exporting the type so it can be used in MemberDashboardPanel.
 export type ChoreLog = {
   id: string;
   completed_at: string | null;
@@ -81,8 +80,6 @@ const KioskDashboard = () => {
     queryKey: ['daily_chores', household?.id, format(new Date(), 'yyyy-MM-dd')],
     queryFn: async () => {
       if (!household?.id) return [];
-      // This RPC function creates chore logs for today if they don't exist,
-      // and then returns all logs for today (both recurring and manually assigned).
       const { data, error } = await supabase
         .rpc('get_or_create_daily_chores', {
           p_household_id: household.id,
@@ -122,24 +119,27 @@ const KioskDashboard = () => {
           <h1 className={cn("text-2xl font-bold", isAnonymous ? "" : "text-gray-800")}>
             {household?.name || (isAnonymous ? 'Kiosk Mode' : 'Dashboard')}
           </h1>
-          {isAnonymous ? (
-            <div className="flex items-center space-x-4">
-              <span className="text-sm text-gray-400">{device?.display_name}</span>
-              <Button variant="destructive" onClick={signOut}>Exit Kiosk Mode</Button>
-            </div>
-          ) : (
-            <div className="flex items-center space-x-4">
-              {member?.role === 'OWNER' && (
-                <Button asChild variant="outline">
-                  <Link to="/admin">
-                    <Shield className="mr-2 h-4 w-4" />
-                    Admin Panel
-                  </Link>
-                </Button>
-              )}
-              <UserNav />
-            </div>
-          )}
+          <div className="flex items-center space-x-4">
+            <WeatherIcon />
+            {isAnonymous ? (
+              <>
+                <span className="text-sm text-gray-400">{device?.display_name}</span>
+                <Button variant="destructive" onClick={signOut}>Exit Kiosk Mode</Button>
+              </>
+            ) : (
+              <>
+                {member?.role === 'OWNER' && (
+                  <Button asChild variant="outline">
+                    <Link to="/admin">
+                      <Shield className="mr-2 h-4 w-4" />
+                      Admin Panel
+                    </Link>
+                  </Button>
+                )}
+                <UserNav />
+              </>
+            )}
+          </div>
         </div>
       </header>
       <main className="flex-grow container mx-auto p-4 md:p-8">

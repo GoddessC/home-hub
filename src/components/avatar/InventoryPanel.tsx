@@ -10,12 +10,19 @@ interface InventoryPanelProps {
 
 const useMemberInventory = (memberId?: string) => {
   return useQuery({
-    queryKey: ['avatar_items', memberId],
+    queryKey: ['member_inventory_items', memberId],
     queryFn: async () => {
-      // For now, this fetches all items. Later, this will be updated to fetch only owned items.
-      const { data, error } = await supabase.from('avatar_items').select('*');
+      if (!memberId) return [];
+      // Fetch the items from the inventory and join with the item details.
+      const { data, error } = await supabase
+        .from('member_avatar_inventory')
+        .select('avatar_items(*)')
+        .eq('member_id', memberId);
+        
       if (error) throw error;
-      return data;
+      
+      // The result is an array like [{ avatar_items: {...} }]. We need to extract the item details.
+      return data.map(inventoryEntry => inventoryEntry.avatar_items).filter(Boolean);
     },
     enabled: !!memberId,
   });
@@ -31,7 +38,7 @@ export const InventoryPanel = ({ memberId }: InventoryPanelProps) => {
       <h2 className="text-xl font-bold mb-4">Your Items</h2>
       {isLoading ? (
         <Skeleton className="w-full h-64" />
-      ) : (
+      ) : items && items.length > 0 ? (
         <Tabs defaultValue={categories[0]} className="w-full">
           <TabsList className="grid w-full grid-cols-3">
             {categories.map(category => (
@@ -48,6 +55,11 @@ export const InventoryPanel = ({ memberId }: InventoryPanelProps) => {
             </TabsContent>
           ))}
         </Tabs>
+      ) : (
+        <div className="text-center text-muted-foreground py-8">
+            <p>You don't own any items yet.</p>
+            <p className="text-sm">Visit the store to buy some!</p>
+        </div>
       )}
     </div>
   );

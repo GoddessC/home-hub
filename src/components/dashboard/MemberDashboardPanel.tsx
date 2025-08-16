@@ -214,14 +214,16 @@ export const MemberDashboardPanel = ({ member, chores }: MemberDashboardPanelPro
                                 {checkinStatus.lastFeelingEmoji ? 'Check-in Again' : 'Log My Feeling'}
                             </Button>
                         )}
-                        {!isAnonymous && member.user_id && (
+                        {!isAnonymous && (
                           <>
-                            <Button asChild variant="default" onClick={(e) => e.stopPropagation()}>
-                                <Link to={`/store/${member.user_id}`}>
-                                    <Store className="mr-2 h-4 w-4" />
-                                    Store
-                                </Link>
-                            </Button>
+                            {member.user_id && (
+                                <Button asChild variant="default" onClick={(e) => e.stopPropagation()}>
+                                    <Link to={`/store/${member.user_id}`}>
+                                        <Store className="mr-2 h-4 w-4" />
+                                        Store
+                                    </Link>
+                                </Button>
+                            )}
                             <Button asChild variant="outline" onClick={(e) => e.stopPropagation()}>
                                 <Link to={`/avatar-builder/${member.id}`}>
                                     <Palette className="mr-2 h-4 w-4" />

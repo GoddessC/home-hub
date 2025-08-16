@@ -9,7 +9,7 @@ import { startOfWeek, endOfWeek, format } from 'date-fns';
 import { Member, useAuth } from '@/context/AuthContext';
 import { Button } from '../ui/button';
 import { FeelingsCheckinDialog } from './FeelingsCheckinDialog';
-import { PlusCircle, X, Palette } from 'lucide-react';
+import { PlusCircle, X, Palette, Store } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Link } from 'react-router-dom';
 import { ChoreLog } from '@/pages/KioskDashboard';
@@ -30,7 +30,7 @@ interface MemberDashboardPanelProps {
 
 export const MemberDashboardPanel = ({ member, chores }: MemberDashboardPanelProps) => {
   const queryClient = useQueryClient();
-  const { household, isAnonymous } = useAuth();
+  const { household, isAnonymous, user } = useAuth();
   const [isFeelingsDialogOpen, setFeelingsDialogOpen] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
 
@@ -49,8 +49,6 @@ export const MemberDashboardPanel = ({ member, chores }: MemberDashboardPanelPro
         .gte('due_date', weekStart)
         .lte('due_date', weekEnd);
       if (error) throw error;
-      // FIX: Supabase can return the joined table as an object or an array.
-      // This handles both cases to correctly sum the points.
       return data.reduce((acc, item: any) => acc + (Array.isArray(item.chores) ? item.chores[0]?.points : item.chores?.points || 0), 0);
     },
     enabled: !!member && !!household,
@@ -214,13 +212,21 @@ export const MemberDashboardPanel = ({ member, chores }: MemberDashboardPanelPro
                                 {checkinStatus.lastFeelingEmoji ? 'Check-in Again' : 'Log My Feeling'}
                             </Button>
                         )}
-                        {!isAnonymous && (
+                        {!isAnonymous && member.user_id === user?.id && (
+                          <>
+                            <Button asChild variant="default" onClick={(e) => e.stopPropagation()}>
+                                <Link to={`/store/${member.user_id}`}>
+                                    <Store className="mr-2 h-4 w-4" />
+                                    Store
+                                </Link>
+                            </Button>
                             <Button asChild variant="outline" onClick={(e) => e.stopPropagation()}>
                                 <Link to={`/avatar-builder/${member.id}`}>
                                     <Palette className="mr-2 h-4 w-4" />
                                     Edit Avatar
                                 </Link>
                             </Button>
+                          </>
                         )}
                     </div>
                 </div>

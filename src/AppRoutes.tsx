@@ -8,6 +8,8 @@ import CreateHousehold from './pages/CreateHousehold';
 import KioskPairingPage from './pages/KioskPairingPage';
 import KioskDashboard from './pages/KioskDashboard';
 import KioskCalmCorner from './pages/KioskCalmCorner';
+import { AvatarBuilderPage } from './pages/AvatarBuilder';
+import { StorePage } from './pages/StorePage';
 
 const AppRoutes = () => {
   const { session, loading, isAnonymous, household, member, device } = useAuth();
@@ -64,6 +66,8 @@ const AppRoutes = () => {
         {member.role === 'OWNER' && (
           <Route path="/admin" element={<AdminDashboard />} />
         )}
+        <Route path="/avatar-builder/:memberId" element={<AvatarBuilderPage />} />
+        <Route path="/store/:memberId" element={<StorePage />} />
         <Route path="/kiosk/calm-corner" element={<KioskCalmCorner />} />
         <Route path="/login" element={<Navigate to="/" replace />} />
         <Route path="/register" element={<Navigate to="/" replace />} />

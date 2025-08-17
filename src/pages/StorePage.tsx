@@ -50,7 +50,7 @@ export const StorePage = () => {
   const { data: storeItems, isLoading: isLoadingItems } = useQuery({
     queryKey: ['avatar_items_for_store'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('avatar_items').select('*, point_cost').neq('category', 'base_body');
+      const { data, error } = await supabase.from('avatar_items').select('*').neq('category', 'base_body');
       if (error) throw error;
       return data;
     },

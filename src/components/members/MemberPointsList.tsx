@@ -14,7 +14,8 @@ export const MemberPointsList = ({ members }: MemberPointsListProps) => {
     <Card>
       <CardHeader>
         <CardTitle>Weekly Points</CardTitle>
-        <CardDescription>Who's leading the charge this week?</CardDescription>
+        <CardDescription>Whos leading the charge this week? 
+        </CardDescription>
       </CardHeader>
       <CardContent>
         {sortedMembers.length > 0 ? (

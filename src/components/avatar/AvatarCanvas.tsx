@@ -14,6 +14,26 @@ interface AvatarCanvasProps {
   isPoofing: boolean;
 }
 
+const bodyStyle: React.CSSProperties = {
+  position: 'absolute',
+  width: '75%',
+  height: 'auto',
+  top: '40%',
+  left: 0,
+  right: 0,
+  margin: '0 auto',
+};
+
+const headStyle: React.CSSProperties = {
+  position: 'absolute',
+  width: '60%',
+  height: 'auto',
+  top: '10%',
+  left: 0,
+  right: 0,
+  margin: '0 auto',
+};
+
 export const AvatarCanvas = ({ config, isPoofing }: AvatarCanvasProps) => {
   const { setNodeRef, isOver } = useDroppable({
     id: 'avatar-drop-zone',
@@ -41,26 +61,29 @@ export const AvatarCanvas = ({ config, isPoofing }: AvatarCanvasProps) => {
       <div className="absolute inset-0 w-full h-full">
         {/* Back Hair Layer */}
         {hairItem?.asset_url_back && (
-          <img src={hairItem.asset_url_back} alt="Hair Back" className="absolute inset-0 w-full h-full object-contain" style={{ zIndex: zIndexMap['hair_back'] }} />
+          <img src={hairItem.asset_url_back} alt="Hair Back" className="object-contain" style={{ ...headStyle, zIndex: zIndexMap['hair_back'] }} />
         )}
 
         {/* Base Layers */}
         {config.base_body && (
-          <img src={config.base_body.asset_url} alt="Avatar Body" className="absolute inset-0 w-full h-full object-contain" style={{ zIndex: zIndexMap['base_body'] }} />
+          <img src={config.base_body.asset_url} alt="Avatar Body" className="object-contain" style={{ ...bodyStyle, zIndex: zIndexMap['base_body'] }} />
         )}
         {config.base_head && (
-          <img src={config.base_head.asset_url} alt="Avatar Head" className="absolute inset-0 w-full h-full object-contain" style={{ zIndex: zIndexMap['base_head'] }} />
+          <img src={config.base_head.asset_url} alt="Avatar Head" className="object-contain" style={{ ...headStyle, zIndex: zIndexMap['base_head'] }} />
         )}
 
         {/* Equipped Items (excluding hair, which is handled separately) */}
         {Object.entries(config).map(([category, item]) => {
           if (!item || category === 'hair' || category === 'base_body' || category === 'base_head') return null;
-          return <img key={item.id} src={item.asset_url} alt={category} className="absolute inset-0 w-full h-full object-contain" style={{ zIndex: zIndexMap[category] || 15 }} />
+          
+          const itemStyle = category === 'shirt' ? bodyStyle : headStyle;
+
+          return <img key={item.id} src={item.asset_url} alt={category} className="object-contain" style={{ ...itemStyle, zIndex: zIndexMap[category] || 15 }} />
         })}
 
         {/* Front Hair Layer */}
         {hairItem && (
-          <img src={hairItem.asset_url} alt="Hair Front" className="absolute inset-0 w-full h-full object-contain" style={{ zIndex: zIndexMap['hair'] }} />
+          <img src={hairItem.asset_url} alt="Hair Front" className="object-contain" style={{ ...headStyle, zIndex: zIndexMap['hair'] }} />
         )}
 
         {/* Poof Animation */}

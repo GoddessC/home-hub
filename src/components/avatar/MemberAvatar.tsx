@@ -26,6 +26,26 @@ const zIndexMap: Record<string, number> = {
     accessory: 40,
 };
 
+const bodyStyle: React.CSSProperties = {
+  position: 'absolute',
+  width: '75%',
+  height: 'auto',
+  top: '40%',
+  left: 0,
+  right: 0,
+  margin: '0 auto',
+};
+
+const headStyle: React.CSSProperties = {
+  position: 'absolute',
+  width: '60%',
+  height: 'auto',
+  top: '10%',
+  left: 0,
+  right: 0,
+  margin: '0 auto',
+};
+
 export const MemberAvatar = ({ memberId, className, viewMode = 'full' }: MemberAvatarProps) => {
   const { data: savedConfig, isLoading } = useQuery({
     queryKey: ['avatar_config', memberId],
@@ -46,39 +66,49 @@ export const MemberAvatar = ({ memberId, className, viewMode = 'full' }: MemberA
     // Fallback for members with no saved config
     return (
       <div className={cn("relative w-24 h-36", className)}>
-        <img src="https://dvqkkqvjsqjnvwwvxenh.supabase.co/storage/v1/object/public/avatar-assets/head.png" alt="Avatar Head" className="absolute inset-0 w-full h-full object-contain" style={{ zIndex: zIndexMap['base_head'] }} />
+        <img src="https://dvqkkqvjsqjnvwwvxenh.supabase.co/storage/v1/object/public/avatar-assets/head.png" alt="Avatar Head" className="object-contain" style={{ ...headStyle, zIndex: zIndexMap['base_head'] }} />
         {viewMode === 'full' && (
-          <img src="https://dvqkkqvjsqjnvwwvxenh.supabase.co/storage/v1/object/public/avatar-assets/body.png" alt="Avatar Body" className="absolute inset-0 w-full h-full object-contain" style={{ zIndex: zIndexMap['base_body'] }} />
+          <img src="https://dvqkkqvjsqjnvwwvxenh.supabase.co/storage/v1/object/public/avatar-assets/body.png" alt="Avatar Body" className="object-contain" style={{ ...bodyStyle, zIndex: zIndexMap['base_body'] }} />
         )}
       </div>
     );
   }
 
-  const renderableItems = Object.entries(savedConfig).filter(([category]) => {
-    if (viewMode === 'headshot') {
-      return category === 'base_head' || category === 'hair';
-    }
-    return true; // Full view
-  });
-
   const hairItem = savedConfig.hair;
+  const bodyItem = savedConfig.base_body;
+  const headItem = savedConfig.base_head;
 
   return (
     <div className={cn("relative w-24 h-36", className)}>
       {/* Back Hair Layer */}
       {viewMode === 'full' && hairItem?.asset_url_back && (
-        <img src={hairItem.asset_url_back} alt="Hair Back" className="absolute inset-0 w-full h-full object-contain" style={{ zIndex: zIndexMap['hair_back'] }} />
+        <img src={hairItem.asset_url_back} alt="Hair Back" className="object-contain" style={{ ...headStyle, zIndex: zIndexMap['hair_back'] }} />
       )}
 
-      {/* Render other items based on viewMode */}
-      {renderableItems.map(([category, item]) => {
-        if (!item || category === 'hair') return null;
-        return <img key={item.id} src={item.asset_url} alt={category} className="absolute inset-0 w-full h-full object-contain" style={{ zIndex: zIndexMap[category] || 15 }} />
+      {/* Base Body */}
+      {viewMode === 'full' && bodyItem && (
+        <img src={bodyItem.asset_url} alt="Avatar Body" className="object-contain" style={{ ...bodyStyle, zIndex: zIndexMap['base_body'] }} />
+      )}
+
+      {/* Base Head */}
+      {headItem && (
+        <img src={headItem.asset_url} alt="Avatar Head" className="object-contain" style={{ ...headStyle, zIndex: zIndexMap['base_head'] }} />
+      )}
+
+      {/* Equipped Items */}
+      {Object.entries(savedConfig).map(([category, item]) => {
+        if (!item || ['hair', 'base_body', 'base_head'].includes(category)) return null;
+        
+        const isBodyItem = category === 'shirt';
+        if (viewMode === 'headshot' && isBodyItem) return null;
+
+        const itemStyle = isBodyItem ? bodyStyle : headStyle;
+        return <img key={item.id} src={item.asset_url} alt={category} className="object-contain" style={{ ...itemStyle, zIndex: zIndexMap[category] || 15 }} />
       })}
 
       {/* Front Hair Layer */}
       {hairItem && (
-        <img src={hairItem.asset_url} alt="Hair Front" className="absolute inset-0 w-full h-full object-contain" style={{ zIndex: zIndexMap['hair'] }} />
+        <img src={hairItem.asset_url} alt="Hair Front" className="object-contain" style={{ ...headStyle, zIndex: zIndexMap['hair'] }} />
       )}
     </div>
   );

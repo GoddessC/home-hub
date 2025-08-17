@@ -12,7 +12,7 @@ type AvatarConfig = Record<string, { id: string; asset_url: string } | null>;
 
 // Static URLs for the default base avatar parts
 const BASE_BODY_URL = 'https://dvqkkqvjsqjnvwwvxenh.supabase.co/storage/v1/object/public/avatar-assets/body.png';
-const BASE_HEAD_URL = 'https://dvqkkqvjsqjnvwwvxenh.supabase.co/storage/v1/object/public/avatar-assets/head.png';
+const BASE_HEAD_URL = 'https://dvqkkqvjsqjnvwwvxenh.supabase.co/storage/v1/object/public/avatars/head.png';
 
 const zIndexMap: Record<string, number> = {
     base_body: 10,

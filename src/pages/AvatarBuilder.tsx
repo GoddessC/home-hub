@@ -15,12 +15,12 @@ type AvatarItem = { id: string; asset_url: string };
 type AvatarConfig = Record<string, AvatarItem | null>;
 
 // Static URLs for the default base avatar parts
-const BASE_HEAD_URL = 'https://dvqkkqvjsqjnvwwvxenh.supabase.co/storage/v1/object/public/avatars/head.png';
-const BASE_BODY_URL = 'https://dvqkkqvjsqjnvwwvxenh.supabase.co/storage/v1/object/public/avatars/body.png';
+const BASE_BODY_URL = 'https://dvqkkqvjsqjnvwwvxenh.supabase.co/storage/v1/object/public/avatar-assets/body.png';
+const BASE_HEAD_URL = 'https://dvqkkqvjsqjnvwwvxenh.supabase.co/storage/v1/object/public/avatar-assets/head.png';
 
 const defaultAvatarConfig: AvatarConfig = {
-    base_head: { id: 'default_head', asset_url: BASE_HEAD_URL },
     base_body: { id: 'default_body', asset_url: BASE_BODY_URL },
+    base_head: { id: 'default_head', asset_url: BASE_HEAD_URL },
 };
 
 export const AvatarBuilderPage = () => {
@@ -57,7 +57,7 @@ export const AvatarBuilderPage = () => {
     },
     enabled: !!memberId,
   });
-x
+
   useEffect(() => {
     if (savedConfig) {
       setEquippedItems(savedConfig);

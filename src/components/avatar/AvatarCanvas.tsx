@@ -38,11 +38,11 @@ export const AvatarCanvas = ({ config, isPoofing }: AvatarCanvasProps) => {
     >
       <div className="absolute inset-0 w-full h-full">
         {/* Base Layers */}
-        {baseBody && (
-          <img src={baseBody.asset_url} alt="Avatar Body" className="absolute inset-0 w-full h-full object-contain" style={{ zIndex: zIndexMap['base_body'] }} />
-        )}
         {baseHead && (
           <img src={baseHead.asset_url} alt="Avatar Head" className="absolute inset-0 w-full h-full object-contain" style={{ zIndex: zIndexMap['base_head'] }} />
+        )}
+        {baseBody && (
+          <img src={baseBody.asset_url} alt="Avatar Body" className="absolute inset-0 w-full h-full object-contain" style={{ zIndex: zIndexMap['base_body'] }} />
         )}
 
         {/* Equipped Items */}

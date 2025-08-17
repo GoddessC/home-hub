@@ -57,7 +57,7 @@ export const AvatarBuilderPage = () => {
     },
     enabled: !!memberId,
   });
-
+x
   useEffect(() => {
     if (savedConfig) {
       setEquippedItems(savedConfig);

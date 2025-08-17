@@ -10,7 +10,7 @@ import { ArrowLeft, Coins } from 'lucide-react';
 
 export const StorePage = () => {
   const { memberId } = useParams<{ memberId: string }>();
-  const { user } = useAuth();
+  const { member: currentUserMember } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
@@ -26,18 +26,7 @@ export const StorePage = () => {
       enabled: !!memberId,
   });
 
-  const { data: currentUserMember, isLoading: isLoadingCurrentUser } = useQuery({
-      queryKey: ['current_user_member', user?.id],
-      queryFn: async () => {
-          if (!user?.id) return null;
-          const { data, error } = await supabase.from('members').select('household_id, role').eq('user_id', user.id).single();
-          if (error) throw error;
-          return data;
-      },
-      enabled: !!user?.id,
-  });
-
-  if (!isLoadingMember && !isLoadingCurrentUser && member && currentUserMember) {
+  if (!isLoadingMember && member && currentUserMember) {
       const isAdminInHousehold = (currentUserMember.role === 'OWNER' || currentUserMember.role === 'ADULT') && currentUserMember.household_id === member.household_id;
       if (!isAdminInHousehold) {
           showError("You don't have permission to access this store.");
@@ -61,7 +50,7 @@ export const StorePage = () => {
   const { data: storeItems, isLoading: isLoadingItems } = useQuery({
     queryKey: ['avatar_items_for_store'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('avatar_items').select('*, point_cost').neq('category', 'base_body');
+      const { data, error } = await supabase.from('avatar_items').select('*').neq('category', 'base_body');
       if (error) throw error;
       return data;
     },
@@ -96,7 +85,7 @@ export const StorePage = () => {
     },
   });
 
-  const isLoading = isLoadingPoints || isLoadingItems || isLoadingInventory || isLoadingMember || isLoadingCurrentUser;
+  const isLoading = isLoadingPoints || isLoadingItems || isLoadingInventory || isLoadingMember;
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">

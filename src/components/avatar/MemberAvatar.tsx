@@ -10,9 +10,9 @@ interface MemberAvatarProps {
 
 type AvatarConfig = Record<string, { id: string; asset_url: string } | null>;
 
-// Static URLs for the default base avatar parts
-const BASE_BODY_URL = 'https://dvqkkqvjsqjnvwwvxenh.supabase.co/storage/v1/object/public/avatars/body.png';
-const BASE_HEAD_URL = 'https://dvqkkqvjsqjnvwwvxenh.supabase.co/storage/v1/object/public/avatars/head.png';
+// Static URLs for the default base avatar parts, used as a fallback.
+const BASE_BODY_URL = 'https://dvqkkqvjsqjnvwwvxenh.supabase.co/storage/v1/object/public/avatar-assets/body.png';
+const BASE_HEAD_URL = 'https://dvqkkqvjsqjnvwwvxenh.supabase.co/storage/v1/object/public/avatar-assets/head.png';
 
 const zIndexMap: Record<string, number> = {
     base_body: 10,
@@ -38,13 +38,20 @@ export const MemberAvatar = ({ memberId, className }: MemberAvatarProps) => {
     return <Skeleton className={cn("w-24 h-36 rounded-md", className)} />;
   }
 
+  const renderBaseBody = !savedConfig?.base_body;
+  const renderBaseHead = !savedConfig?.base_head;
+
   return (
     <div className={cn("relative w-24 h-36", className)}>
-      {/* Base Body */}
-      <img src={BASE_BODY_URL} alt="Avatar Body" className="absolute inset-0 w-full h-full object-contain" style={{ zIndex: zIndexMap['base_body'] }} />
-      <img src={BASE_HEAD_URL} alt="Avatar Head" className="absolute inset-0 w-full h-full object-contain" style={{ zIndex: zIndexMap['base_head'] }} />
+      {/* Fallback Base Layers */}
+      {renderBaseBody && (
+        <img src={BASE_BODY_URL} alt="Avatar Body" className="absolute inset-0 w-full h-full object-contain" style={{ zIndex: zIndexMap['base_body'] }} />
+      )}
+      {renderBaseHead && (
+        <img src={BASE_HEAD_URL} alt="Avatar Head" className="absolute inset-0 w-full h-full object-contain" style={{ zIndex: zIndexMap['base_head'] }} />
+      )}
 
-      {/* Equipped Items */}
+      {/* Equipped Items from Config */}
       {savedConfig && Object.entries(savedConfig).map(([category, item]) => (
         item && <img key={item.id} src={item.asset_url} alt={category} className="absolute inset-0 w-full h-full object-contain" style={{ zIndex: zIndexMap[category] || 15 }} />
       ))}

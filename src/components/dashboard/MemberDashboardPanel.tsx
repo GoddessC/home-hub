@@ -9,19 +9,11 @@ import { startOfWeek, endOfWeek, format } from 'date-fns';
 import { Member, useAuth } from '@/context/AuthContext';
 import { Button } from '../ui/button';
 import { FeelingsCheckinDialog } from './FeelingsCheckinDialog';
-import { PlusCircle, X, Palette } from 'lucide-react';
+import { X, Palette } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Link } from 'react-router-dom';
 import { ChoreLog } from '@/pages/KioskDashboard';
-
-const feelingMeta = {
-  joyful: { emoji: '😄' },
-  happy: { emoji: '😊' },
-  okay: { emoji: '😐' },
-  sad: { emoji: '😢' },
-  worried: { emoji: '😟' },
-  angry: { emoji: '😠' },
-};
+import { MemberAvatar } from '../avatar/MemberAvatar';
 
 interface MemberDashboardPanelProps {
   member: Member;
@@ -91,11 +83,8 @@ export const MemberDashboardPanel = ({ member, chores }: MemberDashboardPanelPro
   });
 
   const checkinStatus = useMemo(() => {
-    const lastLog = todaysLogs?.[0];
-    const lastFeelingEmoji = lastLog ? feelingMeta[lastLog.feeling as keyof typeof feelingMeta]?.emoji : null;
-
     if (!household || !household.is_feelings_enabled) {
-      return { showButton: false, lastFeelingEmoji: null };
+      return { showButton: false };
     }
 
     const { feelings_morning_time, feelings_evening_time } = household;
@@ -128,7 +117,7 @@ export const MemberDashboardPanel = ({ member, chores }: MemberDashboardPanelPro
       if (!hasLoggedinWindow(eveningTime, null)) showButton = true;
     }
 
-    return { showButton, lastFeelingEmoji };
+    return { showButton };
   }, [todaysLogs, household]);
 
   return (
@@ -148,12 +137,8 @@ export const MemberDashboardPanel = ({ member, chores }: MemberDashboardPanelPro
                 {isLoadingScore ? <Skeleton className="h-4 w-8 bg-primary/50" /> : `${weeklyScore} pts`}
               </div>
               <div className="flex flex-col items-center justify-center p-2">
-                <h3 className="font-bold text-lg mb-2">{member.full_name}</h3>
-                {checkinStatus.lastFeelingEmoji ? (
-                  <div className="text-5xl">{checkinStatus.lastFeelingEmoji}</div>
-                ) : (
-                  <PlusCircle className="h-12 w-12 text-muted-foreground" />
-                )}
+                <MemberAvatar memberId={member.id} className="w-24 h-36 mb-2" />
+                <h3 className="font-bold text-lg">{member.full_name}</h3>
               </div>
             </>
           ) : (
@@ -209,7 +194,7 @@ export const MemberDashboardPanel = ({ member, chores }: MemberDashboardPanelPro
                     <div className="flex items-center justify-center gap-4 flex-wrap">
                         {household?.is_feelings_enabled && checkinStatus.showButton && (
                             <Button onClick={(e) => { e.stopPropagation(); setFeelingsDialogOpen(true); }}>
-                                {checkinStatus.lastFeelingEmoji ? 'Check-in Again' : 'Log My Feeling'}
+                                Log My Feeling
                             </Button>
                         )}
                         {!isAnonymous && (

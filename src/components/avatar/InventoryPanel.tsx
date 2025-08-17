@@ -31,7 +31,7 @@ const useMemberInventory = (memberId?: string) => {
       if (error) throw error;
       
       // The result is an array like [{ avatar_items: {...} }]. We need to extract the item details.
-      return data.map((inventoryEntry: { avatar_items: AvatarItem }) => inventoryEntry.avatar_items).filter(Boolean) as AvatarItem[];
+      return data.map((inventoryEntry: any) => inventoryEntry.avatar_items).filter(Boolean) as AvatarItem[];
     },
     enabled: !!memberId,
   });

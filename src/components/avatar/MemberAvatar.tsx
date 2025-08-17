@@ -81,7 +81,7 @@ export const MemberAvatar = ({ memberId, className, viewMode = 'full' }: MemberA
   return (
     <div className={cn("relative w-24 h-36", className)}>
       {/* Back Hair Layer */}
-      {viewMode === 'full' && hairItem?.asset_url_back && (
+      {hairItem?.asset_url_back && (
         <img src={hairItem.asset_url_back} alt="Hair Back" className="object-contain" style={{ ...headStyle, zIndex: zIndexMap['hair_back'] }} />
       )}
 

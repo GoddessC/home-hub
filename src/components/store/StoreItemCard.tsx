@@ -25,14 +25,14 @@ interface StoreItem {
 
 interface StoreItemCardProps {
   item: StoreItem;
-  memberPoints: number;
+  userPoints: number;
   isOwned: boolean;
   onPurchase: (itemId: string) => void;
   isPurchasing: boolean;
 }
 
-export const StoreItemCard = ({ item, memberPoints, isOwned, onPurchase, isPurchasing }: StoreItemCardProps) => {
-  const canAfford = memberPoints >= item.point_cost;
+export const StoreItemCard = ({ item, userPoints, isOwned, onPurchase, isPurchasing }: StoreItemCardProps) => {
+  const canAfford = userPoints >= item.point_cost;
   const isHair = item.category === 'hair';
 
   return (

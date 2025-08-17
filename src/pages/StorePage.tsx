@@ -38,7 +38,7 @@ export const StorePage = () => {
   });
 
   if (!isLoadingMember && !isLoadingCurrentUser && member && currentUserMember) {
-      const isAdminInHousehold = currentUserMember.role === 'OWNER' && currentUserMember.household_id === member.household_id;
+      const isAdminInHousehold = (currentUserMember.role === 'OWNER' || currentUserMember.role === 'ADULT') && currentUserMember.household_id === member.household_id;
       if (!isAdminInHousehold) {
           showError("You don't have permission to access this store.");
           navigate('/');
@@ -57,11 +57,11 @@ export const StorePage = () => {
     enabled: !!memberId,
   });
 
-  // Fetch all active store items
+  // Fetch all active store items from the avatar_items table
   const { data: storeItems, isLoading: isLoadingItems } = useQuery({
-    queryKey: ['store_items_active'],
+    queryKey: ['avatar_items_for_store'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('avatar_items').select('*');
+      const { data, error } = await supabase.from('avatar_items').select('*').neq('category', 'base_body');
       if (error) throw error;
       return data;
     },

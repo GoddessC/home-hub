@@ -17,10 +17,10 @@ import { cn } from '@/lib/utils';
 interface StoreItem {
   id: string;
   name: string;
-  image_url: string; // Corresponds to asset_url (front)
+  asset_url: string; // Front-facing image
   asset_url_back?: string | null; // Back hair piece
   point_cost: number;
-  item_type: 'HAT' | 'SHIRT' | 'ACCESSORY' | 'HAIR';
+  category: string; // e.g., 'hair', 'shirt'
 }
 
 interface StoreItemCardProps {
@@ -33,7 +33,7 @@ interface StoreItemCardProps {
 
 export const StoreItemCard = ({ item, userPoints, isOwned, onPurchase, isPurchasing }: StoreItemCardProps) => {
   const canAfford = userPoints >= item.point_cost;
-  const isHair = item.item_type === 'HAIR';
+  const isHair = item.category === 'hair';
 
   return (
     <Card className="flex flex-col">
@@ -45,7 +45,7 @@ export const StoreItemCard = ({ item, userPoints, isOwned, onPurchase, isPurchas
         style={{ backgroundImage: isHair && item.asset_url_back ? `url(${item.asset_url_back})` : 'none' }}
       >
         <img 
-          src={item.image_url} 
+          src={item.asset_url} 
           alt={item.name} 
           className={cn("object-contain", isHair ? "h-full w-full" : "max-h-32")}
         />

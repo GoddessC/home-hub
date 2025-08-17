@@ -21,9 +21,11 @@ export type ChoreLog = {
   chores: {
     title: string;
     points: number;
+    is_internal: boolean;
   } | {
     title: string;
     points: number;
+    is_internal: boolean;
   }[] | null;
 };
 
@@ -85,7 +87,7 @@ const KioskDashboard = () => {
           p_household_id: household.id,
           p_for_date: format(new Date(), 'yyyy-MM-dd'),
         })
-        .select('id, member_id, completed_at, chores(title, points)');
+        .select('id, member_id, completed_at, chores(title, points, is_internal)');
       
       if (error) throw error;
       return data as ChoreLog[];

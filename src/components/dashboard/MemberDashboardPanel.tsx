@@ -26,6 +26,13 @@ export const MemberDashboardPanel = ({ member, chores }: MemberDashboardPanelPro
   const [isFeelingsDialogOpen, setFeelingsDialogOpen] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
 
+  const visibleChores = useMemo(() => {
+    return chores.filter(chore => {
+      const choreData = Array.isArray(chore.chores) ? chore.chores[0] : chore.chores;
+      return !choreData?.is_internal;
+    });
+  }, [chores]);
+
   const { data: weeklyScore, isLoading: isLoadingScore } = useQuery({
     queryKey: ['member_score', member.id],
     queryFn: async () => {
@@ -167,9 +174,9 @@ export const MemberDashboardPanel = ({ member, chores }: MemberDashboardPanelPro
               <CardContent className="flex-grow flex flex-col justify-between">
                 <div>
                   <h4 className="mb-2 text-sm font-medium text-muted-foreground">Today's Chores</h4>
-                  {chores.length > 0 ? (
+                  {visibleChores.length > 0 ? (
                     <ul className="space-y-3">
-                      {chores.map(chore => {
+                      {visibleChores.map(chore => {
                         const choreData = Array.isArray(chore.chores) ? chore.chores[0] : chore.chores;
                         return (
                             <li key={chore.id} className="flex items-center space-x-3 p-3 rounded-md bg-background">

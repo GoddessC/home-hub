@@ -79,6 +79,7 @@ export const StorePage = () => {
       // Refetch data to update points and inventory
       queryClient.invalidateQueries({ queryKey: ['member_points', memberId] });
       queryClient.invalidateQueries({ queryKey: ['member_inventory', memberId] });
+      queryClient.invalidateQueries({ queryKey: ['member_inventory_items', memberId] });
     },
     onError: (error: Error) => {
       showError(error.message);

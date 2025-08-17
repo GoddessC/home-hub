@@ -40,20 +40,14 @@ export const StoreItemCard = ({ item, userPoints, isOwned, onPurchase, isPurchas
       <CardHeader>
         <CardTitle className="text-lg">{item.name}</CardTitle>
       </CardHeader>
-      <CardContent className="flex-grow flex items-center justify-center relative min-h-[150px]">
-        {isHair && item.asset_url_back && (
-          <img 
-            src={item.asset_url_back} 
-            alt={`${item.name} (back)`} 
-            className="absolute inset-0 w-full h-full object-contain"
-            style={{ zIndex: 1 }}
-          />
-        )}
+      <CardContent 
+        className="flex-grow flex items-center justify-center relative min-h-[150px] bg-contain bg-no-repeat bg-center"
+        style={{ backgroundImage: isHair && item.asset_url_back ? `url(${item.asset_url_back})` : 'none' }}
+      >
         <img 
           src={item.image_url} 
           alt={item.name} 
-          className={cn("object-contain", isHair ? "absolute inset-0 w-full h-full" : "max-h-32")}
-          style={{ zIndex: 2 }}
+          className={cn("object-contain", isHair ? "h-full w-full" : "max-h-32")}
         />
       </CardContent>
       <CardFooter>

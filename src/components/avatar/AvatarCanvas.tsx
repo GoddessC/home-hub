@@ -6,16 +6,18 @@ import { Cloud } from 'lucide-react';
 interface AvatarCanvasProps {
   config: Record<string, { id: string; asset_url: string } | null>;
   baseBodyUrl?: string;
+  baseHeadUrl?: string;
   isPoofing: boolean;
 }
 
-export const AvatarCanvas = ({ config, baseBodyUrl, isPoofing }: AvatarCanvasProps) => {
+export const AvatarCanvas = ({ config, baseBodyUrl, baseHeadUrl, isPoofing }: AvatarCanvasProps) => {
   const { setNodeRef, isOver } = useDroppable({
     id: 'avatar-drop-zone',
   });
 
   const zIndexMap: Record<string, number> = {
     base_body: 10,
+    base_head: 15,
     shirt: 20,
     hair: 30,
     accessory: 40,
@@ -33,6 +35,9 @@ export const AvatarCanvas = ({ config, baseBodyUrl, isPoofing }: AvatarCanvasPro
         {/* Base Body */}
         {baseBodyUrl && (
           <img src={baseBodyUrl} alt="Avatar Body" className="absolute inset-0 w-full h-full object-contain" style={{ zIndex: zIndexMap['base_body'] }} />
+        )}
+        {baseHeadUrl && (
+          <img src={baseHeadUrl} alt="Avatar Head" className="absolute inset-0 w-full h-full object-contain" style={{ zIndex: zIndexMap['base_head'] }} />
         )}
 
         {/* Equipped Items */}

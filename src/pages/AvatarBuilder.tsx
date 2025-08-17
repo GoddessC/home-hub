@@ -14,6 +14,10 @@ import { Store } from 'lucide-react';
 type AvatarItem = { id: string; asset_url: string };
 type AvatarConfig = Record<string, AvatarItem | null>;
 
+// Static URLs for the default base avatar parts
+const BASE_BODY_URL = 'https://dvqkkqvjsqjnvwwvxenh.supabase.co/storage/v1/object/public/avatar-assets/body.png';
+const BASE_HEAD_URL = 'https://dvqkkqvjsqjnvwwvxenh.supabase.co/storage/v1/object/public/avatar-assets/head.png';
+
 export const AvatarBuilderPage = () => {
   const { memberId } = useParams<{ memberId: string }>();
   const { household } = useAuth();
@@ -35,15 +39,6 @@ export const AvatarBuilderPage = () => {
       return data;
     },
     enabled: !!memberId && !!household,
-  });
-
-  const { data: baseBody, isLoading: isLoadingBase } = useQuery({
-    queryKey: ['avatar_base_body'],
-    queryFn: async () => {
-      const { data, error } = await supabase.from('avatar_items').select('*').eq('category', 'base_body').limit(1).single();
-      if (error) throw error;
-      return data;
-    },
   });
 
   const { data: savedConfig, isLoading: isLoadingConfig } = useQuery({
@@ -95,7 +90,7 @@ export const AvatarBuilderPage = () => {
     }
   };
 
-  if (isLoadingBase || isLoadingConfig || isLoadingMember) {
+  if (isLoadingConfig || isLoadingMember) {
     return <div className="container mx-auto p-8"><Skeleton className="w-full h-screen" /></div>;
   }
 
@@ -127,7 +122,8 @@ export const AvatarBuilderPage = () => {
             <div className="flex-grow flex items-center justify-center">
               <AvatarCanvas
                 config={equippedItems}
-                baseBodyUrl={baseBody?.asset_url}
+                baseBodyUrl={BASE_BODY_URL}
+                baseHeadUrl={BASE_HEAD_URL}
                 isPoofing={isPoofing}
               />
             </div>

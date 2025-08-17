@@ -5,7 +5,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Skeleton } from '@/components/ui/skeleton';
 import { showError } from '@/utils/toast';
-import { startOfWeek, endOfWeek, format } from 'date-fns';
 import { Member, useAuth } from '@/context/AuthContext';
 import { Button } from '../ui/button';
 import { FeelingsCheckinDialog } from './FeelingsCheckinDialog';
@@ -33,24 +32,15 @@ export const MemberDashboardPanel = ({ member, chores }: MemberDashboardPanelPro
     });
   }, [chores]);
 
-  const { data: weeklyScore, isLoading: isLoadingScore } = useQuery({
-    queryKey: ['member_score', member.id],
+  const { data: availablePoints, isLoading: isLoadingPoints } = useQuery({
+    queryKey: ['member_points', member.id],
     queryFn: async () => {
-      const weekStartsOn = (household?.chore_reset_day as (0 | 1 | 2 | 3 | 4 | 5 | 6)) ?? 0;
-      const weekStart = format(startOfWeek(new Date(), { weekStartsOn }), 'yyyy-MM-dd');
-      const weekEnd = format(endOfWeek(new Date(), { weekStartsOn }), 'yyyy-MM-dd');
-      
-      const { data, error } = await supabase
-        .from('chore_log')
-        .select('chores(points)')
-        .eq('member_id', member.id)
-        .not('completed_at', 'is', null)
-        .gte('due_date', weekStart)
-        .lte('due_date', weekEnd);
+      if (!member.id) return 0;
+      const { data, error } = await supabase.rpc('get_member_available_points', { p_member_id: member.id });
       if (error) throw error;
-      return data.reduce((acc, item: any) => acc + (Array.isArray(item.chores) ? item.chores[0]?.points : item.chores?.points || 0), 0);
+      return data;
     },
-    enabled: !!member && !!household,
+    enabled: !!member,
   });
 
   const updateChoreMutation = useMutation({
@@ -62,8 +52,8 @@ export const MemberDashboardPanel = ({ member, chores }: MemberDashboardPanelPro
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['chore_log'] });
-      queryClient.invalidateQueries({ queryKey: ['member_score', member.id] });
+      queryClient.invalidateQueries({ queryKey: ['daily_chores'] });
+      queryClient.invalidateQueries({ queryKey: ['member_points', member.id] });
     },
     onError: (error: Error) => showError(error.message),
   });
@@ -141,7 +131,7 @@ export const MemberDashboardPanel = ({ member, chores }: MemberDashboardPanelPro
           {!isExpanded ? (
             <>
               <div className="absolute top-2 right-2 bg-primary text-primary-foreground rounded-full px-2 py-1 text-xs font-bold z-10">
-                {isLoadingScore ? <Skeleton className="h-4 w-8 bg-primary/50" /> : `${weeklyScore} pts`}
+                {isLoadingPoints ? <Skeleton className="h-4 w-8 bg-primary/50" /> : `${availablePoints} pts`}
               </div>
               <div className="flex flex-col items-center justify-center p-2">
                 <MemberAvatar memberId={member.id} className="w-24 h-36 mb-2" viewMode="headshot" />
@@ -154,8 +144,8 @@ export const MemberDashboardPanel = ({ member, chores }: MemberDashboardPanelPro
                 <CardTitle>{member.full_name}</CardTitle>
                 <div className="flex items-start gap-2">
                     <div className="text-right">
-                        <p className="text-2xl font-bold">{isLoadingScore ? <Skeleton className="h-8 w-12" /> : weeklyScore}</p>
-                        <p className="text-xs text-muted-foreground">Points this week</p>
+                        <p className="text-2xl font-bold">{isLoadingPoints ? <Skeleton className="h-8 w-12" /> : availablePoints}</p>
+                        <p className="text-xs text-muted-foreground">Available Points</p>
                     </div>
                     <Button
                         variant="secondary"

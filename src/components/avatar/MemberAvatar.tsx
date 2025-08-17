@@ -66,9 +66,9 @@ export const MemberAvatar = ({ memberId, className, viewMode = 'full' }: MemberA
     // Fallback for members with no saved config
     return (
       <div className={cn("relative w-24 h-36", className)}>
-        <img src="https://dvqkkqvjsqjnvwwvxenh.supabase.co/storage/v1/object/public/avatar-assets/head.png" alt="Avatar Head" className="object-contain" style={{ ...headStyle, zIndex: zIndexMap['base_head'] }} />
+        <img src="https://dvqkkqvjsqjnvwwvxenh.supabase.co/storage/v1/object/public/avatars/head.png" alt="Avatar Head" className="object-contain" style={{ ...headStyle, zIndex: zIndexMap['base_head'] }} />
         {viewMode === 'full' && (
-          <img src="https://dvqkkqvjsqjnvwwvxenh.supabase.co/storage/v1/object/public/avatar-assets/body.png" alt="Avatar Body" className="object-contain" style={{ ...bodyStyle, zIndex: zIndexMap['base_body'] }} />
+          <img src="https://dvqkkqvjsqjnvwwvxenh.supabase.co/storage/v1/object/public/avatars/body.png" alt="Avatar Body" className="object-contain" style={{ ...bodyStyle, zIndex: zIndexMap['base_body'] }} />
         )}
       </div>
     );

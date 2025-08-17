@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 interface MemberAvatarProps {
   memberId: string;
   className?: string;
+  viewMode?: 'full' | 'headshot';
 }
 
 type AvatarConfig = Record<string, { id: string; asset_url: string } | null>;
@@ -22,7 +23,7 @@ const zIndexMap: Record<string, number> = {
     accessory: 40,
 };
 
-export const MemberAvatar = ({ memberId, className }: MemberAvatarProps) => {
+export const MemberAvatar = ({ memberId, className, viewMode = 'full' }: MemberAvatarProps) => {
   const { data: savedConfig, isLoading } = useQuery({
     queryKey: ['avatar_config', memberId],
     queryFn: async () => {
@@ -38,13 +39,26 @@ export const MemberAvatar = ({ memberId, className }: MemberAvatarProps) => {
     return <Skeleton className={cn("w-24 h-36 rounded-md", className)} />;
   }
 
-  // If a config is saved, render it. Otherwise, render the default fallback.
+  const renderableItems = savedConfig 
+    ? Object.entries(savedConfig).filter(([category]) => {
+        if (viewMode === 'headshot') {
+          return category === 'base_head' || category === 'hair';
+        }
+        return true; // Full view
+      })
+    : [];
+
+  // If a config is saved, render it based on viewMode.
   if (savedConfig) {
     return (
         <div className={cn("relative w-24 h-36", className)}>
-            {Object.entries(savedConfig).map(([category, item]) => (
+            {renderableItems.map(([category, item]) => (
                 item && <img key={item.id} src={item.asset_url} alt={category} className="absolute inset-0 w-full h-full object-contain" style={{ zIndex: zIndexMap[category] || 15 }} />
             ))}
+            {/* In headshot mode, if base_body is in config, don't show it. But if base_head is NOT, we need a fallback */}
+            {viewMode === 'headshot' && !savedConfig.base_head && (
+                 <img src={BASE_HEAD_URL} alt="Avatar Head" className="absolute inset-0 w-full h-full object-contain" style={{ zIndex: zIndexMap['base_head'] }} />
+            )}
         </div>
     );
   }
@@ -53,7 +67,9 @@ export const MemberAvatar = ({ memberId, className }: MemberAvatarProps) => {
   return (
     <div className={cn("relative w-24 h-36", className)}>
       <img src={BASE_HEAD_URL} alt="Avatar Head" className="absolute inset-0 w-full h-full object-contain" style={{ zIndex: zIndexMap['base_head'] }} />
-      <img src={BASE_BODY_URL} alt="Avatar Body" className="absolute inset-0 w-full h-full object-contain" style={{ zIndex: zIndexMap['base_body'] }} />
+      {viewMode === 'full' && (
+        <img src={BASE_BODY_URL} alt="Avatar Body" className="absolute inset-0 w-full h-full object-contain" style={{ zIndex: zIndexMap['base_body'] }} />
+      )}
     </div>
   );
 };

@@ -137,7 +137,7 @@ export const MemberDashboardPanel = ({ member, chores }: MemberDashboardPanelPro
                 {isLoadingScore ? <Skeleton className="h-4 w-8 bg-primary/50" /> : `${weeklyScore} pts`}
               </div>
               <div className="flex flex-col items-center justify-center p-2">
-                <MemberAvatar memberId={member.id} className="w-24 h-36 mb-2" />
+                <MemberAvatar memberId={member.id} className="w-24 h-36 mb-2" viewMode="headshot" />
                 <h3 className="font-bold text-lg">{member.full_name}</h3>
               </div>
             </>

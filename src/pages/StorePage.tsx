@@ -118,7 +118,7 @@ export const StorePage = () => {
               <StoreItemCard
                 key={item.id}
                 item={item}
-                u
+                point_cost={item.po}
                 isOwned={inventory?.includes(item.id) ?? false}
                 onPurchase={purchaseMutation.mutate}
                 isPurchasing={purchaseMutation.isPending}

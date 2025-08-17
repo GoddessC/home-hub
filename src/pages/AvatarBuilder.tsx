@@ -16,7 +16,7 @@ type AvatarConfig = Record<string, AvatarItem | null>;
 
 // Static URLs for the default base avatar parts
 const BASE_BODY_URL = 'https://dvqkkqvjsqjnvwwvxenh.supabase.co/storage/v1/object/public/avatars/body.png';
-const BASE_HEAD_URL = 'https://dvqkkqvjsqjnvwwvxenh.supabase.co/storage/v1/object/public/avatar-assets/head.png';
+const BASE_HEAD_URL = 'https://dvqkkqvjsqjnvwwvxenh.supabase.co/storage/v1/object/public/avatars/head.png';
 
 const defaultAvatarConfig: AvatarConfig = {
     base_body: { id: 'default_body', asset_url: BASE_BODY_URL },

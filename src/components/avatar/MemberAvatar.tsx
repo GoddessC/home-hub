@@ -52,8 +52,8 @@ export const MemberAvatar = ({ memberId, className }: MemberAvatarProps) => {
   // Fallback for members with no saved config
   return (
     <div className={cn("relative w-24 h-36", className)}>
-      <img src={BASE_BODY_URL} alt="Avatar Body" className="absolute inset-0 w-full h-full object-contain" style={{ zIndex: zIndexMap['base_body'] }} />
       <img src={BASE_HEAD_URL} alt="Avatar Head" className="absolute inset-0 w-full h-full object-contain" style={{ zIndex: zIndexMap['base_head'] }} />
+      <img src={BASE_BODY_URL} alt="Avatar Body" className="absolute inset-0 w-full h-full object-contain" style={{ zIndex: zIndexMap['base_body'] }} />
     </div>
   );
 };

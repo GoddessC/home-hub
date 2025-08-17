@@ -19,7 +19,7 @@ interface StoreItem {
   name: string;
   asset_url: string; // Front-facing image
   asset_url_back?: string | null; // Back hair piece
-  points_cost: number;
+  point_cost: number;
   category: string; // e.g., 'hair', 'shirt'
 }
 
@@ -32,7 +32,7 @@ interface StoreItemCardProps {
 }
 
 export const StoreItemCard = ({ item, userPoints, isOwned, onPurchase, isPurchasing }: StoreItemCardProps) => {
-  const canAfford = userPoints >= item.points_cost;
+  const canAfford = userPoints >= item.point_cost;
   const isHair = item.category === 'hair';
 
   return (
@@ -65,14 +65,14 @@ export const StoreItemCard = ({ item, userPoints, isOwned, onPurchase, isPurchas
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button className="w-full" disabled={!canAfford || isPurchasing}>
-                {item.points_cost} Points
+                {item.point_cost} Points
               </Button>
             </AlertDialogTrigger>
             <AlertDialogContent>
               <AlertDialogHeader>
                 <AlertDialogTitle>Confirm Purchase</AlertDialogTitle>
                 <AlertDialogDescription>
-                  Are you sure you want to spend {item.points_cost} points on the '{item.name}'?
+                  Are you sure you want to spend {item.point_cost} points on the '{item.name}'?
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>

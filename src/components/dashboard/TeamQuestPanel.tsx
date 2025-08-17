@@ -1,12 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Trophy, CheckSquare, Square } from 'lucide-react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/context/AuthContext';
-import { showError } from '@/utils/toast';
-import { Button } from '../ui/button';
+import { Trophy } from 'lucide-react';
 
 export interface Quest {
   id: string;
@@ -16,7 +11,6 @@ export interface Quest {
     id: string;
     description: string;
     is_completed: boolean;
-    member_id: string;
     members: {
       id: string;
       full_name: string;
@@ -30,25 +24,6 @@ interface TeamQuestPanelProps {
 }
 
 export const TeamQuestPanel = ({ quest, isLoading }: TeamQuestPanelProps) => {
-  const queryClient = useQueryClient();
-  const { member: currentUserMember, isAnonymous, household } = useAuth();
-
-  const updateTaskMutation = useMutation({
-    mutationFn: async ({ taskId, isCompleted }: { taskId: string; isCompleted: boolean }) => {
-      const { error } = await supabase
-        .from('quest_sub_tasks')
-        .update({ is_completed: isCompleted, completed_at: isCompleted ? new Date().toISOString() : null })
-        .eq('id', taskId);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['active_quest', household?.id] });
-    },
-    onError: (error: Error) => {
-      showError(`Failed to update task: ${error.message}`);
-    },
-  });
-
   if (isLoading) {
     return <Skeleton className="h-48 w-full" />;
   }
@@ -92,36 +67,12 @@ export const TeamQuestPanel = ({ quest, isLoading }: TeamQuestPanelProps) => {
             <Progress value={progress} className="w-full" />
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
-            {quest.quest_sub_tasks.map(task => {
-              const isOwner = !isAnonymous && currentUserMember?.id === task.member_id;
-              const isAdmin = !isAnonymous && (currentUserMember?.role === 'OWNER' || currentUserMember?.role === 'ADULT');
-              const canComplete = isOwner || isAdmin;
-
-              return (
-                <div
-                  key={task.id}
-                  className={`p-2 rounded-md text-sm flex items-center gap-2 transition-colors ${
-                    task.is_completed ? 'bg-green-500/20 text-green-800' : 'bg-primary/10 text-primary'
-                  }`}
-                >
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6 shrink-0"
-                    disabled={!canComplete || updateTaskMutation.isPending}
-                    onClick={() => {
-                      if (canComplete) {
-                        updateTaskMutation.mutate({ taskId: task.id, isCompleted: !task.is_completed });
-                      }
-                    }}
-                  >
-                    {task.is_completed ? <CheckSquare className="h-5 w-5" /> : <Square className="h-5 w-5" />}
-                  </Button>
-                  <span className={task.is_completed ? 'line-through' : ''}>{task.description}</span>
-                  <span className="text-xs opacity-70 ml-auto whitespace-nowrap">({task.members?.full_name})</span>
-                </div>
-              );
-            })}
+            {quest.quest_sub_tasks.map(task => (
+              <div key={task.id} className={`p-2 rounded-md text-sm ${task.is_completed ? 'bg-green-500/20 text-green-800' : 'bg-primary/10 text-primary'}`}>
+                <span className={task.is_completed ? 'line-through' : ''}>{task.description}</span>
+                <span className="text-xs opacity-70 ml-2">({task.members?.full_name})</span>
+              </div>
+            ))}
           </div>
         </div>
       </CardContent>

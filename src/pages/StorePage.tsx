@@ -10,7 +10,7 @@ import { ArrowLeft, Coins } from 'lucide-react';
 
 export const StorePage = () => {
   const { memberId } = useParams<{ memberId: string }>();
-  const { user, household } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
@@ -45,7 +45,7 @@ export const StorePage = () => {
       }
   }
 
-  // Fetch the member's available points
+  // Fetch the member's available points using the new RPC function
   const { data: memberPoints, isLoading: isLoadingPoints } = useQuery({
     queryKey: ['member_points', memberId],
     queryFn: async () => {
@@ -61,7 +61,7 @@ export const StorePage = () => {
   const { data: storeItems, isLoading: isLoadingItems } = useQuery({
     queryKey: ['store_items_active'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('store_items').select('*').eq('is_active', true);
+      const { data, error } = await supabase.from('avatar_items').select('*');
       if (error) throw error;
       return data;
     },
@@ -87,6 +87,7 @@ export const StorePage = () => {
     },
     onSuccess: () => {
       showSuccess("Purchase successful!");
+      // Refetch data to update points and inventory
       queryClient.invalidateQueries({ queryKey: ['member_points', memberId] });
       queryClient.invalidateQueries({ queryKey: ['member_inventory', memberId] });
     },

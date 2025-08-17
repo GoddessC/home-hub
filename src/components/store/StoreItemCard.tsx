@@ -25,7 +25,7 @@ interface StoreItem {
 
 interface StoreItemCardProps {
   item: StoreItem;
-  userPoints: number;
+  point_cost: number;
   isOwned: boolean;
   onPurchase: (itemId: string) => void;
   isPurchasing: boolean;

@@ -31,16 +31,42 @@ export const MemberManagement = () => {
   const addMemberMutation = useMutation({
     mutationFn: async (values: AddMemberFormValues) => {
         if (!household?.id) throw new Error("Household not found");
-        const { error } = await supabase.from('members').insert({
+        
+        // Create the new member and return their data
+        const { data: newMember, error } = await supabase.from('members').insert({
             ...values,
             household_id: household.id,
             role: 'CHILD',
-        });
+        }).select().single();
+
         if (error) throw error;
+        return newMember;
     },
-    onSuccess: () => {
-        showSuccess('Member added!');
-        queryClient.invalidateQueries({ queryKey: ['members', household?.id] });
+    onSuccess: (newMember) => {
+        if (!newMember) return;
+
+        // Now, create the default avatar config for the new member
+        const base_body_url = 'https://dvqkkqvjsqjnvwwvxenh.supabase.co/storage/v1/object/public/avatar-assets/body.png';
+        const base_head_url = 'https://dvqkkqvjsqjnvwwvxenh.supabase.co/storage/v1/object/public/avatar-assets/head.png';
+        
+        const defaultConfig = {
+            base_body: { id: 'default_body', asset_url: base_body_url },
+            base_head: { id: 'default_head', asset_url: base_head_url },
+            hair: null,
+            shirt: null,
+        };
+
+        supabase.from('member_avatar_config').insert({
+            member_id: newMember.id,
+            config: defaultConfig,
+        }).then(({ error }) => {
+            if (error) {
+                showError(`Failed to create avatar for new member: ${error.message}`);
+            } else {
+                showSuccess('Member added successfully!');
+                queryClient.invalidateQueries({ queryKey: ['members', household?.id] });
+            }
+        });
     },
     onError: (error: Error) => showError(error.message),
   });

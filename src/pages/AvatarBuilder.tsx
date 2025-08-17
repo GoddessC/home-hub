@@ -11,7 +11,7 @@ import { showSuccess, showError } from '@/utils/toast';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { Store } from 'lucide-react';
 
-type AvatarItem = { id: string; asset_url: string };
+type AvatarItem = { id: string; asset_url: string; asset_url_back?: string | null };
 type AvatarConfig = Record<string, AvatarItem | null>;
 
 // Static URLs for the default base avatar parts
@@ -85,10 +85,20 @@ export const AvatarBuilderPage = () => {
     if (over && over.id === 'avatar-drop-zone') {
       const category = active.data.current?.category;
       const asset_url = active.data.current?.asset_url;
+      const asset_url_back = active.data.current?.asset_url_back;
+
       if (category) {
+        const newItem: AvatarItem = { 
+            id: active.id as string, 
+            asset_url 
+        };
+        if (category === 'hair' && asset_url_back) {
+            newItem.asset_url_back = asset_url_back;
+        }
+
         setEquippedItems(prev => ({
           ...prev,
-          [category]: { id: active.id as string, asset_url },
+          [category]: newItem,
         }));
         setIsPoofing(true);
         setTimeout(() => setIsPoofing(false), 300);

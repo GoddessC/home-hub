@@ -7,6 +7,7 @@ interface DraggableAvatarItemProps {
     id: string;
     name: string;
     asset_url: string;
+    asset_url_back?: string | null;
     category: string;
   };
 }
@@ -17,6 +18,7 @@ export const DraggableAvatarItem = ({ item }: DraggableAvatarItemProps) => {
     data: {
       category: item.category,
       asset_url: item.asset_url,
+      asset_url_back: item.asset_url_back,
     },
   });
 
@@ -31,11 +33,24 @@ export const DraggableAvatarItem = ({ item }: DraggableAvatarItemProps) => {
       {...listeners}
       {...attributes}
       className={cn(
-        "p-2 aspect-square flex items-center justify-center cursor-grab touch-none",
+        "p-2 aspect-square flex items-center justify-center cursor-grab touch-none relative",
         isDragging && "opacity-50 z-50 shadow-lg"
       )}
     >
-      <img src={item.asset_url} alt={item.name} className="w-full h-full object-contain" />
+      {item.category === 'hair' && item.asset_url_back && (
+        <img 
+          src={item.asset_url_back} 
+          alt="" 
+          className="absolute inset-0 w-full h-full object-contain"
+          style={{ zIndex: 1 }}
+        />
+      )}
+      <img 
+        src={item.asset_url} 
+        alt={item.name} 
+        className="w-full h-full object-contain relative"
+        style={{ zIndex: 2 }}
+      />
     </Card>
   );
 };

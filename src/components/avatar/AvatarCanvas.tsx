@@ -5,12 +5,10 @@ import { Cloud } from 'lucide-react';
 
 interface AvatarCanvasProps {
   config: Record<string, { id: string; asset_url: string } | null>;
-  baseBodyUrl?: string;
-  baseHeadUrl?: string;
   isPoofing: boolean;
 }
 
-export const AvatarCanvas = ({ config, baseBodyUrl, baseHeadUrl, isPoofing }: AvatarCanvasProps) => {
+export const AvatarCanvas = ({ config, isPoofing }: AvatarCanvasProps) => {
   const { setNodeRef, isOver } = useDroppable({
     id: 'avatar-drop-zone',
   });
@@ -23,6 +21,13 @@ export const AvatarCanvas = ({ config, baseBodyUrl, baseHeadUrl, isPoofing }: Av
     accessory: 40,
   };
 
+  // Extract base layers and equipped items from the config
+  const baseBody = config?.base_body;
+  const baseHead = config?.base_head;
+  const equippedItems = Object.fromEntries(
+    Object.entries(config).filter(([key]) => key !== 'base_body' && key !== 'base_head')
+  );
+
   return (
     <Card
       ref={setNodeRef}
@@ -32,16 +37,16 @@ export const AvatarCanvas = ({ config, baseBodyUrl, baseHeadUrl, isPoofing }: Av
       )}
     >
       <div className="absolute inset-0 w-full h-full">
-        {/* Base Body */}
-        {baseBodyUrl && (
-          <img src={baseBodyUrl} alt="Avatar Body" className="absolute inset-0 w-full h-full object-contain" style={{ zIndex: zIndexMap['base_body'] }} />
+        {/* Base Layers */}
+        {baseBody && (
+          <img src={baseBody.asset_url} alt="Avatar Body" className="absolute inset-0 w-full h-full object-contain" style={{ zIndex: zIndexMap['base_body'] }} />
         )}
-        {baseHeadUrl && (
-          <img src={baseHeadUrl} alt="Avatar Head" className="absolute inset-0 w-full h-full object-contain" style={{ zIndex: zIndexMap['base_head'] }} />
+        {baseHead && (
+          <img src={baseHead.asset_url} alt="Avatar Head" className="absolute inset-0 w-full h-full object-contain" style={{ zIndex: zIndexMap['base_head'] }} />
         )}
 
         {/* Equipped Items */}
-        {Object.entries(config).map(([category, item]) => (
+        {Object.entries(equippedItems).map(([category, item]) => (
           item && <img key={item.id} src={item.asset_url} alt={category} className="absolute inset-0 w-full h-full object-contain" style={{ zIndex: zIndexMap[category] || 15 }} />
         ))}
 

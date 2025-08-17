@@ -18,12 +18,17 @@ type AvatarConfig = Record<string, AvatarItem | null>;
 const BASE_BODY_URL = 'https://dvqkkqvjsqjnvwwvxenh.supabase.co/storage/v1/object/public/avatar-assets/body.png';
 const BASE_HEAD_URL = 'https://dvqkkqvjsqjnvwwvxenh.supabase.co/storage/v1/object/public/avatar-assets/head.png';
 
+const defaultAvatarConfig: AvatarConfig = {
+    base_body: { id: 'default_body', asset_url: BASE_BODY_URL },
+    base_head: { id: 'default_head', asset_url: BASE_HEAD_URL },
+};
+
 export const AvatarBuilderPage = () => {
   const { memberId } = useParams<{ memberId: string }>();
   const { household } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [equippedItems, setEquippedItems] = useState<AvatarConfig>({});
+  const [equippedItems, setEquippedItems] = useState<AvatarConfig>(defaultAvatarConfig);
   const [isPoofing, setIsPoofing] = useState(false);
 
   const { data: member, isLoading: isLoadingMember } = useQuery({
@@ -47,7 +52,8 @@ export const AvatarBuilderPage = () => {
       if (!memberId) return null;
       const { data, error } = await supabase.from('member_avatar_config').select('config').eq('member_id', memberId).single();
       if (error && error.code !== 'PGRST116') throw error;
-      return data?.config as AvatarConfig || {};
+      // If a config exists, merge it with the default, otherwise use the default.
+      return data?.config ? { ...defaultAvatarConfig, ...data.config } : defaultAvatarConfig;
     },
     enabled: !!memberId,
   });
@@ -122,8 +128,6 @@ export const AvatarBuilderPage = () => {
             <div className="flex-grow flex items-center justify-center">
               <AvatarCanvas
                 config={equippedItems}
-                baseBodyUrl={BASE_BODY_URL}
-                baseHeadUrl={BASE_HEAD_URL}
                 isPoofing={isPoofing}
               />
             </div>

@@ -12,12 +12,15 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { cn } from '@/lib/utils';
 
 interface StoreItem {
   id: string;
   name: string;
-  image_url: string;
+  image_url: string; // Corresponds to asset_url (front)
+  asset_url_back?: string | null; // Back hair piece
   point_cost: number;
+  item_type: 'HAT' | 'SHIRT' | 'ACCESSORY' | 'HAIR';
 }
 
 interface StoreItemCardProps {
@@ -30,14 +33,28 @@ interface StoreItemCardProps {
 
 export const StoreItemCard = ({ item, userPoints, isOwned, onPurchase, isPurchasing }: StoreItemCardProps) => {
   const canAfford = userPoints >= item.point_cost;
+  const isHair = item.item_type === 'HAIR';
 
   return (
     <Card className="flex flex-col">
       <CardHeader>
         <CardTitle className="text-lg">{item.name}</CardTitle>
       </CardHeader>
-      <CardContent className="flex-grow flex items-center justify-center">
-        <img src={item.image_url} alt={item.name} className="max-h-32 object-contain" />
+      <CardContent className="flex-grow flex items-center justify-center relative min-h-[150px]">
+        {isHair && item.asset_url_back && (
+          <img 
+            src={item.asset_url_back} 
+            alt={`${item.name} (back)`} 
+            className="absolute inset-0 w-full h-full object-contain"
+            style={{ zIndex: 1 }}
+          />
+        )}
+        <img 
+          src={item.image_url} 
+          alt={item.name} 
+          className={cn("object-contain", isHair ? "absolute inset-0 w-full h-full" : "max-h-32")}
+          style={{ zIndex: 2 }}
+        />
       </CardContent>
       <CardFooter>
         {isOwned ? (

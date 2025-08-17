@@ -3,8 +3,14 @@ import { Card } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { Cloud } from 'lucide-react';
 
+type AvatarItemConfig = { 
+  id: string; 
+  asset_url: string;
+  asset_url_back?: string | null;
+} | null;
+
 interface AvatarCanvasProps {
-  config: Record<string, { id: string; asset_url: string } | null>;
+  config: Record<string, AvatarItemConfig>;
   isPoofing: boolean;
 }
 
@@ -14,19 +20,15 @@ export const AvatarCanvas = ({ config, isPoofing }: AvatarCanvasProps) => {
   });
 
   const zIndexMap: Record<string, number> = {
+    hair_back: 12,
     base_body: 10,
-    base_head: 15,
     shirt: 20,
+    base_head: 15,
     hair: 30,
     accessory: 40,
   };
 
-  // Extract base layers and equipped items from the config
-  const baseBody = config?.base_body;
-  const baseHead = config?.base_head;
-  const equippedItems = Object.fromEntries(
-    Object.entries(config).filter(([key]) => key !== 'base_body' && key !== 'base_head')
-  );
+  const hairItem = config?.hair;
 
   return (
     <Card
@@ -37,18 +39,29 @@ export const AvatarCanvas = ({ config, isPoofing }: AvatarCanvasProps) => {
       )}
     >
       <div className="absolute inset-0 w-full h-full">
-        {/* Base Layers */}
-        {baseHead && (
-          <img src={baseHead.asset_url} alt="Avatar Head" className="absolute inset-0 w-full h-full object-contain" style={{ zIndex: zIndexMap['base_head'] }} />
-        )}
-        {baseBody && (
-          <img src={baseBody.asset_url} alt="Avatar Body" className="absolute inset-0 w-full h-full object-contain" style={{ zIndex: zIndexMap['base_body'] }} />
+        {/* Back Hair Layer */}
+        {hairItem?.asset_url_back && (
+          <img src={hairItem.asset_url_back} alt="Hair Back" className="absolute inset-0 w-full h-full object-contain" style={{ zIndex: zIndexMap['hair_back'] }} />
         )}
 
-        {/* Equipped Items */}
-        {Object.entries(equippedItems).map(([category, item]) => (
-          item && <img key={item.id} src={item.asset_url} alt={category} className="absolute inset-0 w-full h-full object-contain" style={{ zIndex: zIndexMap[category] || 15 }} />
-        ))}
+        {/* Base Layers */}
+        {config.base_body && (
+          <img src={config.base_body.asset_url} alt="Avatar Body" className="absolute inset-0 w-full h-full object-contain" style={{ zIndex: zIndexMap['base_body'] }} />
+        )}
+        {config.base_head && (
+          <img src={config.base_head.asset_url} alt="Avatar Head" className="absolute inset-0 w-full h-full object-contain" style={{ zIndex: zIndexMap['base_head'] }} />
+        )}
+
+        {/* Equipped Items (excluding hair, which is handled separately) */}
+        {Object.entries(config).map(([category, item]) => {
+          if (!item || category === 'hair' || category === 'base_body' || category === 'base_head') return null;
+          return <img key={item.id} src={item.asset_url} alt={category} className="absolute inset-0 w-full h-full object-contain" style={{ zIndex: zIndexMap[category] || 15 }} />
+        })}
+
+        {/* Front Hair Layer */}
+        {hairItem && (
+          <img src={hairItem.asset_url} alt="Hair Front" className="absolute inset-0 w-full h-full object-contain" style={{ zIndex: zIndexMap['hair'] }} />
+        )}
 
         {/* Poof Animation */}
         {isPoofing && (

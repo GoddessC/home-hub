@@ -14,8 +14,8 @@ export const AvatarCanvas = ({ config, isPoofing }: AvatarCanvasProps) => {
   });
 
   const zIndexMap: Record<string, number> = {
-    base_body: 10,
     base_head: 15,
+    base_body: 10,
     shirt: 20,
     hair: 30,
     accessory: 40,

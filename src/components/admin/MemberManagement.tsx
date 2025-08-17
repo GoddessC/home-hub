@@ -46,12 +46,12 @@ export const MemberManagement = () => {
         if (!newMember) return;
 
         // Now, create the default avatar config for the new member
-        const base_body_url = 'https://dvqkkqvjsqjnvwwvxenh.supabase.co/storage/v1/object/public/avatar-assets/body.png';
         const base_head_url = 'https://dvqkkqvjsqjnvwwvxenh.supabase.co/storage/v1/object/public/avatar-assets/head.png';
+        const base_body_url = 'https://dvqkkqvjsqjnvwwvxenh.supabase.co/storage/v1/object/public/avatar-assets/body.png';
         
         const defaultConfig = {
-            base_body: { id: 'default_body', asset_url: base_body_url },
             base_head: { id: 'default_head', asset_url: base_head_url },
+            base_body: { id: 'default_body', asset_url: base_body_url },
             hair: null,
             shirt: null,
         };

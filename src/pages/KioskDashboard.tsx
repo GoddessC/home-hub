@@ -113,9 +113,9 @@ const KioskDashboard = () => {
   });
 
   return (
-    <div className={cn("flex flex-col min-h-screen", isAnonymous ? "bg-gray-900 text-white dark" : "bg-gray-50")}>
-      <header className={cn("p-4 sticky top-0 z-40", isAnonymous ? "bg-gray-800 shadow-md" : "bg-white shadow-sm")}>
-        <div className="container mx-auto flex justify-between items-center">
+    <div className={cn("flex flex-col min-h-screen dashboardBG", isAnonymous ? "text-white dark" : "")}>
+      <header className={cn("p-4 sticky top-0 z-40", isAnonymous ? " shadow-md" : "shadow-sm")}>
+        <div className="w-full px-4 flex justify-between items-center">
           <h1 className={cn("text-2xl font-bold", isAnonymous ? "" : "text-gray-800")}>
             {household?.name || (isAnonymous ? 'Kiosk Mode' : 'Dashboard')}
           </h1>
@@ -142,7 +142,7 @@ const KioskDashboard = () => {
           </div>
         </div>
       </header>
-      <main className="flex-grow container mx-auto p-4 md:p-8 main-container bottom-right">
+      <main className="flex-grow container mx-auto p-4 md:p-8 main-container bottom-right glass-card">
         <div className="space-y-8">
           <TeamQuestPanel quest={activeQuest} isLoading={isLoadingQuest} />
           <AnnouncementPanel />

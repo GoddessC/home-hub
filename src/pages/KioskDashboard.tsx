@@ -142,7 +142,7 @@ const KioskDashboard = () => {
           </div>
         </div>
       </header>
-      <main className="flex-grow container mx-auto p-4 md:p-8">
+      <main className="flex-grow container mx-auto p-4 md:p-8 main-container bottom-right">
         <div className="space-y-8">
           <TeamQuestPanel quest={activeQuest} isLoading={isLoadingQuest} />
           <AnnouncementPanel />
@@ -163,12 +163,12 @@ const KioskDashboard = () => {
       </main>
  
       {household?.is_calm_corner_enabled && (
-        <Link to="/kiosk/calm-corner" className="fixed bottom-8 right-8">
+        <Link to="/kiosk/calm-corner" className="fixed bottom-2 right-2">
             <Button 
                 variant="secondary" 
                 size="lg" 
                 className={cn(
-                    "rounded-full h-20 w-20 shadow-lg bg-green-500 hover:bg-green-600 text-white flex flex-col items-center justify-center gap-1 transition-transform transform hover:scale-110", 
+                    "rounded-full h-40 w-40 shadow-lg bg-green-500 hover:bg-green-600 text-white flex flex-col items-center justify-center gap-1 transition-transform transform hover:scale-110", 
                     isPulsing && "animate-pulse"
                 )}
                 onClick={() => setIsPulsing(false)}

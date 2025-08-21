@@ -7,7 +7,7 @@ interface DraggableAvatarItemProps {
     id: string;
     name: string;
     asset_url: string;
-    asset_url_back: string;
+    asset_url_back?: string | null;
     category: string;
   };
 }
@@ -56,12 +56,14 @@ export const DraggableAvatarItem = ({ item }: DraggableAvatarItemProps) => {
       )}
     >
       <div className="absolute inset-0 w-full h-full">
-        <img
-          src={item.asset_url_back}
-          alt="Hair Back"
-          className="object-contain absolute inset-0 w-full h-full"
-          style={{ zIndex: zIndexMap['hair_back'] }}
-        />
+        {item.asset_url_back && (
+          <img
+            src={item.asset_url_back}
+            alt="Hair Back"
+            className="object-contain absolute inset-0 w-full h-full"
+            style={{ zIndex: zIndexMap['hair_back'] }}
+          />
+        )}
         <img
           src="https://dvqkkqvjsqjnvwwvxenh.supabase.co/storage/v1/object/public/avatars/head.png"
           alt="Avatar Head"

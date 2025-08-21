@@ -13,6 +13,7 @@ type AvatarItem = {
     name: string;
     category: string;
     asset_url: string;
+    asset_url_back: string | null;
     points_cost: number;
     created_at: string;
 }

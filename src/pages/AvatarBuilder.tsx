@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { showSuccess, showError } from '@/utils/toast';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { Store } from 'lucide-react';
+import SkinTonePicker, { SkinTone } from '@/components/avatar/SkinTonePicker';
 
 type AvatarItem = { id: string; asset_url: string };
 type AvatarConfig = Record<string, AvatarItem | null>;
@@ -30,6 +31,21 @@ export const AvatarBuilderPage = () => {
   const queryClient = useQueryClient();
   const [equippedItems, setEquippedItems] = useState<AvatarConfig>(defaultAvatarConfig);
   const [isPoofing, setIsPoofing] = useState(false);
+
+  // handler to update base layers when user picks a skin tone
+  const handleSkinToneSelect = (tone: SkinTone) => {
+    setEquippedItems(prev => ({
+      ...prev,
+      base_head: prev.base_head
+        ? { ...prev.base_head, id: `base_head_${tone.name}`, asset_url: tone.headUrl }
+        : { id: `base_head_${tone.name}`, asset_url: tone.headUrl },
+      base_body: prev.base_body
+        ? { ...prev.base_body, id: `base_body_${tone.name}`, asset_url: tone.bodyUrl }
+        : { id: `base_body_${tone.name}`, asset_url: tone.bodyUrl },
+    }));
+    setIsPoofing(true);
+    setTimeout(() => setIsPoofing(false), 300);
+  };
 
   const { data: member, isLoading: isLoadingMember } = useQuery({
     queryKey: ['member', memberId],
@@ -124,7 +140,13 @@ export const AvatarBuilderPage = () => {
         </header>
         <main className="flex-grow container mx-auto p-4 md:p-8">
           <div className="flex flex-col md:flex-row gap-8">
-            <InventoryPanel memberId={memberId} />
+            <div className="w-full md:w-1/2 lg:w-2/5 flex flex-col gap-6">
+              <SkinTonePicker
+                onSelect={handleSkinToneSelect}
+                selectedHeadUrl={equippedItems?.base_head?.asset_url}
+              />
+              <InventoryPanel memberId={memberId} />
+            </div>
             <div className="flex-grow flex items-center justify-center">
               <AvatarCanvas
                 config={equippedItems}

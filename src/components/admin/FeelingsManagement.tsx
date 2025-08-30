@@ -11,6 +11,8 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { showSuccess, showError } from '@/utils/toast';
 import { FeelingsChart } from './FeelingsChart';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { ChevronsUpDown } from 'lucide-react';
 
 const settingsSchema = z.object({
   is_feelings_enabled: z.boolean(),
@@ -58,65 +60,77 @@ export const FeelingsManagement = () => {
   });
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Daily Feelings Check-in</CardTitle>
-        <CardDescription>Configure prompts for household members to log their feelings.</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit((data) => updateSettingsMutation.mutate(data))} className="space-y-8">
-          <div className="flex items-center justify-between p-4 border rounded-lg">
-            <Label htmlFor="is_feelings_enabled" className="font-medium">Enable Feelings Check-in</Label>
-            <Controller
-              name="is_feelings_enabled"
-              control={control}
-              render={({ field }) => <Switch id="is_feelings_enabled" checked={field.value} onCheckedChange={field.onChange} />}
-            />
+    <Collapsible defaultOpen>
+      <Card>
+        <CardHeader className="flex-row items-center justify-between">
+          <div>
+            <CardTitle>Daily Feelings Check-in</CardTitle>
+            <CardDescription>Configure prompts for household members to log their feelings.</CardDescription>
           </div>
-
-          {isEnabled && (
-            <div className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <Label htmlFor="feelings_morning_time">Morning Check-in Time</Label>
-                  <Controller
-                    name="feelings_morning_time"
-                    control={control}
-                    render={({ field }) => <Input id="feelings_morning_time" type="time" {...field} value={field.value ?? ''} />}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="feelings_evening_time">Evening Check-in Time</Label>
-                  <Controller
-                    name="feelings_evening_time"
-                    control={control}
-                    render={({ field }) => <Input id="feelings_evening_time" type="time" {...field} value={field.value ?? ''} />}
-                  />
-                </div>
-              </div>
+          <CollapsibleTrigger asChild>
+            <Button variant="ghost" size="icon">
+              <ChevronsUpDown className="h-4 w-4" />
+              <span className="sr-only">Toggle</span>
+            </Button>
+          </CollapsibleTrigger>
+        </CardHeader>
+        <CollapsibleContent>
+          <CardContent>
+            <form onSubmit={handleSubmit((data) => updateSettingsMutation.mutate(data))} className="space-y-8">
               <div className="flex items-center justify-between p-4 border rounded-lg">
-                <div>
-                    <Label htmlFor="feelings_notify_on_negative" className="font-medium">Negative Streak Notifications</Label>
-                    <p className="text-sm text-muted-foreground">Get a notification after 2 consecutive 'Sad' or 'Angry' check-ins.</p>
-                </div>
+                <Label htmlFor="is_feelings_enabled" className="font-medium">Enable Feelings Check-in</Label>
                 <Controller
-                  name="feelings_notify_on_negative"
+                  name="is_feelings_enabled"
                   control={control}
-                  render={({ field }) => <Switch id="feelings_notify_on_negative" checked={field.value} onCheckedChange={field.onChange} />}
+                  render={({ field }) => <Switch id="is_feelings_enabled" checked={field.value} onCheckedChange={field.onChange} />}
                 />
               </div>
-              <div>
-                <h4 className="text-lg font-semibold mb-2">Feelings Chart</h4>
-                <FeelingsChart />
-              </div>
-            </div>
-          )}
 
-          <Button type="submit" disabled={isSubmitting || updateSettingsMutation.isPending || !isDirty}>
-            {updateSettingsMutation.isPending ? 'Saving...' : 'Save Settings'}
-          </Button>
-        </form>
-      </CardContent>
-    </Card>
+              {isEnabled && (
+                <div className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <Label htmlFor="feelings_morning_time">Morning Check-in Time</Label>
+                      <Controller
+                        name="feelings_morning_time"
+                        control={control}
+                        render={({ field }) => <Input id="feelings_morning_time" type="time" {...field} value={field.value ?? ''} />}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="feelings_evening_time">Evening Check-in Time</Label>
+                      <Controller
+                        name="feelings_evening_time"
+                        control={control}
+                        render={({ field }) => <Input id="feelings_evening_time" type="time" {...field} value={field.value ?? ''} />}
+                      />
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between p-4 border rounded-lg">
+                    <div>
+                        <Label htmlFor="feelings_notify_on_negative" className="font-medium">Negative Streak Notifications</Label>
+                        <p className="text-sm text-muted-foreground">Get a notification after 2 consecutive 'Sad' or 'Angry' check-ins.</p>
+                    </div>
+                    <Controller
+                      name="feelings_notify_on_negative"
+                      control={control}
+                      render={({ field }) => <Switch id="feelings_notify_on_negative" checked={field.value} onCheckedChange={field.onChange} />}
+                    />
+                  </div>
+                  <div>
+                    <h4 className="text-lg font-semibold mb-2">Feelings Chart</h4>
+                    <FeelingsChart />
+                  </div>
+                </div>
+              )}
+
+              <Button type="submit" disabled={isSubmitting || updateSettingsMutation.isPending || !isDirty}>
+                {updateSettingsMutation.isPending ? 'Saving...' : 'Save Settings'}
+              </Button>
+            </form>
+          </CardContent>
+        </CollapsibleContent>
+      </Card>
+    </Collapsible>
   );
 };

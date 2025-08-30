@@ -9,6 +9,8 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { showSuccess, showError } from '@/utils/toast';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { ChevronsUpDown } from 'lucide-react';
 
 const settingsSchema = z.object({
   chore_reset_frequency: z.string(),
@@ -77,50 +79,62 @@ export const HouseholdSettings = () => {
   });
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Household Settings</CardTitle>
-        <CardDescription>Manage general settings for your household.</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit((data) => updateSettingsMutation.mutate(data))} className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                    <Label>Point Reset Frequency</Label>
-                    <Select onValueChange={(value) => setValue('chore_reset_frequency', value, { shouldDirty: true })} value={chore_reset_frequency}>
-                        <SelectTrigger>
-                            <SelectValue placeholder="Select frequency" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {resetFrequencies.map(freq => (
-                                <SelectItem key={freq.value} value={freq.value}>{freq.label}</SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                    <p className="text-sm text-muted-foreground">How often member points should reset to zero.</p>
-                </div>
-                {chore_reset_frequency === 'WEEKLY' && (
+    <Collapsible defaultOpen>
+      <Card>
+        <CardHeader className="flex-row items-center justify-between">
+          <div>
+            <CardTitle>Household Settings</CardTitle>
+            <CardDescription>Manage general settings for your household.</CardDescription>
+          </div>
+          <CollapsibleTrigger asChild>
+            <Button variant="ghost" size="icon">
+              <ChevronsUpDown className="h-4 w-4" />
+              <span className="sr-only">Toggle</span>
+            </Button>
+          </CollapsibleTrigger>
+        </CardHeader>
+        <CollapsibleContent>
+          <CardContent>
+            <form onSubmit={handleSubmit((data) => updateSettingsMutation.mutate(data))} className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
-                        <Label>Weekly Reset Day</Label>
-                        <Select onValueChange={(value) => setValue('chore_reset_day', Number(value), { shouldDirty: true })} value={String(chore_reset_day)}>
-                        <SelectTrigger>
-                            <SelectValue placeholder="Select a day" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {daysOfWeek.map(day => (
-                            <SelectItem key={day.value} value={String(day.value)}>{day.label}</SelectItem>
-                            ))}
-                        </SelectContent>
+                        <Label>Point Reset Frequency</Label>
+                        <Select onValueChange={(value) => setValue('chore_reset_frequency', value, { shouldDirty: true })} value={chore_reset_frequency}>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Select frequency" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {resetFrequencies.map(freq => (
+                                    <SelectItem key={freq.value} value={freq.value}>{freq.label}</SelectItem>
+                                ))}
+                            </SelectContent>
                         </Select>
-                        <p className="text-sm text-muted-foreground">The day on which weekly point totals are reset.</p>
+                        <p className="text-sm text-muted-foreground">How often member points should reset to zero.</p>
                     </div>
-                )}
-            </div>
-          <Button type="submit" disabled={updateSettingsMutation.isPending || isSubmitting || !isDirty}>
-            {updateSettingsMutation.isPending ? 'Saving...' : 'Save Settings'}
-          </Button>
-        </form>
-      </CardContent>
-    </Card>
+                    {chore_reset_frequency === 'WEEKLY' && (
+                        <div className="space-y-2">
+                            <Label>Weekly Reset Day</Label>
+                            <Select onValueChange={(value) => setValue('chore_reset_day', Number(value), { shouldDirty: true })} value={String(chore_reset_day)}>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Select a day" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {daysOfWeek.map(day => (
+                                <SelectItem key={day.value} value={String(day.value)}>{day.label}</SelectItem>
+                                ))}
+                            </SelectContent>
+                            </Select>
+                            <p className="text-sm text-muted-foreground">The day on which weekly point totals are reset.</p>
+                        </div>
+                    )}
+                </div>
+              <Button type="submit" disabled={updateSettingsMutation.isPending || isSubmitting || !isDirty}>
+                {updateSettingsMutation.isPending ? 'Saving...' : 'Save Settings'}
+              </Button>
+            </form>
+          </CardContent>
+        </CollapsibleContent>
+      </Card>
+    </Collapsible>
   );
 };

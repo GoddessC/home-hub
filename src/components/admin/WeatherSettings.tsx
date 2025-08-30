@@ -11,6 +11,8 @@ import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { showSuccess, showError } from '@/utils/toast';
 import { cn } from '@/lib/utils';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { ChevronsUpDown } from 'lucide-react';
 
 const weatherSchema = z.object({
   weather_location: z.string().min(1, 'Location is required.'),
@@ -56,51 +58,63 @@ export const WeatherSettings = () => {
   });
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Location & Weather</CardTitle>
-        <CardDescription>Set your location to display local weather on the dashboard.</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit((data) => updateSettingsMutation.mutate(data))} className="space-y-6">
-          <div className="space-y-2">
-            <Label htmlFor="weather_location">Location (ZIP Code or City, State)</Label>
-            <Input 
-              id="weather_location" 
-              {...register('weather_location')} 
-              placeholder="e.g., 90210 or New York, NY"
-              className={cn(errors.weather_location && "border-destructive")}
-            />
-            {errors.weather_location && <p className="text-red-500 text-sm">{errors.weather_location.message}</p>}
+    <Collapsible defaultOpen>
+      <Card>
+        <CardHeader className="flex-row items-center justify-between">
+          <div>
+            <CardTitle>Location & Weather</CardTitle>
+            <CardDescription>Set your location to display local weather on the dashboard.</CardDescription>
           </div>
-          <div className="space-y-2">
-            <Label>Temperature Units</Label>
-            <Controller
-              name="weather_units"
-              control={control}
-              render={({ field }) => (
-                <RadioGroup
-                  onValueChange={field.onChange}
-                  defaultValue={field.value}
-                  className="flex items-center gap-4"
-                >
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="imperial" id="imperial" />
-                    <Label htmlFor="imperial">Fahrenheit (°F)</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="metric" id="metric" />
-                    <Label htmlFor="metric">Celsius (°C)</Label>
-                  </div>
-                </RadioGroup>
-              )}
-            />
-          </div>
-          <Button type="submit" disabled={isSubmitting || updateSettingsMutation.isPending || !isDirty}>
-            {updateSettingsMutation.isPending ? 'Saving...' : 'Save Weather Settings'}
-          </Button>
-        </form>
-      </CardContent>
-    </Card>
+          <CollapsibleTrigger asChild>
+            <Button variant="ghost" size="icon">
+              <ChevronsUpDown className="h-4 w-4" />
+              <span className="sr-only">Toggle</span>
+            </Button>
+          </CollapsibleTrigger>
+        </CardHeader>
+        <CollapsibleContent>
+          <CardContent>
+            <form onSubmit={handleSubmit((data) => updateSettingsMutation.mutate(data))} className="space-y-6">
+              <div className="space-y-2">
+                <Label htmlFor="weather_location">Location (ZIP Code or City, State)</Label>
+                <Input 
+                  id="weather_location" 
+                  {...register('weather_location')} 
+                  placeholder="e.g., 90210 or New York, NY"
+                  className={cn(errors.weather_location && "border-destructive")}
+                />
+                {errors.weather_location && <p className="text-red-500 text-sm">{errors.weather_location.message}</p>}
+              </div>
+              <div className="space-y-2">
+                <Label>Temperature Units</Label>
+                <Controller
+                  name="weather_units"
+                  control={control}
+                  render={({ field }) => (
+                    <RadioGroup
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                      className="flex items-center gap-4"
+                    >
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="imperial" id="imperial" />
+                        <Label htmlFor="imperial">Fahrenheit (°F)</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="metric" id="metric" />
+                        <Label htmlFor="metric">Celsius (°C)</Label>
+                      </div>
+                    </RadioGroup>
+                  )}
+                />
+              </div>
+              <Button type="submit" disabled={isSubmitting || updateSettingsMutation.isPending || !isDirty}>
+                {updateSettingsMutation.isPending ? 'Saving...' : 'Save Weather Settings'}
+              </Button>
+            </form>
+          </CardContent>
+        </CollapsibleContent>
+      </Card>
+    </Collapsible>
   );
 };

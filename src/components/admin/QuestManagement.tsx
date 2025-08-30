@@ -10,8 +10,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { showSuccess, showError } from '@/utils/toast';
-import { PlusCircle, Trash2, Rocket } from 'lucide-react';
+import { PlusCircle, Trash2, Rocket, ChevronsUpDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 const subTaskSchema = z.object({
   description: z.string().min(3, 'Description is too short.'),
@@ -78,73 +79,85 @@ export const QuestManagement = () => {
   });
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Team Quests</CardTitle>
-        <CardDescription>Create collaborative goals for your household with a shared reward.</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit(data => addQuestMutation.mutate(data))} className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">Quest Name</Label>
-              <Input id="name" {...register('name')} placeholder="e.g., Operation: Tidy Living Room" className={cn(errors.name && "border-destructive")} />
-              {errors.name && <p className="text-red-500 text-sm">{errors.name.message}</p>}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="reward_points_each">Bonus Points (for each member)</Label>
-              <Input id="reward_points_each" type="number" {...register('reward_points_each')} className={cn(errors.reward_points_each && "border-destructive")} />
-              {errors.reward_points_each && <p className="text-red-500 text-sm">{errors.reward_points_each.message}</p>}
-            </div>
-          </div>
-
+    <Collapsible defaultOpen>
+      <Card>
+        <CardHeader className="flex-row items-center justify-between">
           <div>
-            <Label>Sub-Tasks</Label>
-            <div className="space-y-4 mt-2">
-              {fields.map((field, index) => (
-                <div key={field.id} className="flex items-start gap-2 p-3 bg-secondary rounded-lg">
-                  <div className="flex-grow grid grid-cols-1 md:grid-cols-2 gap-2">
-                    <Input
-                      {...register(`sub_tasks.${index}.description`)}
-                      placeholder={`Task #${index + 1}`}
-                      className="bg-background"
-                    />
-                    <Controller
-                      control={control}
-                      name={`sub_tasks.${index}.member_id`}
-                      render={({ field: controllerField }) => (
-                        <Select onValueChange={controllerField.onChange} defaultValue={controllerField.value}>
-                          <SelectTrigger className="bg-background">
-                            <SelectValue placeholder="Assign to..." />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {members?.map(member => (
-                              <SelectItem key={member.id} value={member.id}>{member.full_name}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      )}
-                    />
-                  </div>
-                  <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)} disabled={fields.length <= 1}>
-                    <Trash2 className="h-4 w-4 text-destructive" />
-                  </Button>
-                </div>
-              ))}
-              {errors.sub_tasks?.root && <p className="text-red-500 text-sm">{errors.sub_tasks.root.message}</p>}
-            </div>
-            <Button type="button" variant="outline" size="sm" className="mt-4" onClick={() => append({ description: '', member_id: '' })}>
-              <PlusCircle className="h-4 w-4 mr-2" />
-              Add Task
-            </Button>
+            <CardTitle>Team Quests</CardTitle>
+            <CardDescription>Create collaborative goals for your household with a shared reward.</CardDescription>
           </div>
+          <CollapsibleTrigger asChild>
+            <Button variant="ghost" size="icon">
+              <ChevronsUpDown className="h-4 w-4" />
+              <span className="sr-only">Toggle</span>
+            </Button>
+          </CollapsibleTrigger>
+        </CardHeader>
+        <CollapsibleContent>
+          <CardContent>
+            <form onSubmit={handleSubmit(data => addQuestMutation.mutate(data))} className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="name">Quest Name</Label>
+                  <Input id="name" {...register('name')} placeholder="e.g., Operation: Tidy Living Room" className={cn(errors.name && "border-destructive")} />
+                  {errors.name && <p className="text-red-500 text-sm">{errors.name.message}</p>}
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="reward_points_each">Bonus Points (for each member)</Label>
+                  <Input id="reward_points_each" type="number" {...register('reward_points_each')} className={cn(errors.reward_points_each && "border-destructive")} />
+                  {errors.reward_points_each && <p className="text-red-500 text-sm">{errors.reward_points_each.message}</p>}
+                </div>
+              </div>
 
-          <Button type="submit" disabled={isSubmitting || addQuestMutation.isPending}>
-            <Rocket className="h-4 w-4 mr-2" />
-            {addQuestMutation.isPending ? 'Launching...' : 'Launch Quest'}
-          </Button>
-        </form>
-      </CardContent>
-    </Card>
+              <div>
+                <Label>Sub-Tasks</Label>
+                <div className="space-y-4 mt-2">
+                  {fields.map((field, index) => (
+                    <div key={field.id} className="flex items-start gap-2 p-3 bg-secondary rounded-lg">
+                      <div className="flex-grow grid grid-cols-1 md:grid-cols-2 gap-2">
+                        <Input
+                          {...register(`sub_tasks.${index}.description`)}
+                          placeholder={`Task #${index + 1}`}
+                          className="bg-background"
+                        />
+                        <Controller
+                          control={control}
+                          name={`sub_tasks.${index}.member_id`}
+                          render={({ field: controllerField }) => (
+                            <Select onValueChange={controllerField.onChange} defaultValue={controllerField.value}>
+                              <SelectTrigger className="bg-background">
+                                <SelectValue placeholder="Assign to..." />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {members?.map(member => (
+                                  <SelectItem key={member.id} value={member.id}>{member.full_name}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          )}
+                        />
+                      </div>
+                      <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)} disabled={fields.length <= 1}>
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </div>
+                  ))}
+                  {errors.sub_tasks?.root && <p className="text-red-500 text-sm">{errors.sub_tasks.root.message}</p>}
+                </div>
+                <Button type="button" variant="outline" size="sm" className="mt-4" onClick={() => append({ description: '', member_id: '' })}>
+                  <PlusCircle className="h-4 w-4 mr-2" />
+                  Add Task
+                </Button>
+              </div>
+
+              <Button type="submit" disabled={isSubmitting || addQuestMutation.isPending}>
+                <Rocket className="h-4 w-4 mr-2" />
+                {addQuestMutation.isPending ? 'Launching...' : 'Launch Quest'}
+              </Button>
+            </form>
+          </CardContent>
+        </CollapsibleContent>
+      </Card>
+    </Collapsible>
   );
 };

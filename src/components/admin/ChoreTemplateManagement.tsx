@@ -7,8 +7,9 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { showSuccess, showError } from '@/utils/toast';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Trash2, PlusCircle, Pencil, Repeat, Repeat1 } from 'lucide-react';
+import { Trash2, PlusCircle, Pencil, Repeat, Repeat1, ChevronsUpDown } from 'lucide-react';
 import { ChoreTemplateForm, ChoreTemplateFormValues } from './ChoreTemplateForm';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 type ChoreTemplate = ChoreTemplateFormValues & {
   id: string;
@@ -84,47 +85,59 @@ export const ChoreTemplateManagement = () => {
 
   return (
     <>
-      <Card>
-        <CardHeader className="flex-row items-center justify-between">
-          <div>
-            <CardTitle>Chore Templates</CardTitle>
-            <CardDescription>Create and manage the master list of chores for your household.</CardDescription>
-          </div>
-          <Button onClick={handleCreate}>
-            <PlusCircle className="h-4 w-4 mr-2" />
-            Create Template
-          </Button>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="space-y-2"><Skeleton className="h-16 w-full" /><Skeleton className="h-16 w-full" /></div>
-          ) : choreTemplates && choreTemplates.length > 0 ? (
-            <ul className="space-y-3">
-              {choreTemplates.map(template => (
-                <li key={template.id} className="flex items-center justify-between p-3 bg-secondary rounded-lg">
-                  <div className="flex items-center gap-3">
-                    {template.recurrence_type === 'NONE' ? <Repeat1 className="h-5 w-5 text-muted-foreground" /> : <Repeat className="h-5 w-5 text-blue-600" />}
-                    <div>
-                        <p className="font-medium">{template.title}</p>
-                        <p className="text-xs text-muted-foreground">{template.points} points · {recurrenceText[template.recurrence_type as keyof typeof recurrenceText]}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center">
-                    <Button variant="ghost" size="icon" onClick={() => handleEdit(template)}>
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button variant="ghost" size="icon" onClick={() => deleteMutation.mutate(template.id)} disabled={deleteMutation.isPending}>
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="text-sm text-muted-foreground text-center py-4">No chore templates created yet. Add one to get started.</p>
-          )}
-        </CardContent>
-      </Card>
+      <Collapsible defaultOpen>
+        <Card>
+          <CardHeader className="flex-row items-center justify-between">
+            <div>
+              <CardTitle>Chore Templates</CardTitle>
+              <CardDescription>Create and manage the master list of chores for your household.</CardDescription>
+            </div>
+            <div className="flex items-center gap-1">
+              <Button onClick={handleCreate}>
+                <PlusCircle className="h-4 w-4 mr-2" />
+                Create Template
+              </Button>
+              <CollapsibleTrigger asChild>
+                <Button variant="ghost" size="icon">
+                  <ChevronsUpDown className="h-4 w-4" />
+                  <span className="sr-only">Toggle</span>
+                </Button>
+              </CollapsibleTrigger>
+            </div>
+          </CardHeader>
+          <CollapsibleContent>
+            <CardContent>
+              {isLoading ? (
+                <div className="space-y-2"><Skeleton className="h-16 w-full" /><Skeleton className="h-16 w-full" /></div>
+              ) : choreTemplates && choreTemplates.length > 0 ? (
+                <ul className="space-y-3">
+                  {choreTemplates.map(template => (
+                    <li key={template.id} className="flex items-center justify-between p-3 bg-secondary rounded-lg">
+                      <div className="flex items-center gap-3">
+                        {template.recurrence_type === 'NONE' ? <Repeat1 className="h-5 w-5 text-muted-foreground" /> : <Repeat className="h-5 w-5 text-blue-600" />}
+                        <div>
+                            <p className="font-medium">{template.title}</p>
+                            <p className="text-xs text-muted-foreground">{template.points} points · {recurrenceText[template.recurrence_type as keyof typeof recurrenceText]}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center">
+                        <Button variant="ghost" size="icon" onClick={() => handleEdit(template)}>
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={() => deleteMutation.mutate(template.id)} disabled={deleteMutation.isPending}>
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-sm text-muted-foreground text-center py-4">No chore templates created yet. Add one to get started.</p>
+              )}
+            </CardContent>
+          </CollapsibleContent>
+        </Card>
+      </Collapsible>
       <Dialog open={isFormOpen} onOpenChange={setFormOpen}>
         <DialogContent>
           <DialogHeader>

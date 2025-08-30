@@ -3,13 +3,14 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth, Member } from '@/context/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, Trash2 } from 'lucide-react';
+import { PlusCircle, Trash2, ChevronsUpDown } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AddMemberDialog, AddMemberFormValues } from '@/components/members/AddMemberDialog';
 import { showError, showSuccess } from '@/utils/toast';
 import { MemberAvatar } from '../avatar/MemberAvatar';
 import { useState } from 'react';
 import { AssignChoreDialog } from './AssignChoreDialog';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 export const MemberManagement = () => {
   const { household } = useAuth();
@@ -88,49 +89,61 @@ export const MemberManagement = () => {
 
   return (
     <>
-      <Card>
-        <CardHeader className="flex-row items-center justify-between">
-          <div>
-            <CardTitle>Household Members</CardTitle>
-            <CardDescription>Add, remove, and manage members of your household.</CardDescription>
-          </div>
-          <AddMemberDialog onAddMember={addMemberMutation.mutate}>
-              <Button>
-                  <PlusCircle className="h-4 w-4 mr-2" />
-                  Add Member
-              </Button>
-          </AddMemberDialog>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="space-y-2"><Skeleton className="h-16 w-full" /><Skeleton className="h-16 w-full" /></div>
-          ) : members && members.length > 0 ? (
-            <ul className="space-y-3">
-              {members.map((member) => (
-                <li key={member.id} className="flex items-center justify-between p-3 bg-secondary rounded-lg">
-                  <div className="flex items-center gap-4">
-                    <MemberAvatar memberId={member.id} className="w-12 h-16" />
-                    <span className="font-medium">{member.full_name}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Button variant="outline" size="sm" onClick={() => setAssigningToMember(member)}>
+      <Collapsible defaultOpen>
+        <Card>
+          <CardHeader className="flex-row items-center justify-between">
+            <div>
+              <CardTitle>Household Members</CardTitle>
+              <CardDescription>Add, remove, and manage members of your household.</CardDescription>
+            </div>
+            <div className="flex items-center gap-1">
+              <AddMemberDialog onAddMember={addMemberMutation.mutate}>
+                  <Button>
                       <PlusCircle className="h-4 w-4 mr-2" />
-                      Assign
-                    </Button>
-                    {member.role !== 'OWNER' && (
-                      <Button variant="ghost" size="icon" onClick={() => deleteMemberMutation.mutate(member.id)} disabled={deleteMemberMutation.isPending}>
-                        <Trash2 className="h-5 w-5 text-destructive" />
-                      </Button>
-                    )}
-                  </div>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="text-sm text-muted-foreground text-center py-4">No members found. Add one to get started!</p>
-          )}
-        </CardContent>
-      </Card>
+                      Add Member
+                  </Button>
+              </AddMemberDialog>
+              <CollapsibleTrigger asChild>
+                <Button variant="ghost" size="icon">
+                  <ChevronsUpDown className="h-4 w-4" />
+                  <span className="sr-only">Toggle</span>
+                </Button>
+              </CollapsibleTrigger>
+            </div>
+          </CardHeader>
+          <CollapsibleContent>
+            <CardContent>
+              {isLoading ? (
+                <div className="space-y-2"><Skeleton className="h-16 w-full" /><Skeleton className="h-16 w-full" /></div>
+              ) : members && members.length > 0 ? (
+                <ul className="space-y-3">
+                  {members.map((member) => (
+                    <li key={member.id} className="flex items-center justify-between p-3 bg-secondary rounded-lg">
+                      <div className="flex items-center gap-4">
+                        <MemberAvatar memberId={member.id} className="w-12 h-16" />
+                        <span className="font-medium">{member.full_name}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button variant="outline" size="sm" onClick={() => setAssigningToMember(member)}>
+                          <PlusCircle className="h-4 w-4 mr-2" />
+                          Assign
+                        </Button>
+                        {member.role !== 'OWNER' && (
+                          <Button variant="ghost" size="icon" onClick={() => deleteMemberMutation.mutate(member.id)} disabled={deleteMemberMutation.isPending}>
+                            <Trash2 className="h-5 w-5 text-destructive" />
+                          </Button>
+                        )}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-sm text-muted-foreground text-center py-4">No members found. Add one to get started!</p>
+              )}
+            </CardContent>
+          </CollapsibleContent>
+        </Card>
+      </Collapsible>
       {assigningToMember && (
         <AssignChoreDialog
           isOpen={!!assigningToMember}

@@ -11,8 +11,9 @@ import { Label } from '@/components/ui/label';
 import { showSuccess, showError } from '@/utils/toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format } from 'date-fns';
-import { Trash2 } from 'lucide-react';
+import { Trash2, ChevronsUpDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 const pairSchema = z.object({
   code: z.string().min(8, 'Code must be 8 characters.').max(8, 'Code must be 8 characters.'),
@@ -74,65 +75,89 @@ export const DeviceManagement = () => {
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-      <Card>
-        <CardHeader>
-          <CardTitle>Pair a New Kiosk</CardTitle>
-          <CardDescription>Enter the 8-character code from your kiosk screen.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit((data) => pairMutation.mutate(data))} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="code">Pairing Code</Label>
-              <Input 
-                id="code" 
-                {...register('code')} 
-                className={cn("font-mono uppercase", errors.code && "border-destructive focus-visible:ring-destructive")}
-              />
-              {errors.code && <p className="text-red-500 text-sm">{errors.code.message}</p>}
+      <Collapsible defaultOpen>
+        <Card>
+          <CardHeader className="flex-row items-center justify-between">
+            <div>
+              <CardTitle>Pair a New Kiosk</CardTitle>
+              <CardDescription>Enter the 8-character code from your kiosk screen.</CardDescription>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="displayName">Device Name</Label>
-              <Input 
-                id="displayName" 
-                {...register('displayName')} 
-                placeholder="e.g., Kitchen Display" 
-                className={cn(errors.displayName && "border-destructive focus-visible:ring-destructive")}
-              />
-              {errors.displayName && <p className="text-red-500 text-sm">{errors.displayName.message}</p>}
+            <CollapsibleTrigger asChild>
+              <Button variant="ghost" size="icon">
+                <ChevronsUpDown className="h-4 w-4" />
+                <span className="sr-only">Toggle</span>
+              </Button>
+            </CollapsibleTrigger>
+          </CardHeader>
+          <CollapsibleContent>
+            <CardContent>
+              <form onSubmit={handleSubmit((data) => pairMutation.mutate(data))} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="code">Pairing Code</Label>
+                  <Input 
+                    id="code" 
+                    {...register('code')} 
+                    className={cn("font-mono uppercase", errors.code && "border-destructive focus-visible:ring-destructive")}
+                  />
+                  {errors.code && <p className="text-red-500 text-sm">{errors.code.message}</p>}
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="displayName">Device Name</Label>
+                  <Input 
+                    id="displayName" 
+                    {...register('displayName')} 
+                    placeholder="e.g., Kitchen Display" 
+                    className={cn(errors.displayName && "border-destructive focus-visible:ring-destructive")}
+                  />
+                  {errors.displayName && <p className="text-red-500 text-sm">{errors.displayName.message}</p>}
+                </div>
+                <Button type="submit" disabled={pairMutation.isPending || isSubmitting}>
+                  {pairMutation.isPending ? 'Pairing...' : 'Pair Device'}
+                </Button>
+              </form>
+            </CardContent>
+          </CollapsibleContent>
+        </Card>
+      </Collapsible>
+      <Collapsible defaultOpen>
+        <Card>
+          <CardHeader className="flex-row items-center justify-between">
+            <div>
+              <CardTitle>Paired Devices</CardTitle>
+              <CardDescription>Manage kiosks linked to your household.</CardDescription>
             </div>
-            <Button type="submit" disabled={pairMutation.isPending || isSubmitting}>
-              {pairMutation.isPending ? 'Pairing...' : 'Pair Device'}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
-      <Card>
-        <CardHeader>
-          <CardTitle>Paired Devices</CardTitle>
-          <CardDescription>Manage kiosks linked to your household.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="space-y-2"><Skeleton className="h-12 w-full" /><Skeleton className="h-12 w-full" /></div>
-          ) : devices && devices.length > 0 ? (
-            <ul className="space-y-3">
-              {devices.map(device => (
-                <li key={device.id} className="flex items-center justify-between p-3 bg-secondary rounded-lg">
-                  <div>
-                    <p className="font-medium">{device.display_name}</p>
-                    <p className="text-xs text-muted-foreground">Paired on {format(new Date(device.approved_at), 'PPP')}</p>
-                  </div>
-                  <Button variant="ghost" size="icon" onClick={() => revokeMutation.mutate(device.id)} disabled={revokeMutation.isPending}>
-                    <Trash2 className="h-4 w-4 text-destructive" />
-                  </Button>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="text-sm text-muted-foreground">No devices have been paired yet.</p>
-          )}
-        </CardContent>
-      </Card>
+            <CollapsibleTrigger asChild>
+              <Button variant="ghost" size="icon">
+                <ChevronsUpDown className="h-4 w-4" />
+                <span className="sr-only">Toggle</span>
+              </Button>
+            </CollapsibleTrigger>
+          </CardHeader>
+          <CollapsibleContent>
+            <CardContent>
+              {isLoading ? (
+                <div className="space-y-2"><Skeleton className="h-12 w-full" /><Skeleton className="h-12 w-full" /></div>
+              ) : devices && devices.length > 0 ? (
+                <ul className="space-y-3">
+                  {devices.map(device => (
+                    <li key={device.id} className="flex items-center justify-between p-3 bg-secondary rounded-lg">
+                      <div>
+                        <p className="font-medium">{device.display_name}</p>
+                        <p className="text-xs text-muted-foreground">Paired on {format(new Date(device.approved_at), 'PPP')}</p>
+                      </div>
+                      <Button variant="ghost" size="icon" onClick={() => revokeMutation.mutate(device.id)} disabled={revokeMutation.isPending}>
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-sm text-muted-foreground">No devices have been paired yet.</p>
+              )}
+            </CardContent>
+          </CollapsibleContent>
+        </Card>
+      </Collapsible>
     </div>
   );
 };

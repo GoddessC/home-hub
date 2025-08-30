@@ -10,9 +10,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { showSuccess, showError } from '@/utils/toast';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Trash2, Megaphone, CheckCircle } from 'lucide-react';
+import { Trash2, Megaphone, CheckCircle, ChevronsUpDown } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 const announcementSchema = z.object({
   message: z.string().min(3, 'Announcement must be at least 3 characters.').max(500, 'Announcement cannot exceed 500 characters.'),
@@ -90,54 +91,66 @@ export const AnnouncementManagement = () => {
   });
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Household Announcements</CardTitle>
-        <CardDescription>Post messages that will appear on all dashboards.</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit((data) => addMutation.mutate(data))} className="space-y-4 mb-8">
-          <div className="space-y-2">
-            <Label htmlFor="message">New Announcement</Label>
-            <Textarea id="message" {...register('message')} placeholder="e.g., Movie night is at 7 PM tonight!" className={cn(errors.message && "border-destructive")} />
-            {errors.message && <p className="text-red-500 text-sm">{errors.message.message}</p>}
+    <Collapsible defaultOpen>
+      <Card>
+        <CardHeader className="flex-row items-center justify-between">
+          <div>
+            <CardTitle>Household Announcements</CardTitle>
+            <CardDescription>Post messages that will appear on all dashboards.</CardDescription>
           </div>
-          <Button type="submit" disabled={isSubmitting || addMutation.isPending}>
-            <Megaphone className="h-4 w-4 mr-2" />
-            {addMutation.isPending ? 'Posting...' : 'Post Announcement'}
-          </Button>
-        </form>
+          <CollapsibleTrigger asChild>
+            <Button variant="ghost" size="icon">
+              <ChevronsUpDown className="h-4 w-4" />
+              <span className="sr-only">Toggle</span>
+            </Button>
+          </CollapsibleTrigger>
+        </CardHeader>
+        <CollapsibleContent>
+          <CardContent>
+            <form onSubmit={handleSubmit((data) => addMutation.mutate(data))} className="space-y-4 mb-8">
+              <div className="space-y-2">
+                <Label htmlFor="message">New Announcement</Label>
+                <Textarea id="message" {...register('message')} placeholder="e.g., Movie night is at 7 PM tonight!" className={cn(errors.message && "border-destructive")} />
+                {errors.message && <p className="text-red-500 text-sm">{errors.message.message}</p>}
+              </div>
+              <Button type="submit" disabled={isSubmitting || addMutation.isPending}>
+                <Megaphone className="h-4 w-4 mr-2" />
+                {addMutation.isPending ? 'Posting...' : 'Post Announcement'}
+              </Button>
+            </form>
 
-        <div>
-          <h4 className="text-sm font-medium text-muted-foreground mb-4">History</h4>
-          {isLoading ? (
-            <div className="space-y-2"><Skeleton className="h-16 w-full" /><Skeleton className="h-16 w-full" /></div>
-          ) : announcements && announcements.length > 0 ? (
-            <ul className="space-y-3">
-              {announcements.map(ann => (
-                <li key={ann.id} className={cn("flex items-start justify-between p-3 rounded-lg", ann.is_active ? "bg-green-100 border border-green-200" : "bg-secondary")}>
-                  <div>
-                    <p className="font-medium">{ann.message}</p>
-                    <p className="text-xs text-muted-foreground">Posted on {format(new Date(ann.created_at), 'PPP p')}</p>
-                  </div>
-                  <div className="flex items-center gap-1 flex-shrink-0 ml-4">
-                    {ann.is_active ? (
-                      <span className="flex items-center text-xs text-green-700 font-semibold mr-2"><CheckCircle className="h-4 w-4 mr-1" /> Active</span>
-                    ) : (
-                      <Button variant="outline" size="sm" onClick={() => setActiveMutation.mutate(ann.id)} disabled={setActiveMutation.isPending}>Make Active</Button>
-                    )}
-                    <Button variant="ghost" size="icon" onClick={() => deleteMutation.mutate(ann.id)} disabled={deleteMutation.isPending}>
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="text-sm text-muted-foreground text-center py-4">No announcements have been posted yet.</p>
-          )}
-        </div>
-      </CardContent>
-    </Card>
+            <div>
+              <h4 className="text-sm font-medium text-muted-foreground mb-4">History</h4>
+              {isLoading ? (
+                <div className="space-y-2"><Skeleton className="h-16 w-full" /><Skeleton className="h-16 w-full" /></div>
+              ) : announcements && announcements.length > 0 ? (
+                <ul className="space-y-3">
+                  {announcements.map(ann => (
+                    <li key={ann.id} className={cn("flex items-start justify-between p-3 rounded-lg", ann.is_active ? "bg-green-100 border border-green-200" : "bg-secondary")}>
+                      <div>
+                        <p className="font-medium">{ann.message}</p>
+                        <p className="text-xs text-muted-foreground">Posted on {format(new Date(ann.created_at), 'PPP p')}</p>
+                      </div>
+                      <div className="flex items-center gap-1 flex-shrink-0 ml-4">
+                        {ann.is_active ? (
+                          <span className="flex items-center text-xs text-green-700 font-semibold mr-2"><CheckCircle className="h-4 w-4 mr-1" /> Active</span>
+                        ) : (
+                          <Button variant="outline" size="sm" onClick={() => setActiveMutation.mutate(ann.id)} disabled={setActiveMutation.isPending}>Make Active</Button>
+                        )}
+                        <Button variant="ghost" size="icon" onClick={() => deleteMutation.mutate(ann.id)} disabled={deleteMutation.isPending}>
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-sm text-muted-foreground text-center py-4">No announcements have been posted yet.</p>
+              )}
+            </div>
+          </CardContent>
+        </CollapsibleContent>
+      </Card>
+    </Collapsible>
   );
 };

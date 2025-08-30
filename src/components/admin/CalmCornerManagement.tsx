@@ -6,9 +6,10 @@ import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { showSuccess, showError } from '@/utils/toast';
-import { Sparkles, BarChart } from 'lucide-react';
+import { Sparkles, BarChart, ChevronsUpDown } from 'lucide-react';
 import { Skeleton } from '../ui/skeleton';
 import { formatDistanceToNow } from 'date-fns';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 export const CalmCornerManagement = () => {
   const { household } = useAuth();
@@ -64,49 +65,61 @@ export const CalmCornerManagement = () => {
   });
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>The Calm Corner</CardTitle>
-        <CardDescription>Manage the guided breathing feature for your household kiosks.</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        <div className="flex items-center justify-between p-4 border rounded-lg">
-          <Label htmlFor="calm-corner-switch" className="font-medium">Enable Calm Corner</Label>
-          <Switch
-            id="calm-corner-switch"
-            checked={household?.is_calm_corner_enabled ?? false}
-            onCheckedChange={(checked) => updateSettingMutation.mutate(checked)}
-            disabled={updateSettingMutation.isPending}
-          />
-        </div>
-        <Button 
-            className="w-full" 
-            onClick={() => suggestMutation.mutate()}
-            disabled={suggestMutation.isPending || !household?.is_calm_corner_enabled}
-        >
-          <Sparkles className="mr-2 h-4 w-4" />
-          {suggestMutation.isPending ? 'Sending...' : 'Suggest a Calm Moment'}
-        </Button>
-        <div>
-            <h4 className="text-sm font-medium text-muted-foreground mb-2 flex items-center"><BarChart className="h-4 w-4 mr-2" /> Recent Usage</h4>
-            {isLoadingLogs ? <Skeleton className="h-24 w-full" /> : (
-                logs && logs.length > 0 ? (
-                    <ul className="space-y-2 text-sm text-muted-foreground">
-                        {logs.map((log: any) => (
-                            <li key={log.id} className="flex justify-between">
-                                <span>
-                                    Used for {log.duration_seconds}s on '{log.devices?.display_name || 'Unknown Device'}'
-                                </span>
-                                <span>{formatDistanceToNow(new Date(log.created_at), { addSuffix: true })}</span>
-                            </li>
-                        ))}
-                    </ul>
-                ) : (
-                    <p className="text-sm text-muted-foreground text-center py-4">The Calm Corner hasn't been used yet.</p>
-                )
-            )}
-        </div>
-      </CardContent>
-    </Card>
+    <Collapsible defaultOpen>
+      <Card>
+        <CardHeader className="flex-row items-center justify-between">
+          <div>
+            <CardTitle>The Calm Corner</CardTitle>
+            <CardDescription>Manage the guided breathing feature for your household kiosks.</CardDescription>
+          </div>
+          <CollapsibleTrigger asChild>
+            <Button variant="ghost" size="icon">
+              <ChevronsUpDown className="h-4 w-4" />
+              <span className="sr-only">Toggle</span>
+            </Button>
+          </CollapsibleTrigger>
+        </CardHeader>
+        <CollapsibleContent>
+          <CardContent className="space-y-6">
+            <div className="flex items-center justify-between p-4 border rounded-lg">
+              <Label htmlFor="calm-corner-switch" className="font-medium">Enable Calm Corner</Label>
+              <Switch
+                id="calm-corner-switch"
+                checked={household?.is_calm_corner_enabled ?? false}
+                onCheckedChange={(checked) => updateSettingMutation.mutate(checked)}
+                disabled={updateSettingMutation.isPending}
+              />
+            </div>
+            <Button 
+                className="w-full" 
+                onClick={() => suggestMutation.mutate()}
+                disabled={suggestMutation.isPending || !household?.is_calm_corner_enabled}
+            >
+              <Sparkles className="mr-2 h-4 w-4" />
+              {suggestMutation.isPending ? 'Sending...' : 'Suggest a Calm Moment'}
+            </Button>
+            <div>
+                <h4 className="text-sm font-medium text-muted-foreground mb-2 flex items-center"><BarChart className="h-4 w-4 mr-2" /> Recent Usage</h4>
+                {isLoadingLogs ? <Skeleton className="h-24 w-full" /> : (
+                    logs && logs.length > 0 ? (
+                        <ul className="space-y-2 text-sm text-muted-foreground">
+                            {logs.map((log: any) => (
+                                <li key={log.id} className="flex justify-between">
+                                    <span>
+                                        Used for {log.duration_seconds}s on '{log.devices?.display_name || 'Unknown Device'}'
+                                    </span>
+                                    <span>{formatDistanceToNow(new Date(log.created_at), { addSuffix: true })}</span>
+                                </li>
+                            ))}
+                        </ul>
+                    ) : (
+                        <p className="text-sm text-muted-foreground text-center py-4">The Calm Corner hasn't been used yet.</p>
+                    )
+                )}
+            </div>
+          </CardContent>
+        </CollapsibleContent>
+      </Card>
+    </Collapsible>
   );
 };

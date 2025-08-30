@@ -57,12 +57,30 @@ export const AssignChoreDialog = ({ isOpen, setOpen, member }: AssignChoreDialog
   const assignMutation = useMutation({
     mutationFn: async (values: AssignChoreValues) => {
       if (!household) throw new Error('Household not found');
+      const formattedDate = format(values.dueDate, 'yyyy-MM-dd');
+
+      // Check for existing chore to prevent duplicates
+      const { data: existingChore, error: checkError } = await supabase
+        .from('chore_log')
+        .select('id')
+        .eq('chore_id', values.choreId)
+        .eq('member_id', member.id)
+        .eq('due_date', formattedDate)
+        .maybeSingle();
+
+      if (checkError) throw checkError;
+
+      if (existingChore) {
+        throw new Error('This chore is already assigned to this member for this day.');
+      }
+
       const { data, error } = await supabase.from('chore_log').insert({
         household_id: household.id,
         chore_id: values.choreId,
         member_id: member.id,
-        due_date: format(values.dueDate, 'yyyy-MM-dd'),
+        due_date: formattedDate,
       }).select('*, chores(title, points)').single();
+      
       if (error) throw error;
       return data;
     },

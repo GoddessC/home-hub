@@ -7,9 +7,10 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { showSuccess, showError } from '@/utils/toast';
 import { Skeleton } from '@/components/ui/skeleton';
-import { PlusCircle, Trash2, Pencil, BellRing, BellOff } from 'lucide-react';
+import { PlusCircle, Trash2, Pencil, BellRing, BellOff, ChevronsUpDown } from 'lucide-react';
 import { AlarmForm, AlarmFormValues } from './AlarmForm';
 import { format, parse } from 'date-fns';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 type Alarm = {
   id: string;
@@ -102,48 +103,60 @@ export const AlarmManagement = () => {
 
   return (
     <>
-      <Card>
-        <CardHeader className="flex-row items-center justify-between">
-          <div>
-            <CardTitle>Alarm System</CardTitle>
-            <CardDescription>Manage daily alarms for your household.</CardDescription>
-          </div>
-          <Button onClick={handleCreate}>
-            <PlusCircle className="h-4 w-4 mr-2" />
-            Create Alarm
-          </Button>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="space-y-2"><Skeleton className="h-16 w-full" /><Skeleton className="h-16 w-full" /></div>
-          ) : alarms && alarms.length > 0 ? (
-            <ul className="space-y-3">
-              {alarms.map(alarm => (
-                <li key={alarm.id} className="flex items-center justify-between p-3 bg-secondary rounded-lg">
-                  <div className="flex items-center gap-3">
-                    {alarm.is_active ? <BellRing className="h-5 w-5 text-green-600" /> : <BellOff className="h-5 w-5 text-muted-foreground" />}
-                    <div>
-                        <p className="font-bold text-lg">{formatTime(alarm.time)}</p>
-                        <p className="font-medium">{alarm.name}</p>
-                        <p className="text-xs text-muted-foreground">{formatDays(alarm.days_of_week)}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Button variant="ghost" size="icon" onClick={() => handleEdit(alarm)}>
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button variant="ghost" size="icon" onClick={() => deleteMutation.mutate(alarm.id)} disabled={deleteMutation.isPending}>
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="text-sm text-muted-foreground text-center py-4">No alarms created yet.</p>
-          )}
-        </CardContent>
-      </Card>
+      <Collapsible defaultOpen>
+        <Card>
+          <CardHeader className="flex-row items-center justify-between">
+            <div>
+              <CardTitle>Alarm System</CardTitle>
+              <CardDescription>Manage daily alarms for your household.</CardDescription>
+            </div>
+            <div className="flex items-center gap-1">
+              <Button onClick={handleCreate}>
+                <PlusCircle className="h-4 w-4 mr-2" />
+                Create Alarm
+              </Button>
+              <CollapsibleTrigger asChild>
+                <Button variant="ghost" size="icon">
+                  <ChevronsUpDown className="h-4 w-4" />
+                  <span className="sr-only">Toggle</span>
+                </Button>
+              </CollapsibleTrigger>
+            </div>
+          </CardHeader>
+          <CollapsibleContent>
+            <CardContent>
+              {isLoading ? (
+                <div className="space-y-2"><Skeleton className="h-16 w-full" /><Skeleton className="h-16 w-full" /></div>
+              ) : alarms && alarms.length > 0 ? (
+                <ul className="space-y-3">
+                  {alarms.map(alarm => (
+                    <li key={alarm.id} className="flex items-center justify-between p-3 bg-secondary rounded-lg">
+                      <div className="flex items-center gap-3">
+                        {alarm.is_active ? <BellRing className="h-5 w-5 text-green-600" /> : <BellOff className="h-5 w-5 text-muted-foreground" />}
+                        <div>
+                            <p className="font-bold text-lg">{formatTime(alarm.time)}</p>
+                            <p className="font-medium">{alarm.name}</p>
+                            <p className="text-xs text-muted-foreground">{formatDays(alarm.days_of_week)}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Button variant="ghost" size="icon" onClick={() => handleEdit(alarm)}>
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={() => deleteMutation.mutate(alarm.id)} disabled={deleteMutation.isPending}>
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-sm text-muted-foreground text-center py-4">No alarms created yet.</p>
+              )}
+            </CardContent>
+          </CollapsibleContent>
+        </Card>
+      </Collapsible>
       <Dialog open={isFormOpen} onOpenChange={setFormOpen}>
         <DialogContent>
           <DialogHeader>

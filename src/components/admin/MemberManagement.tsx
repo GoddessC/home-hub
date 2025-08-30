@@ -8,10 +8,13 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { AddMemberDialog, AddMemberFormValues } from '@/components/members/AddMemberDialog';
 import { showError, showSuccess } from '@/utils/toast';
 import { MemberAvatar } from '../avatar/MemberAvatar';
+import { useState } from 'react';
+import { AssignChoreDialog } from './AssignChoreDialog';
 
 export const MemberManagement = () => {
   const { household } = useAuth();
   const queryClient = useQueryClient();
+  const [assigningToMember, setAssigningToMember] = useState<Member | null>(null);
 
   const { data: members, isLoading } = useQuery<Member[]>({
     queryKey: ['members', household?.id],
@@ -32,7 +35,6 @@ export const MemberManagement = () => {
     mutationFn: async (values: AddMemberFormValues) => {
         if (!household?.id) throw new Error("Household not found");
         
-        // Create the new member and return their data
         const { data: newMember, error } = await supabase.from('members').insert({
             ...values,
             household_id: household.id,
@@ -45,7 +47,6 @@ export const MemberManagement = () => {
     onSuccess: (newMember) => {
         if (!newMember) return;
 
-        // Now, create the default avatar config for the new member
         const base_head_url = 'https://dvqkkqvjsqjnvwwvxenh.supabase.co/storage/v1/object/public/avatars/head.png';
         const base_body_url = 'https://dvqkkqvjsqjnvwwvxenh.supabase.co/storage/v1/object/public/avatars/body.png';
         
@@ -86,42 +87,57 @@ export const MemberManagement = () => {
   });
 
   return (
-    <Card>
-      <CardHeader className="flex-row items-center justify-between">
-        <div>
-          <CardTitle>Household Members</CardTitle>
-          <CardDescription>Add, remove, and manage members of your household.</CardDescription>
-        </div>
-        <AddMemberDialog onAddMember={addMemberMutation.mutate}>
-            <Button>
-                <PlusCircle className="h-4 w-4 mr-2" />
-                Add Member
-            </Button>
-        </AddMemberDialog>
-      </CardHeader>
-      <CardContent>
-        {isLoading ? (
-          <div className="space-y-2"><Skeleton className="h-16 w-full" /><Skeleton className="h-16 w-full" /></div>
-        ) : members && members.length > 0 ? (
-          <ul className="space-y-3">
-            {members.map((member) => (
-              <li key={member.id} className="flex items-center justify-between p-3 bg-secondary rounded-lg">
-                <div className="flex items-center gap-4">
-                  <MemberAvatar memberId={member.id} className="w-12 h-16" />
-                  <span className="font-medium">{member.full_name}</span>
-                </div>
-                {member.role !== 'OWNER' && (
-                  <Button variant="ghost" size="icon" onClick={() => deleteMemberMutation.mutate(member.id)} disabled={deleteMemberMutation.isPending}>
-                    <Trash2 className="h-5 w-5 text-destructive" />
-                  </Button>
-                )}
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="text-sm text-muted-foreground text-center py-4">No members found. Add one to get started!</p>
-        )}
-      </CardContent>
-    </Card>
+    <>
+      <Card>
+        <CardHeader className="flex-row items-center justify-between">
+          <div>
+            <CardTitle>Household Members</CardTitle>
+            <CardDescription>Add, remove, and manage members of your household.</CardDescription>
+          </div>
+          <AddMemberDialog onAddMember={addMemberMutation.mutate}>
+              <Button>
+                  <PlusCircle className="h-4 w-4 mr-2" />
+                  Add Member
+              </Button>
+          </AddMemberDialog>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <div className="space-y-2"><Skeleton className="h-16 w-full" /><Skeleton className="h-16 w-full" /></div>
+          ) : members && members.length > 0 ? (
+            <ul className="space-y-3">
+              {members.map((member) => (
+                <li key={member.id} className="flex items-center justify-between p-3 bg-secondary rounded-lg">
+                  <div className="flex items-center gap-4">
+                    <MemberAvatar memberId={member.id} className="w-12 h-16" />
+                    <span className="font-medium">{member.full_name}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button variant="outline" size="sm" onClick={() => setAssigningToMember(member)}>
+                      <PlusCircle className="h-4 w-4 mr-2" />
+                      Assign
+                    </Button>
+                    {member.role !== 'OWNER' && (
+                      <Button variant="ghost" size="icon" onClick={() => deleteMemberMutation.mutate(member.id)} disabled={deleteMemberMutation.isPending}>
+                        <Trash2 className="h-5 w-5 text-destructive" />
+                      </Button>
+                    )}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-sm text-muted-foreground text-center py-4">No members found. Add one to get started!</p>
+          )}
+        </CardContent>
+      </Card>
+      {assigningToMember && (
+        <AssignChoreDialog
+          isOpen={!!assigningToMember}
+          setOpen={(isOpen) => !isOpen && setAssigningToMember(null)}
+          member={assigningToMember}
+        />
+      )}
+    </>
   );
 };

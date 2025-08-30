@@ -7,7 +7,7 @@ import { format } from 'date-fns';
 import { AnnouncementPanel } from '@/components/dashboard/AnnouncementPanel';
 import { Link } from 'react-router-dom';
 import { Leaf, Shield } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { cn } from '@/lib/utils';
 import { UserNav } from '@/components/layout/UserNav';
 import { MemberDashboardPanel } from '@/components/dashboard/MemberDashboardPanel';
@@ -29,7 +29,8 @@ export type ChoreLog = {
 
 const KioskDashboard = () => {
   const { device, household, signOut, isAnonymous, member } = useAuth();
-  const [isPulsing, setIsPulsing] = useState(false);
+  const [isCalmCornerSuggested, setIsCalmCornerSuggested] = useState(false);
+  const suggestionTimer = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     if (!household || !isAnonymous) return;
@@ -46,10 +47,16 @@ const KioskDashboard = () => {
         },
         (payload) => {
           if (!payload.new.acknowledged_at) {
-            setIsPulsing(true);
+            setIsCalmCornerSuggested(true);
             const audio = new Audio('/ding.mp3');
             audio.play().catch(e => console.error("Could not play audio:", e));
             
+            if (suggestionTimer.current) clearTimeout(suggestionTimer.current);
+
+            suggestionTimer.current = setTimeout(() => {
+              setIsCalmCornerSuggested(false);
+            }, 180000); // 3 minutes
+
             supabase
               .from('calm_corner_suggestions')
               .update({ acknowledged_at: new Date().toISOString() })
@@ -62,6 +69,7 @@ const KioskDashboard = () => {
 
     return () => {
       supabase.removeChannel(channel);
+      if (suggestionTimer.current) clearTimeout(suggestionTimer.current);
     };
   }, [household, isAnonymous]);
 
@@ -111,6 +119,15 @@ const KioskDashboard = () => {
     },
     enabled: !!household?.id,
   });
+
+  const handleCalmCornerClick = () => {
+    if (isCalmCornerSuggested) {
+      setIsCalmCornerSuggested(false);
+      if (suggestionTimer.current) {
+        clearTimeout(suggestionTimer.current);
+      }
+    }
+  };
 
   return (
     <div className={cn("flex flex-col min-h-screen dashboardBG", isAnonymous ? "text-white dark" : "")}>
@@ -163,15 +180,14 @@ const KioskDashboard = () => {
       </main>
  
       {household?.is_calm_corner_enabled && (
-        <Link to="/kiosk/calm-corner" className="fixed bottom-2 right-2">
+        <Link to="/kiosk/calm-corner" className="fixed bottom-2 right-2" onClick={handleCalmCornerClick}>
             <Button 
                 variant="secondary" 
                 size="lg" 
                 className={cn(
                     "rounded-full h-40 w-40 shadow-lg bg-green-500 hover:bg-green-600 text-white flex flex-col items-center justify-center gap-1 transition-transform transform hover:scale-110", 
-                    isPulsing && "animate-pulse"
+                    isCalmCornerSuggested && "animate-pulse animate-rainbow-border border-4 border-transparent"
                 )}
-                onClick={() => setIsPulsing(false)}
             >
                 <Leaf className="h-8 w-8" />
                 <span className="text-xs font-semibold">Calm Corner</span>

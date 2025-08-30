@@ -107,7 +107,15 @@ export default {
           '50%': {
             opacity: '.5'
           }
-        }
+        },
+        "rainbow-border": {
+          '0%, 100%': { borderColor: '#ef4444' },
+          '14%': { borderColor: '#f97316' },
+          '28%': { borderColor: '#eab308' },
+          '42%': { borderColor: '#22c55e' },
+          '57%': { borderColor: '#3b82f6' },
+          '85%': { borderColor: '#8b5cf6' },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -117,6 +125,7 @@ export default {
         twinkle: "twinkle 7s ease-in-out infinite",
         "box-breathing": "box-breathing 16s linear infinite",
         pulse: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+        "rainbow-border": "rainbow-border 4s linear infinite",
       },
     },
   },

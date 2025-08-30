@@ -20,7 +20,7 @@ export const CalmCornerManagement = () => {
         if (!household?.id) return [];
         const { data, error } = await supabase
             .from('calm_corner_log')
-            .select('*')
+            .select('*, devices(display_name)')
             .eq('household_id', household.id)
             .order('created_at', { ascending: false })
             .limit(5);
@@ -92,9 +92,11 @@ export const CalmCornerManagement = () => {
             {isLoadingLogs ? <Skeleton className="h-24 w-full" /> : (
                 logs && logs.length > 0 ? (
                     <ul className="space-y-2 text-sm text-muted-foreground">
-                        {logs.map(log => (
+                        {logs.map((log: any) => (
                             <li key={log.id} className="flex justify-between">
-                                <span>Used for {log.duration_seconds} seconds</span>
+                                <span>
+                                    Used for {log.duration_seconds}s on '{log.devices?.display_name || 'Unknown Device'}'
+                                </span>
                                 <span>{formatDistanceToNow(new Date(log.created_at), { addSuffix: true })}</span>
                             </li>
                         ))}

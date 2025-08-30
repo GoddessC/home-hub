@@ -14,10 +14,16 @@ import { cn } from '@/lib/utils';
 import { Link } from 'react-router-dom';
 import { ChoreLog } from '@/pages/KioskDashboard';
 import { MemberAvatar } from '../avatar/MemberAvatar';
+import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip';
 
 interface MemberDashboardPanelProps {
   member: Member;
   chores: ChoreLog[];
+}
+
+interface Achievements {
+    has_completed_chores: boolean;
+    has_completed_quest: boolean;
 }
 
 export const MemberDashboardPanel = ({ member, chores }: MemberDashboardPanelProps) => {
@@ -46,6 +52,16 @@ export const MemberDashboardPanel = ({ member, chores }: MemberDashboardPanelPro
     enabled: !!member && !!household,
   });
 
+  const { data: achievements, isLoading: isLoadingAchievements } = useQuery<Achievements>({
+    queryKey: ['member_achievements', member.id],
+    queryFn: async () => {
+        const { data, error } = await supabase.rpc('get_member_achievements', { p_member_id: member.id });
+        if (error) throw error;
+        return data;
+    },
+    enabled: !!member.id,
+  });
+
   const updateChoreMutation = useMutation({
     mutationFn: async ({ choreId, isCompleted }: { choreId: string, isCompleted: boolean }) => {
       const { error } = await supabase
@@ -57,6 +73,7 @@ export const MemberDashboardPanel = ({ member, chores }: MemberDashboardPanelPro
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['chore_log'] });
       queryClient.invalidateQueries({ queryKey: ['member_score', member.id] });
+      queryClient.invalidateQueries({ queryKey: ['member_achievements', member.id] });
     },
     onError: (error: Error) => showError(error.message),
   });
@@ -131,6 +148,26 @@ export const MemberDashboardPanel = ({ member, chores }: MemberDashboardPanelPro
           )}
           onClick={() => setIsExpanded(!isExpanded)}
         >
+          {!isLoadingAchievements && (
+            <>
+              {achievements?.has_completed_chores && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <img src="/orange-check.png" alt="All Chores Done!" className={cn("absolute w-8 h-8 transition-all duration-300 z-20", isExpanded ? "top-2 right-2" : "-top-2 -right-2")} />
+                  </TooltipTrigger>
+                  <TooltipContent><p>All Chores Done Today!</p></TooltipContent>
+                </Tooltip>
+              )}
+              {achievements?.has_completed_quest && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <img src="/purple-check.png" alt="Quest Complete!" className={cn("absolute w-8 h-8 transition-all duration-300 z-20", isExpanded ? "top-2 right-12" : "-top-2 right-8")} />
+                  </TooltipTrigger>
+                  <TooltipContent><p>Team Quest Completed!</p></TooltipContent>
+                </Tooltip>
+              )}
+            </>
+          )}
           {!isExpanded ? (
             <>
               <div className="absolute top-2 right-2 bg-primary text-primary-foreground rounded-full px-2 py-1 text-xs font-bold z-10">

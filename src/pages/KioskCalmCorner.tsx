@@ -16,7 +16,7 @@ const DURATION_SECONDS = TOTAL_CYCLES * 16;
 
 const KioskCalmCorner = () => {
   const navigate = useNavigate();
-  const { household, isAnonymous } = useAuth();
+  const { household, device, isAnonymous } = useAuth();
   const [phaseIndex, setPhaseIndex] = useState(0);
   const [cycleCount, setCycleCount] = useState(0);
   const [isFinished, setIsFinished] = useState(false);
@@ -27,6 +27,7 @@ const KioskCalmCorner = () => {
     await supabase.from('calm_corner_log').insert({
       household_id: household.id,
       duration_seconds: DURATION_SECONDS,
+      device_id: device?.id,
     });
   };
 

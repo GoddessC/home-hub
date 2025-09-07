@@ -37,6 +37,7 @@ export const TeamQuestPanel = ({ quest, isLoading }: TeamQuestPanelProps) => {
   const queryClient = useQueryClient();
   const { household } = useAuth();
   const [showConfetti, setShowConfetti] = useState(false);
+  const [justCompleted, setJustCompleted] = useState(false);
 
   const updateSubTaskMutation = useMutation({
     mutationFn: async ({ subTaskId, isCompleted }: { subTaskId: string, isCompleted: boolean }) => {
@@ -81,16 +82,24 @@ export const TeamQuestPanel = ({ quest, isLoading }: TeamQuestPanelProps) => {
   useEffect(() => {
     if (isComplete) {
       setShowConfetti(true);
+      setJustCompleted(true);
     }
   }, [isComplete]);
 
   const handleConfettiComplete = () => {
     setShowConfetti(false);
-    // After confetti, refetch data to remove the panel and update points
-    queryClient.invalidateQueries({ queryKey: ['active_quest', household?.id] });
+    // Update points and achievements immediately
     queryClient.invalidateQueries({ queryKey: ['member_score'] });
     queryClient.invalidateQueries({ queryKey: ['member_weekly_score'] });
     queryClient.invalidateQueries({ queryKey: ['member_all_time_score'] });
+    // Invalidate member achievements to refresh banners
+    queryClient.invalidateQueries({ queryKey: ['member_achievements'] });
+    
+    // Delay hiding the quest panel to let users see the completion
+    setTimeout(() => {
+      setJustCompleted(false);
+      queryClient.invalidateQueries({ queryKey: ['active_quest', household?.id] });
+    }, 5000); // 5 second delay
   };
 
   if (isLoading) {
@@ -105,7 +114,7 @@ export const TeamQuestPanel = ({ quest, isLoading }: TeamQuestPanelProps) => {
     <>
       {showConfetti && <ConfettiCelebration onComplete={handleConfettiComplete} />}
       <Card className="relative w-full bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-900/30 dark:to-indigo-900/30 border-purple-200 dark:border-purple-800 overflow-hidden">
-        {isComplete && (
+        {(isComplete || justCompleted) && (
           <div className="absolute inset-0 bg-green-500/95 z-10 flex items-center justify-center animate-fade-in">
             <h2 className="text-5xl font-bold text-white" style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.3)' }}>
               Completed!

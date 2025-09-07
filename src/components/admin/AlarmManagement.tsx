@@ -23,8 +23,8 @@ type Alarm = {
 
 const formatTime = (timeStr: string) => {
     try {
-        const date = parse(timeStr, 'HH:mm:ss', new Date());
-        return format(date, 'h:mm a');
+        const date = parse(timeStr, 'HH:mm', new Date());
+        return format(date, 'h:mm:ss a');
     } catch (e) {
         return timeStr;
     }

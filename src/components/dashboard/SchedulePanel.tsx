@@ -21,7 +21,7 @@ interface SchedulePanelProps {
 }
 
 export const SchedulePanel = ({ className }: SchedulePanelProps) => {
-  const { household, isAnonymous } = useAuth();
+  const { household } = useAuth();
   const [currentTime, setCurrentTime] = useState(new Date());
 
   // Update clock every second
@@ -76,7 +76,7 @@ export const SchedulePanel = ({ className }: SchedulePanelProps) => {
           <CardContent className="p-6">
             <div className="text-center">
               <div className="text-4xl font-mono font-bold text-primary mb-2">
-                {format(currentTime, 'HH:mm:ss')}
+                {format(currentTime, 'h:mm:s a')}
               </div>
               <div className="text-lg text-muted-foreground">
                 {format(currentTime, 'EEEE, MMMM do, yyyy')}
@@ -113,7 +113,7 @@ export const SchedulePanel = ({ className }: SchedulePanelProps) => {
           <CardContent className="p-6">
             <div className="text-center">
               <div className="text-4xl font-mono font-bold text-primary mb-2">
-                {format(currentTime, 'HH:mm:ss')}
+                {format(currentTime, 'h:mm:s a')}
               </div>
               <div className="text-lg text-muted-foreground">
                 {format(currentTime, 'EEEE, MMMM do, yyyy')}
@@ -147,7 +147,7 @@ export const SchedulePanel = ({ className }: SchedulePanelProps) => {
         <CardContent className="p-6">
           <div className="text-center">
             <div className="text-4xl font-mono font-bold text-primary mb-2">
-              {format(currentTime, 'HH:mm:ss')}
+              {format(currentTime, 'h:mm:s a')}
             </div>
             <div className="text-lg text-muted-foreground">
               {format(currentTime, 'EEEE, MMMM do, yyyy')}

@@ -144,16 +144,20 @@ export const QuestManagement = () => {
                   ))}
                   {errors.sub_tasks?.root && <p className="text-red-500 text-sm">{errors.sub_tasks.root.message}</p>}
                 </div>
-                <Button type="button" variant="outline" size="sm" className="mt-4" onClick={() => append({ description: '', member_id: '' })}>
-                  <PlusCircle className="h-4 w-4 mr-2" />
-                  Add Task
-                </Button>
+                <div className="mb-12">
+                  <Button type="button" variant="outline" size="sm" className="mt-4" onClick={() => append({ description: '', member_id: '' })}>
+                    <PlusCircle className="h-4 w-4 mr-2" />
+                    Add Task
+                  </Button>
+
+                  <Button type="submit" className='float-right mt-16' disabled={isSubmitting || addQuestMutation.isPending}>
+                    <Rocket className="h-4 w-4 mr-2 right-0" />
+                    {addQuestMutation.isPending ? 'Launching...' : 'Launch Quest'}
+                  </Button>
+                </div>
               </div>
 
-              <Button type="submit" disabled={isSubmitting || addQuestMutation.isPending}>
-                <Rocket className="h-4 w-4 mr-2" />
-                {addQuestMutation.isPending ? 'Launching...' : 'Launch Quest'}
-              </Button>
+              
             </form>
           </CardContent>
         </CollapsibleContent>

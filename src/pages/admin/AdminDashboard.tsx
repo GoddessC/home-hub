@@ -49,8 +49,8 @@ const AdminDashboard = () => {
                 <DeviceManagement />
             </div>
             <div className="lg:col-span-1 space-y-8">
-                <ScheduleManagement />
                 <HouseholdSettings />
+                <ScheduleManagement />
                 <WeatherSettings />
                 <CalmCornerManagement />
             </div>

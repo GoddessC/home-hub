@@ -8,6 +8,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
+import { Controller } from 'react-hook-form';
 import { showSuccess, showError } from '@/utils/toast';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { ChevronsUpDown } from 'lucide-react';
@@ -15,6 +17,7 @@ import { ChevronsUpDown } from 'lucide-react';
 const settingsSchema = z.object({
   chore_reset_frequency: z.string(),
   chore_reset_day: z.coerce.number().min(0).max(6),
+  alarm_snooze_enabled: z.boolean(),
 });
 type SettingsFormValues = z.infer<typeof settingsSchema>;
 
@@ -40,11 +43,12 @@ export const HouseholdSettings = () => {
   const { household } = useAuth();
   const queryClient = useQueryClient();
 
-  const { handleSubmit, setValue, watch, formState: { isSubmitting, isDirty } } = useForm<SettingsFormValues>({
+  const { handleSubmit, setValue, watch, control, formState: { isSubmitting, isDirty } } = useForm<SettingsFormValues>({
     resolver: zodResolver(settingsSchema),
     values: {
       chore_reset_day: household?.chore_reset_day ?? 0,
       chore_reset_frequency: household?.chore_reset_frequency ?? 'WEEKLY',
+      alarm_snooze_enabled: household?.alarm_snooze_enabled ?? true,
     },
   });
   const chore_reset_day = watch('chore_reset_day');
@@ -58,6 +62,7 @@ export const HouseholdSettings = () => {
         .update({ 
             chore_reset_day: values.chore_reset_day,
             chore_reset_frequency: values.chore_reset_frequency,
+            alarm_snooze_enabled: values.alarm_snooze_enabled,
         })
         .eq('id', household.id);
       if (error) throw error;
@@ -128,6 +133,20 @@ export const HouseholdSettings = () => {
                         </div>
                     )}
                 </div>
+                
+                {/* Alarm Snooze Setting */}
+                <div className="flex items-center justify-between p-4 border rounded-lg">
+                  <div>
+                    <Label htmlFor="alarm_snooze_enabled" className="font-medium">Enable Alarm Snooze</Label>
+                    <p className="text-sm text-muted-foreground">Allow users to snooze alarms for 5 minutes on the kiosk dashboard.</p>
+                  </div>
+                  <Controller
+                    name="alarm_snooze_enabled"
+                    control={control}
+                    render={({ field }) => <Switch id="alarm_snooze_enabled" checked={field.value} onCheckedChange={field.onChange} />}
+                  />
+                </div>
+                
               <Button type="submit" disabled={updateSettingsMutation.isPending || isSubmitting || !isDirty}>
                 {updateSettingsMutation.isPending ? 'Saving...' : 'Save Settings'}
               </Button>

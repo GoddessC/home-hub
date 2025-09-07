@@ -14,6 +14,8 @@ import { MemberDashboardPanel } from '@/components/dashboard/MemberDashboardPane
 import { TeamQuestPanel, Quest } from '@/components/dashboard/TeamQuestPanel';
 import { WeatherIcon } from '@/components/dashboard/WeatherIcon';
 import { SchedulePanel } from '@/components/dashboard/SchedulePanel';
+import { AlarmModal } from '@/components/alarms/AlarmModal';
+import { useAlarmSystem } from '@/hooks/useAlarmSystem';
 
 export type ChoreLog = {
   id: string;
@@ -31,7 +33,11 @@ export type ChoreLog = {
 const KioskDashboard = () => {
   const { device, household, signOut, isAnonymous, member } = useAuth();
   const [isCalmCornerSuggested, setIsCalmCornerSuggested] = useState(false);
+  const [expandedMemberId, setExpandedMemberId] = useState<string | null>(null);
   const suggestionTimer = useRef<NodeJS.Timeout | null>(null);
+  
+  // Alarm system
+  const { activeAlarm, dismissAlarm, snoozeAlarm, isAlarmActive } = useAlarmSystem();
 
   useEffect(() => {
     if (!household || !isAnonymous) return;
@@ -181,7 +187,15 @@ const KioskDashboard = () => {
                   <MemberDashboardPanel 
                     key={m.id} 
                     member={m} 
-                    chores={chores?.filter(c => c.member_id === m.id) || []} 
+                    chores={chores?.filter(c => c.member_id === m.id) || []}
+                    isExpanded={expandedMemberId === m.id}
+                    onToggleExpanded={(expanded) => {
+                      if (expanded) {
+                        setExpandedMemberId(m.id);
+                      } else {
+                        setExpandedMemberId(null);
+                      }
+                    }}
                   />
                 ))
               )}
@@ -205,6 +219,15 @@ const KioskDashboard = () => {
             </Button>
         </Link>
       )}
+
+      {/* Alarm Modal */}
+      <AlarmModal
+        alarm={activeAlarm}
+        isOpen={isAlarmActive}
+        onClose={dismissAlarm}
+        onSnooze={snoozeAlarm}
+        isSnoozeEnabled={household?.alarm_snooze_enabled ?? true}
+      />
     </div>
   );
 };

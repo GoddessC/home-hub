@@ -41,8 +41,8 @@ export const AnnouncementPanel = () => {
       <CardContent className="p-4 flex items-start space-x-4">
         <Megaphone className="h-6 w-6 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-1" />
         <div>
-            <h3 className="font-bold text-blue-800 dark:text-blue-300">Announcement</h3>
-            <p className="text-blue-700 dark:text-blue-300/90">{announcement.message}</p>
+            {/* <h3 className="font-bold text-blue-800 mr-4 dark:text-blue-300 float-left">Announcement:</h3> */}
+            <p className="text-blue-700 dark:text-blue-300/90 float-right">{announcement.message}</p>
         </div>
       </CardContent>
     </Card>

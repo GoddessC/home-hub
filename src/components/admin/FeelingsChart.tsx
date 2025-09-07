@@ -64,33 +64,32 @@ export const FeelingsChart = () => {
     return acc;
   }, {} as Record<string, FeelingLog[]>) || {};
 
-  const DayComponent = ({ date, ...props }: { date: Date, [key: string]: any }) => {
+  const DayComponent = ({ date }: { date: Date, [key: string]: any }) => {
     const dayKey = format(date, 'yyyy-MM-dd');
     const dayLogs = logsByDay[dayKey];
-
-    if (!dayLogs) {
-      return <div {...props} />;
-    }
 
     return (
       <Popover>
         <PopoverTrigger asChild>
           <div className="relative w-full h-full flex items-center justify-center cursor-pointer">
-            <div className="absolute inset-0.5 flex overflow-hidden rounded-md">
-              {dayLogs.map((log, index) => (
-                <div
-                  key={log.id}
-                  className={cn("h-full", feelingMeta[log.feeling]?.color || 'bg-gray-200')}
-                  style={{ width: `${100 / dayLogs.length}%` }}
-                />
-              ))}
-            </div>
+            {dayLogs && dayLogs.length > 0 && (
+              <div className="absolute inset-0.5 flex overflow-hidden rounded-md">
+                {dayLogs.map((log) => (
+                  <div
+                    key={log.id}
+                    className={cn("h-full", feelingMeta[log.feeling]?.color || 'bg-gray-200')}
+                    style={{ width: `${100 / dayLogs.length}%` }}
+                  />
+                ))}
+              </div>
+            )}
             <span className="relative text-sm z-10">{date.getDate()}</span>
           </div>
         </PopoverTrigger>
         <PopoverContent>
             <h4 className="font-bold mb-2">{format(date, 'PPP')}</h4>
-            <ul className="space-y-2">
+            {dayLogs && dayLogs.length > 0 ? (
+              <ul className="space-y-2">
                 {dayLogs.map(log => {
                     const member = Array.isArray(log.members) ? log.members[0] : log.members;
                     return (
@@ -100,7 +99,10 @@ export const FeelingsChart = () => {
                         </li>
                     )
                 })}
-            </ul>
+              </ul>
+            ) : (
+              <p className="text-sm text-muted-foreground">No feelings logged for this day.</p>
+            )}
         </PopoverContent>
       </Popover>
     );

@@ -19,6 +19,8 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip';
 interface MemberDashboardPanelProps {
   member: Member;
   chores: ChoreLog[];
+  isExpanded: boolean;
+  onToggleExpanded: (expanded: boolean) => void;
 }
 
 interface Achievements {
@@ -26,11 +28,10 @@ interface Achievements {
     has_completed_quest: boolean;
 }
 
-export const MemberDashboardPanel = ({ member, chores }: MemberDashboardPanelProps) => {
+export const MemberDashboardPanel = ({ member, chores, isExpanded, onToggleExpanded }: MemberDashboardPanelProps) => {
   const queryClient = useQueryClient();
   const { household, isAnonymous } = useAuth();
   const [isFeelingsDialogOpen, setFeelingsDialogOpen] = useState(false);
-  const [isExpanded, setIsExpanded] = useState(false);
   const [showQuestBadge, setShowQuestBadge] = useState(false);
   const [questPoints, setQuestPoints] = useState(0);
 
@@ -68,13 +69,13 @@ export const MemberDashboardPanel = ({ member, chores }: MemberDashboardPanelPro
     queryKey: ['recent_completed_quest', member.id],
     queryFn: async () => {
       const now = new Date();
-      const fiveMinutesAgo = new Date(now.getTime() - 5 * 60 * 1000);
+      const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
       
       const { data, error } = await supabase
         .from('quest_member_rewards')
         .select('points_awarded, created_at')
         .eq('member_id', member.id)
-        .gte('created_at', fiveMinutesAgo.toISOString())
+        .gte('created_at', twentyFourHoursAgo.toISOString())
         .order('created_at', { ascending: false })
         .limit(1);
       
@@ -90,12 +91,20 @@ export const MemberDashboardPanel = ({ member, chores }: MemberDashboardPanelPro
       setShowQuestBadge(true);
       setQuestPoints(recentCompletedQuest.points_awarded);
       
-      // Hide the badge after 2 minutes
+      // Calculate time remaining until 24 hours expire
+      const questTime = new Date(recentCompletedQuest.created_at);
+      const now = new Date();
+      const timeRemaining = (24 * 60 * 60 * 1000) - (now.getTime() - questTime.getTime());
+      
+      // Hide the badge when 24 hours have passed
       const timer = setTimeout(() => {
         setShowQuestBadge(false);
-      }, 120000);
+      }, Math.max(0, timeRemaining));
       
       return () => clearTimeout(timer);
+    } else {
+      // If no recent quest, hide the badge
+      setShowQuestBadge(false);
     }
   }, [recentCompletedQuest]);
 
@@ -154,6 +163,8 @@ export const MemberDashboardPanel = ({ member, chores }: MemberDashboardPanelPro
       }
       queryClient.invalidateQueries({ queryKey: ['member_score', member.id] });
       queryClient.invalidateQueries({ queryKey: ['member_achievements', member.id] });
+      // Also invalidate all member achievements to refresh banners for all members
+      queryClient.invalidateQueries({ queryKey: ['member_achievements'] });
     },
   });
 
@@ -218,21 +229,24 @@ export const MemberDashboardPanel = ({ member, chores }: MemberDashboardPanelPro
 
   return (
     <>
-      <div className={cn("transition-all duration-300 ease-in-out", isExpanded ? "col-span-full md:col-span-2 lg:col-span-2" : "col-span-1")}>
+      <div className={cn(
+        "transition-all duration-500 ease-in-out transform",
+        isExpanded ? "col-span-full md:col-span-2 lg:col-span-2 scale-105" : "col-span-1 scale-100"
+      )}>
         <Card
           className={cn(
-            "w-full flex flex-col cursor-pointer transition-all duration-300 ease-in-out relative",
+            "w-full flex flex-col cursor-pointer transition-all duration-500 ease-in-out relative transform",
             isAnonymous ? "dark:bg-gray-800 dark:hover:bg-gray-700" : "bg-white hover:bg-gray-50",
-            isExpanded ? "min-h-[24rem]" : "aspect-square items-center justify-center text-center"
+            isExpanded ? "min-h-[24rem] shadow-xl" : "aspect-square items-center justify-center text-center shadow-md hover:shadow-lg"
           )}
-          onClick={() => setIsExpanded(!isExpanded)}
+          onClick={() => onToggleExpanded(!isExpanded)}
         >
           {!isLoadingAchievements && (
             <>
               {achievements?.has_completed_chores && (
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <img src="/orange-check.png" alt="All Chores Done!" className={cn("absolute w-20 h-20 transition-all duration-300 z-20 top-[-40px] left-[-30px]")} />
+                    <img src="/orange-check.png" alt="All Chores Done!" className={cn("absolute w-20 h-20 transition-all duration-300 z-20 top-10 right-0")} />
                   </TooltipTrigger>
                   <TooltipContent><p>All Chores Done Today!</p></TooltipContent>
                 </Tooltip>
@@ -240,7 +254,7 @@ export const MemberDashboardPanel = ({ member, chores }: MemberDashboardPanelPro
               {achievements?.has_completed_quest && (
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <img src="/orange-check.png" alt="Quest Complete!" className={cn("absolute w-20 h-20 transition-all duration-300 z-20 top-[10px] left-[-30px]", isExpanded ? "top-2 right-12" : "-top-2 right-8")} />
+                    <img src="/orange-check.png" alt="Quest Complete!" className={cn("absolute w-20 h-20 transition-all duration-300 z-20", isExpanded ? "top-15 right-0" : "top-15 right-0")} />
                   </TooltipTrigger>
                   <TooltipContent><p>Team Quest Completed!</p></TooltipContent>
                 </Tooltip>
@@ -287,7 +301,7 @@ export const MemberDashboardPanel = ({ member, chores }: MemberDashboardPanelPro
                         className="h-8 w-8 shrink-0"
                         onClick={(e) => {
                             e.stopPropagation();
-                            setIsExpanded(false);
+                            onToggleExpanded(false);
                         }}
                     >
                         <X className="h-4 w-4" />

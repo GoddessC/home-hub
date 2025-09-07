@@ -17,6 +17,7 @@ export interface Household {
   // FIX: Added missing properties to the Household type definition.
   weather_location: string | null;
   weather_units: string;
+  alarm_snooze_enabled: boolean;
 }
 
 export interface Member {

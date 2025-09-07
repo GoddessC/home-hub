@@ -89,44 +89,46 @@ export const FeelingsManagement = () => {
               {isEnabled && (
                 <div className="space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                      <Label htmlFor="feelings_morning_time">Morning Check-in Time</Label>
-                      <Controller
-                        name="feelings_morning_time"
-                        control={control}
-                        render={({ field }) => <Input id="feelings_morning_time" type="time" {...field} value={field.value ?? ''} />}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="feelings_evening_time">Evening Check-in Time</Label>
-                      <Controller
-                        name="feelings_evening_time"
-                        control={control}
-                        render={({ field }) => <Input id="feelings_evening_time" type="time" {...field} value={field.value ?? ''} />}
-                      />
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between p-4 border rounded-lg">
                     <div>
-                        <Label htmlFor="feelings_notify_on_negative" className="font-medium">Negative Streak Notifications</Label>
-                        <p className="text-sm text-muted-foreground">Get a notification after 2 consecutive 'Sad' or 'Angry' check-ins.</p>
+                      <div className="mt-4">
+                        <Label htmlFor="feelings_morning_time">Morning Check-in Time</Label>
+                        <Controller
+                          name="feelings_morning_time"
+                          control={control}
+                          render={({ field }) => <Input id="feelings_morning_time" type="time" {...field} value={field.value ?? ''} />}
+                        />
+                      </div>
+                      <div className="mt-4">
+                        <Label htmlFor="feelings_evening_time">Evening Check-in Time</Label>
+                        <Controller
+                          name="feelings_evening_time"
+                          control={control}
+                          render={({ field }) => <Input id="feelings_evening_time" type="time" {...field} value={field.value ?? ''} />}
+                        />
+                      </div>
+                      <div className="flex items-center justify-between p-4 border rounded-lg mt-4">
+                      <div>
+                          <Label htmlFor="feelings_notify_on_negative" className="font-medium">Negative Streak Notifications</Label>
+                          <p className="text-sm text-muted-foreground">Get a notification after 2 consecutive 'Sad' or 'Angry' check-ins.</p>
+                      </div>
+                      <Controller
+                        name="feelings_notify_on_negative"
+                        control={control}
+                        render={({ field }) => <Switch id="feelings_notify_on_negative" checked={field.value} onCheckedChange={field.onChange} />}
+                      />
                     </div>
-                    <Controller
-                      name="feelings_notify_on_negative"
-                      control={control}
-                      render={({ field }) => <Switch id="feelings_notify_on_negative" checked={field.value} onCheckedChange={field.onChange} />}
-                    />
+                    <Button type="submit" disabled={isSubmitting || updateSettingsMutation.isPending || !isDirty} className="mt-14">
+                      {updateSettingsMutation.isPending ? 'Saving...' : 'Save Settings'}
+                    </Button>
+                    </div>
+                    <div>
+                      <h4 className="text-lg font-semibold mb-2">Feelings Chart</h4>
+                      <FeelingsChart />
+                    </div>
                   </div>
-                  <div>
-                    <h4 className="text-lg font-semibold mb-2">Feelings Chart</h4>
-                    <FeelingsChart />
-                  </div>
+                  
                 </div>
               )}
-
-              <Button type="submit" disabled={isSubmitting || updateSettingsMutation.isPending || !isDirty}>
-                {updateSettingsMutation.isPending ? 'Saving...' : 'Save Settings'}
-              </Button>
             </form>
           </CardContent>
         </CollapsibleContent>

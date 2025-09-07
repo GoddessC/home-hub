@@ -13,6 +13,7 @@ import { UserNav } from '@/components/layout/UserNav';
 import { MemberDashboardPanel } from '@/components/dashboard/MemberDashboardPanel';
 import { TeamQuestPanel, Quest } from '@/components/dashboard/TeamQuestPanel';
 import { WeatherIcon } from '@/components/dashboard/WeatherIcon';
+import { SchedulePanel } from '@/components/dashboard/SchedulePanel';
 
 export type ChoreLog = {
   id: string;
@@ -136,6 +137,7 @@ const KioskDashboard = () => {
           <h1 className={cn("text-2xl font-bold", isAnonymous ? "" : "text-gray-800")}>
             {household?.name || (isAnonymous ? 'Kiosk Mode' : 'Dashboard')}
           </h1>
+          <AnnouncementPanel />
           <div className="flex items-center space-x-4">
             <WeatherIcon />
             {isAnonymous ? (
@@ -160,33 +162,42 @@ const KioskDashboard = () => {
         </div>
       </header>
       <main className="flex-grow container mx-auto p-4 md:p-8 main-container bottom-right glass-card">
-        <div className="space-y-8">
-          <TeamQuestPanel quest={activeQuest} isLoading={isLoadingQuest} />
-          <AnnouncementPanel />
-        </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 mt-8">
-          {isLoadingMembers || isLoadingChores ? (
-            Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className={cn("h-48 w-full rounded-lg", isAnonymous && "bg-gray-700")} />)
-          ) : (
-            members?.map(m => (
-              <MemberDashboardPanel 
-                key={m.id} 
-                member={m} 
-                chores={chores?.filter(c => c.member_id === m.id) || []} 
-              />
-            ))
-          )}
+        <div className="flex gap-8">
+          {/* Left sidebar with schedule */}
+          <div className="hidden lg:block w-80 flex-shrink-0">
+            <SchedulePanel />
+          </div>
+          
+          {/* Main content */}
+          <div className="flex-grow">
+            <div className="space-y-8">
+              <TeamQuestPanel quest={activeQuest} isLoading={isLoadingQuest} />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 gap-4">
+              {isLoadingMembers || isLoadingChores ? (
+                Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className={cn("h-48 w-full rounded-lg", isAnonymous && "bg-gray-700")} />)
+              ) : (
+                members?.map(m => (
+                  <MemberDashboardPanel 
+                    key={m.id} 
+                    member={m} 
+                    chores={chores?.filter(c => c.member_id === m.id) || []} 
+                  />
+                ))
+              )}
+            </div>
+          </div>
         </div>
       </main>
  
       {household?.is_calm_corner_enabled && (
-        <Link to="/kiosk/calm-corner" className="fixed bottom-2 right-2" onClick={handleCalmCornerClick}>
+        <Link to="/kiosk/calm-corner" className="fixed bottom-[.9rem] right-2" onClick={handleCalmCornerClick}>
             <Button 
                 variant="secondary" 
                 size="lg" 
                 className={cn(
-                    "rounded-full h-40 w-40 shadow-lg bg-green-500 hover:bg-green-600 text-white flex flex-col items-center justify-center gap-1 transition-transform transform hover:scale-110", 
-                    isCalmCornerSuggested && "animate-pulse animate-rainbow-border border-4 border-transparent"
+                    "rounded-full h-40 w-40 shadow-lg bg-cyan-600/95 hover:bg-cyan-900 text-white flex flex-col items-center justify-center gap-1 transition-transform transform hover:scale-110", 
+                    isCalmCornerSuggested && "animate-rainbow-border border-4 border-transparent"
                 )}
             >
                 <Leaf className="h-8 w-8" />

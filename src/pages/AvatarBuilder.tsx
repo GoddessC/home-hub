@@ -16,8 +16,8 @@ type AvatarItem = { id: string; asset_url: string };
 type AvatarConfig = Record<string, AvatarItem | null>;
 
 // Static URLs for the default base avatar parts
-const BASE_HEAD_URL = 'https://dvqkkqvjsqjnvwwvxenh.supabase.co/storage/v1/object/public/avatars/head.png';
-const BASE_BODY_URL = 'https://dvqkkqvjsqjnvwwvxenh.supabase.co/storage/v1/object/public/avatars/body.png';
+const BASE_HEAD_URL = 'https://dvqkkqvjsqjnvwwvxenh.supabase.co/storage/v1/object/public/avatars/light_head.png';
+const BASE_BODY_URL = 'https://dvqkkqvjsqjnvwwvxenh.supabase.co/storage/v1/object/public/avatars/light_body.png';
 
 const defaultAvatarConfig: AvatarConfig = {
   base_head: { id: 'default_head', asset_url: BASE_HEAD_URL },
@@ -140,18 +140,20 @@ export const AvatarBuilderPage = () => {
         </header>
         <main className="flex-grow container mx-auto p-4 md:p-8">
           <div className="flex flex-col md:flex-row gap-8">
-            <div className="w-full md:w-1/2 lg:w-2/5 flex flex-col gap-6">
+            <div className="flex flex-row gap-6">
               <SkinTonePicker
                 onSelect={handleSkinToneSelect}
                 selectedHeadUrl={equippedItems?.base_head?.asset_url}
               />
-              <InventoryPanel memberId={memberId} />
             </div>
             <div className="flex-grow flex items-center justify-center">
               <AvatarCanvas
                 config={equippedItems}
                 isPoofing={isPoofing}
               />
+            </div>
+            <div className="w-1/4 flex flex-col gap-6">
+              <InventoryPanel memberId={memberId} />
             </div>
           </div>
         </main>

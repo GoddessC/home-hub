@@ -85,7 +85,7 @@ export const ChoreTemplateManagement = () => {
 
   return (
     <>
-      <Collapsible defaultOpen>
+      <Collapsible defaultOpen={false}>
         <Card>
           <CardHeader className="flex-row items-center justify-between">
             <div>

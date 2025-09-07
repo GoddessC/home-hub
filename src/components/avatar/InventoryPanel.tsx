@@ -44,7 +44,7 @@ export const InventoryPanel = ({ memberId }: InventoryPanelProps) => {
   const categories = Array.from(new Set(items?.map(item => item.category).filter(cat => cat !== 'base_body')));
 
   return (
-    <div className="w-full md:w-1/3 lg:w-1/4 p-4 bg-secondary rounded-lg shadow-inner">
+    <div className="w-full p-4 bg-secondary rounded-lg shadow-inner">
       <h2 className="text-xl font-bold mb-4">Your Items</h2>
       {isLoading ? (
         <Skeleton className="w-full h-64" />

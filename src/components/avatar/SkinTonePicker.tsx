@@ -19,27 +19,24 @@ interface SkinTonePickerProps {
 const BASE_URL = 'https://dvqkkqvjsqjnvwwvxenh.supabase.co/storage/v1/object/public/avatars';
 
 const skinTones: SkinTone[] = [
-  { name: 'light',  color: '#F6D1BE', headUrl: `${BASE_URL}/head_light.png`,  bodyUrl: `${BASE_URL}/body_light.png` },
-  { name: 'fair',   color: '#F0C2A8', headUrl: `${BASE_URL}/head_fair.png`,   bodyUrl: `${BASE_URL}/body_fair.png` },
-  { name: 'medium', color: '#D8A083', headUrl: `${BASE_URL}/head_medium.png`, bodyUrl: `${BASE_URL}/body_medium.png` },
-  { name: 'tan',    color: '#B87957', headUrl: `${BASE_URL}/head_tan.png`,    bodyUrl: `${BASE_URL}/body_tan.png` },
-  { name: 'brown',  color: '#8C5532', headUrl: `${BASE_URL}/head_brown.png`,  bodyUrl: `${BASE_URL}/body_brown.png` },
-  { name: 'dark',   color: '#5F3B25', headUrl: `${BASE_URL}/head_dark.png`,   bodyUrl: `${BASE_URL}/body_dark.png` },
-  { name: 'deep',   color: '#3E2518', headUrl: `${BASE_URL}/head_deep.png`,   bodyUrl: `${BASE_URL}/body_deep.png` },
+  { name: 'light',  color: '#F6D1BE', headUrl: `${BASE_URL}/light_head.png`,  bodyUrl: `${BASE_URL}/light_body.png` },
+  { name: 'medium', color: '#D8A083', headUrl: `${BASE_URL}/medium_head.png`, bodyUrl: `${BASE_URL}/medium_body.png` },
+  { name: 'brown',  color: '#8C5532', headUrl: `${BASE_URL}/brown_head.png`,  bodyUrl: `${BASE_URL}/brown_body.png` },
+  { name: 'deep',   color: '#3E2518', headUrl: `${BASE_URL}/deep_head.png`,   bodyUrl: `${BASE_URL}/deep_body.png` },
 ];
 
 export const SkinTonePicker: React.FC<SkinTonePickerProps> = ({ onSelect, selectedHeadUrl, className }) => {
   const isSelected = (tone: SkinTone) => {
     if (!selectedHeadUrl) return false;
-    return selectedHeadUrl === tone.headUrl || selectedHeadUrl.endsWith(`/head_${tone.name}.png`);
+    return selectedHeadUrl === tone.headUrl || selectedHeadUrl.endsWith(`/${tone.name}_head.png`);
   };
 
   return (
-    <Card className={cn('p-4', className)}>
+    <Card className={cn('p-4 flex-row', className)}>
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-sm font-medium text-muted-foreground">Skin tone</h3>
       </div>
-      <div className="grid grid-cols-7 gap-3">
+      <div className="grid grid-cols-1 gap-3">
         {skinTones.map((tone) => {
           const selected = isSelected(tone);
           return (

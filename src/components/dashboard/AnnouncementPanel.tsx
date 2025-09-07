@@ -37,7 +37,7 @@ export const AnnouncementPanel = () => {
   }
 
   return (
-    <Card className="bg-blue-50 border-blue-200 dark:bg-blue-900/20 dark:border-blue-800">
+    <Card className="w-2/3 bg-blue-50 border-blue-200 dark:bg-blue-900/20 dark:border-blue-800">
       <CardContent className="p-4 flex items-start space-x-4">
         <Megaphone className="h-6 w-6 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-1" />
         <div>

@@ -75,7 +75,7 @@ export const DeviceManagement = () => {
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-      <Collapsible defaultOpen>
+      <Collapsible defaultOpen={false}>
         <Card>
           <CardHeader className="flex-row items-center justify-between">
             <div>
@@ -119,7 +119,7 @@ export const DeviceManagement = () => {
           </CollapsibleContent>
         </Card>
       </Collapsible>
-      <Collapsible defaultOpen>
+      <Collapsible defaultOpen={false}>
         <Card>
           <CardHeader className="flex-row items-center justify-between">
             <div>

@@ -19,6 +19,7 @@ export const storeItemSchema = z.object({
   point_cost: z.coerce.number().min(0, 'Point cost must be 0 or more.'),
   item_category: z.enum(['AVATAR', 'IRL']),
   image_url: z.string().optional(),
+  is_active: z.boolean().default(true),
 });
 
 export type StoreItemFormValues = z.infer<typeof storeItemSchema>;
@@ -40,6 +41,7 @@ export const StoreItemForm = ({ onSubmit, onCancel, defaultValues, isSubmitting 
       description: '',
       point_cost: 10,
       item_category: 'AVATAR',
+      is_active: true,
       ...defaultValues,
     },
   });
@@ -84,7 +86,7 @@ export const StoreItemForm = ({ onSubmit, onCancel, defaultValues, isSubmitting 
           control={control}
           render={({ field }) => (
             <RadioGroup onValueChange={field.onChange} value={field.value} className="flex gap-4">
-              <div className="flex items-center space-x-2"><RadioGroupItem value="AVATAR" id="avatar" /><Label htmlFor="avatar">Avatar Item</Label></div>
+              <div className="flex items-center space-x-2 text-gray-400"><RadioGroupItem value="AVATAR" id="avatar" disabled /><Label htmlFor="avatar">Avatar Item</Label></div>
               <div className="flex items-center space-x-2"><RadioGroupItem value="IRL" id="irl" /><Label htmlFor="irl">Real-Life Reward</Label></div>
             </RadioGroup>
           )}

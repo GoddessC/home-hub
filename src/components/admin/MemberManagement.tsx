@@ -48,8 +48,8 @@ export const MemberManagement = () => {
     onSuccess: (newMember) => {
         if (!newMember) return;
 
-        const base_head_url = 'https://dvqkkqvjsqjnvwwvxenh.supabase.co/storage/v1/object/public/avatars/head.png';
-        const base_body_url = 'https://dvqkkqvjsqjnvwwvxenh.supabase.co/storage/v1/object/public/avatars/body.png';
+        const base_head_url = 'https://dvqkkqvjsqjnvwwvxenh.supabase.co/storage/v1/object/public/avatars/light_head.png';
+        const base_body_url = 'https://dvqkkqvjsqjnvwwvxenh.supabase.co/storage/v1/object/public/avatars/light_body.png';
         
         const defaultConfig = {
             base_head: { id: 'default_head', asset_url: base_head_url },
@@ -89,7 +89,7 @@ export const MemberManagement = () => {
 
   return (
     <>
-      <Collapsible defaultOpen>
+      <Collapsible defaultOpen={false}>
         <Card>
           <CardHeader className="flex-row items-center justify-between">
             <div>

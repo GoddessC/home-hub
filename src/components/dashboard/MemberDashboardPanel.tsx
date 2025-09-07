@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -31,6 +31,8 @@ export const MemberDashboardPanel = ({ member, chores }: MemberDashboardPanelPro
   const { household, isAnonymous } = useAuth();
   const [isFeelingsDialogOpen, setFeelingsDialogOpen] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [showQuestBadge, setShowQuestBadge] = useState(false);
+  const [questPoints, setQuestPoints] = useState(0);
 
   const { data: weeklyScore, isLoading: isLoadingScore } = useQuery({
     queryKey: ['member_score', member.id],
@@ -62,20 +64,97 @@ export const MemberDashboardPanel = ({ member, chores }: MemberDashboardPanelPro
     enabled: !!member.id,
   });
 
-  const updateChoreMutation = useMutation({
-    mutationFn: async ({ choreId, isCompleted }: { choreId: string, isCompleted: boolean }) => {
+  const { data: recentCompletedQuest } = useQuery({
+    queryKey: ['recent_completed_quest', member.id],
+    queryFn: async () => {
+      const now = new Date();
+      const fiveMinutesAgo = new Date(now.getTime() - 5 * 60 * 1000);
+      
+      const { data, error } = await supabase
+        .from('quest_member_rewards')
+        .select('points_awarded, created_at')
+        .eq('member_id', member.id)
+        .gte('created_at', fiveMinutesAgo.toISOString())
+        .order('created_at', { ascending: false })
+        .limit(1);
+      
+      if (error) return null;
+      return data.length > 0 ? data[0] : null;
+    },
+    enabled: !!member.id,
+    refetchInterval: 30000, // Check every 30 seconds
+  });
+
+  useEffect(() => {
+    if (recentCompletedQuest) {
+      setShowQuestBadge(true);
+      setQuestPoints(recentCompletedQuest.points_awarded);
+      
+      // Hide the badge after 2 minutes
+      const timer = setTimeout(() => {
+        setShowQuestBadge(false);
+      }, 120000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [recentCompletedQuest]);
+
+  const updateChoreMutation = useMutation<
+    void,
+    Error,
+    { choreId: string; isCompleted: boolean },
+    { previousDailyChores: any[] | undefined; todayKey: (string | number)[] } 
+  >({
+    mutationFn: async ({ choreId, isCompleted }: { choreId: string; isCompleted: boolean }) => {
+      // Only allow marking as completed, not unchecking
+      if (!isCompleted) {
+        throw new Error("Cannot uncheck completed chores");
+      }
+      
       const { error } = await supabase
         .from('chore_log')
-        .update({ completed_at: isCompleted ? new Date().toISOString() : null })
+        .update({ completed_at: new Date().toISOString() })
         .eq('id', choreId);
       if (error) throw error;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['chore_log'] });
+    onMutate: async ({ choreId, isCompleted }) => {
+      if (!household?.id) return { previousDailyChores: undefined, todayKey: [] };
+
+      // Only allow marking as completed, not unchecking
+      if (!isCompleted) {
+        throw new Error("Cannot uncheck completed chores");
+      }
+
+      const todayKey = ['daily_chores', household.id, format(new Date(), 'yyyy-MM-dd')];
+
+      await queryClient.cancelQueries({ queryKey: todayKey });
+
+      const previousDailyChores = queryClient.getQueryData<any[]>(todayKey);
+
+      queryClient.setQueryData<any[]>(todayKey, (old) => {
+        if (!old) return old as any;
+        return old.map((entry) =>
+          entry.id === choreId
+            ? { ...entry, completed_at: new Date().toISOString() }
+            : entry
+        );
+      });
+
+      return { previousDailyChores, todayKey };
+    },
+    onError: (error, _variables, context) => {
+      showError(error.message);
+      if (context?.todayKey?.length) {
+        queryClient.setQueryData(context.todayKey, context.previousDailyChores);
+      }
+    },
+    onSettled: (_data, _error, _variables, context) => {
+      if (context?.todayKey?.length) {
+        queryClient.invalidateQueries({ queryKey: context.todayKey });
+      }
       queryClient.invalidateQueries({ queryKey: ['member_score', member.id] });
       queryClient.invalidateQueries({ queryKey: ['member_achievements', member.id] });
     },
-    onError: (error: Error) => showError(error.message),
   });
 
   const { data: todaysLogs } = useQuery({
@@ -153,7 +232,7 @@ export const MemberDashboardPanel = ({ member, chores }: MemberDashboardPanelPro
               {achievements?.has_completed_chores && (
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <img src="/orange-check.png" alt="All Chores Done!" className={cn("absolute w-8 h-8 transition-all duration-300 z-20", isExpanded ? "top-2 right-2" : "-top-2 -right-2")} />
+                    <img src="/orange-check.png" alt="All Chores Done!" className={cn("absolute w-20 h-20 transition-all duration-300 z-20 top-[-40px] left-[-30px]")} />
                   </TooltipTrigger>
                   <TooltipContent><p>All Chores Done Today!</p></TooltipContent>
                 </Tooltip>
@@ -161,9 +240,24 @@ export const MemberDashboardPanel = ({ member, chores }: MemberDashboardPanelPro
               {achievements?.has_completed_quest && (
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <img src="/purple-check.png" alt="Quest Complete!" className={cn("absolute w-8 h-8 transition-all duration-300 z-20", isExpanded ? "top-2 right-12" : "-top-2 right-8")} />
+                    <img src="/orange-check.png" alt="Quest Complete!" className={cn("absolute w-20 h-20 transition-all duration-300 z-20 top-[10px] left-[-30px]", isExpanded ? "top-2 right-12" : "-top-2 right-8")} />
                   </TooltipTrigger>
                   <TooltipContent><p>Team Quest Completed!</p></TooltipContent>
+                </Tooltip>
+              )}
+              {showQuestBadge && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="absolute z-30 transition-all duration-300 animate-bounce" style={{ top: "-30px", right: isExpanded ? "20px" : "0" }}>
+                      <div className="relative">
+                        <img src="/quest_badge.png" alt="Quest Reward!" className="w-16 h-16" />
+                        <div className="absolute inset-0 flex items-center justify-center text-black font-bold text-lg" style={{ paddingBottom: "4px" }}>
+                          +{questPoints}
+                        </div>
+                      </div>
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent><p>Quest Reward Earned!</p></TooltipContent>
                 </Tooltip>
               )}
             </>
@@ -213,12 +307,27 @@ export const MemberDashboardPanel = ({ member, chores }: MemberDashboardPanelPro
                             <Checkbox
                                 id={`${member.id}-${chore.id}`}
                                 checked={!!chore.completed_at}
-                                onCheckedChange={(checked) => updateChoreMutation.mutate({ choreId: chore.id, isCompleted: !!checked })}
+                                disabled={!!chore.completed_at}
+                                onCheckedChange={(checked) => {
+                                  // Only allow checking, not unchecking
+                                  if (checked && !chore.completed_at) {
+                                    updateChoreMutation.mutate({ choreId: chore.id, isCompleted: true });
+                                  }
+                                }}
                             />
-                            <label htmlFor={`${member.id}-${chore.id}`} className="flex-grow text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                            <label 
+                              htmlFor={`${member.id}-${chore.id}`} 
+                              className={`flex-grow text-sm font-medium leading-none ${
+                                chore.completed_at 
+                                  ? 'cursor-not-allowed opacity-70 line-through text-muted-foreground' 
+                                  : 'peer-disabled:cursor-not-allowed peer-disabled:opacity-70'
+                              }`}
+                            >
                                 {choreData?.title}
                             </label>
-                            <span className="font-semibold text-primary">+{choreData?.points} pt</span>
+                            <span className={`font-semibold ${chore.completed_at ? 'text-muted-foreground' : 'text-primary'}`}>
+                              +{choreData?.points} pt
+                            </span>
                             </li>
                         )
                       })}

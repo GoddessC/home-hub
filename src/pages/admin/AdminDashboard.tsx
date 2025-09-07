@@ -13,6 +13,7 @@ import { QuestManagement } from '@/components/admin/QuestManagement';
 import { AlarmManagement } from '@/components/admin/AlarmManagement';
 import { WeatherSettings } from '@/components/admin/WeatherSettings';
 import { StoreManagement } from '@/components/admin/StoreManagement';
+import { ScheduleManagement } from '@/components/admin/ScheduleManagement';
 
 const AdminDashboard = () => {
   const { household } = useAuth();
@@ -38,16 +39,17 @@ const AdminDashboard = () => {
         
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2 space-y-8">
-                <StoreManagement />
-                <AlarmManagement />
-                <QuestManagement />
                 <AnnouncementManagement />
                 <FeelingsManagement />
+                <QuestManagement />
+                <AlarmManagement />
                 <MemberManagement />
-                <DeviceManagement />
                 <ChoreTemplateManagement />
+                <StoreManagement />
+                <DeviceManagement />
             </div>
             <div className="lg:col-span-1 space-y-8">
+                <ScheduleManagement />
                 <HouseholdSettings />
                 <WeatherSettings />
                 <CalmCornerManagement />

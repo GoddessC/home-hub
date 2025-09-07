@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { showSuccess, showError } from '@/utils/toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { PlusCircle, Trash2, Pencil, Gem, Gift, ChevronsUpDown } from 'lucide-react';
@@ -20,7 +21,7 @@ export const StoreManagement = () => {
   const { data: items, isLoading } = useQuery<StoreItem[]>({
     queryKey: ['store_items'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('store_items').select('*').order('created_at');
+      const { data, error } = await supabase.from('store_items').select('*').eq('is_active', true).order('created_at');
       if (error) throw error;
       return data;
     },
@@ -42,12 +43,13 @@ export const StoreManagement = () => {
 
   const deleteMutation = useMutation({
     mutationFn: async (itemId: string) => {
-      const { error } = await supabase.from('store_items').delete().eq('id', itemId);
+      const { error } = await supabase.from('store_items').update({ is_active: false }).eq('id', itemId);
       if (error) throw error;
     },
     onSuccess: () => {
-      showSuccess('Item deleted.');
+      showSuccess('Item deactivated and removed from store.');
       queryClient.invalidateQueries({ queryKey: ['store_items'] });
+      queryClient.invalidateQueries({ queryKey: ['store_items_active'] });
     },
     onError: (error: Error) => showError(error.message),
   });
@@ -64,7 +66,7 @@ export const StoreManagement = () => {
 
   return (
     <>
-      <Collapsible defaultOpen>
+      <Collapsible defaultOpen={false}>
         <Card>
           <CardHeader className="flex-row items-center justify-between">
             <div>
@@ -103,9 +105,27 @@ export const StoreManagement = () => {
                         <Button variant="ghost" size="icon" onClick={() => handleEdit(item)}>
                           <Pencil className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="icon" onClick={() => deleteMutation.mutate(item.id)} disabled={deleteMutation.isPending}>
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="ghost" size="icon" disabled={deleteMutation.isPending}>
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Remove Item from Store</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Are you sure you want to remove "{item.name}" from the store? This will hide it from all users, but members who already own it will keep it in their inventory.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => deleteMutation.mutate(item.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                                Remove Item
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
                       </div>
                     </li>
                   ))}

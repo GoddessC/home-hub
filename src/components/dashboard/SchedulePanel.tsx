@@ -7,6 +7,7 @@ import { format } from 'date-fns';
 import { useAuth } from '@/context/AuthContext';
 import { cn } from '@/lib/utils';
 import { useState, useEffect } from 'react';
+import { WeatherIcon } from './WeatherIcon';
 
 type ScheduleItem = {
   id: string;
@@ -76,10 +77,16 @@ export const SchedulePanel = ({ className }: SchedulePanelProps) => {
           <CardContent className="p-6">
             <div className="text-center">
               <div className="text-4xl font-mono font-bold text-primary mb-2">
-                {format(currentTime, 'h:mm:s a')}
+                {format(currentTime, 'h:mm:ss a')}
               </div>
-              <div className="text-lg text-muted-foreground">
+              <div className="text-xl text-muted-foreground mb-4">
                 {format(currentTime, 'EEEE, MMMM do, yyyy')}
+              </div>
+              {/* Weather under the clock */}
+              <div className="flex items-center justify-center">
+                <div className="scale-150">
+                  <WeatherIcon />
+                </div>
               </div>
             </div>
           </CardContent>
@@ -115,8 +122,14 @@ export const SchedulePanel = ({ className }: SchedulePanelProps) => {
               <div className="text-4xl font-mono font-bold text-primary mb-2">
                 {format(currentTime, 'h:mm:s a')}
               </div>
-              <div className="text-lg text-muted-foreground">
+              <div className="text-lg text-muted-foreground mb-4">
                 {format(currentTime, 'EEEE, MMMM do, yyyy')}
+              </div>
+              {/* Weather under the clock */}
+              <div className="flex items-center justify-center">
+                <div className="scale-150">
+                  <WeatherIcon />
+                </div>
               </div>
             </div>
           </CardContent>
@@ -149,8 +162,14 @@ export const SchedulePanel = ({ className }: SchedulePanelProps) => {
             <div className="text-4xl font-mono font-bold text-primary mb-2">
               {format(currentTime, 'h:mm:s a')}
             </div>
-            <div className="text-lg text-muted-foreground">
+            <div className="text-lg text-muted-foreground mb-4">
               {format(currentTime, 'EEEE, MMMM do, yyyy')}
+            </div>
+            {/* Weather under the clock */}
+            <div className="flex items-center justify-center">
+              <div className="scale-150">
+                <WeatherIcon />
+              </div>
             </div>
           </div>
         </CardContent>

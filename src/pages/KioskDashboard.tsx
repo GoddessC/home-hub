@@ -12,7 +12,7 @@ import { cn } from '@/lib/utils';
 import { UserNav } from '@/components/layout/UserNav';
 import { MemberDashboardPanel } from '@/components/dashboard/MemberDashboardPanel';
 import { TeamQuestPanel, Quest } from '@/components/dashboard/TeamQuestPanel';
-import { WeatherIcon } from '@/components/dashboard/WeatherIcon';
+// removed WeatherIcon from header per request
 import { SchedulePanel } from '@/components/dashboard/SchedulePanel';
 import { AlarmModal } from '@/components/alarms/AlarmModal';
 import { useAlarmSystem } from '@/hooks/useAlarmSystem';
@@ -33,11 +33,17 @@ export type ChoreLog = {
 const KioskDashboard = () => {
   const { device, household, signOut, isAnonymous, member } = useAuth();
   const [isCalmCornerSuggested, setIsCalmCornerSuggested] = useState(false);
+  const [headerTime, setHeaderTime] = useState(new Date());
   const [expandedMemberId, setExpandedMemberId] = useState<string | null>(null);
   const suggestionTimer = useRef<NodeJS.Timeout | null>(null);
   
   // Alarm system
   const { activeAlarm, dismissAlarm, snoozeAlarm, isAlarmActive } = useAlarmSystem();
+
+  useEffect(() => {
+    const t = setInterval(() => setHeaderTime(new Date()), 1000);
+    return () => clearInterval(t);
+  }, []);
 
   useEffect(() => {
     if (!household || !isAnonymous) return;
@@ -145,7 +151,7 @@ const KioskDashboard = () => {
           </h1>
           <AnnouncementPanel />
           <div className="flex items-center space-x-4">
-            <WeatherIcon />
+            <div className={cn("font-mono font-semibold", isAnonymous ? "text-white" : "text-gray-800")}>{format(headerTime, 'h:mm a')}</div>
             {isAnonymous ? (
               <>
                 <span className="text-sm text-gray-400">{device?.display_name}</span>

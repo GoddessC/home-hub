@@ -75,9 +75,9 @@ export const WeatherIcon = () => {
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        <div className="flex items-center gap-2 font-semibold text-lg">
+        <div className="flex items-center gap-2 text-[12px] text-muted-foreground">
           <IconComponent className="h-6 w-6" />
-          <span>{weather.temp}°</span>
+          <span>{weather.temp}° - {weather.description}</span>
         </div>
       </TooltipTrigger>
       <TooltipContent>

@@ -9,13 +9,12 @@ interface InventoryPanelProps {
 }
 
 type AvatarItem = {
-    id: string;
-    name: string;
-    category: string;
-    asset_url: string;
-    asset_url_back: string | null;
-    points_cost: number;
-    created_at: string;
+  id: string;
+  name: string;
+  category: string;
+  asset_url: string;
+  asset_url_back: string | null;
+  created_at: string;
 }
 
 const useMemberInventory = (memberId?: string) => {
@@ -23,16 +22,118 @@ const useMemberInventory = (memberId?: string) => {
     queryKey: ['member_inventory_items', memberId],
     queryFn: async () => {
       if (!memberId) return [];
-      // Fetch the items from the inventory and join with the item details.
-      const { data, error } = await supabase
+
+      // 1) Fetch owned item ids
+      const { data: owned, error: ownedErr } = await supabase
         .from('member_avatar_inventory')
-        .select('avatar_items(*)')
+        .select('item_id')
         .eq('member_id', memberId);
-        
-      if (error) throw error;
-      
-      // The result is an array like [{ avatar_items: {...} }]. We need to extract the item details.
-      return data.map((inventoryEntry: any) => inventoryEntry.avatar_items).filter(Boolean) as AvatarItem[];
+      if (ownedErr) throw ownedErr;
+      const ids: string[] = (owned || []).map((r: any) => r.item_id).filter(Boolean);
+      if (ids.length === 0) return [];
+
+      // 2) Fetch item details from avatar_items
+      const { data: items, error: itemsErr } = await supabase
+        .from('avatar_items')
+        .select('*')
+        .in('id', ids);
+      if (itemsErr) throw itemsErr;
+
+      // 3) Normalize and ensure category and asset urls are present
+      const normalized: AvatarItem[] = (items || []).map((row: any) => {
+        let assetUrl: string = row.asset_url || row.image_url || '';
+        if (assetUrl && !/^https?:\/\//i.test(assetUrl)) {
+          let relative = String(assetUrl).replace(/^store-assets\//, '');
+
+          // Hair normalization: ensure path is hair/{variant}/{variant}_front.png
+          const isHair = (row.category === 'hair' || row.avatar_category === 'hair');
+          if (isHair && !relative.startsWith('hair/')) {
+            const segments = relative.split('/');
+            const variant = segments[0];
+            const filename = segments[1] || `${variant}_front.png`;
+            relative = `hair/${variant}/${filename}`;
+          }
+
+          const { data: pub } = supabase.storage.from('store-assets').getPublicUrl(relative);
+          assetUrl = pub.publicUrl;
+        }
+
+        // Handle full public URL that may lack hair/ segment
+        if (assetUrl && /^https?:\/\//i.test(assetUrl) && assetUrl.includes('/store-assets/')) {
+          try {
+            const url = new URL(assetUrl);
+            const idx = url.pathname.indexOf('/store-assets/');
+            if (idx !== -1) {
+              let relative = url.pathname.substring(idx + '/store-assets/'.length);
+              const isHair = (row.category === 'hair' || row.avatar_category === 'hair');
+              if (isHair && !relative.startsWith('hair/')) {
+                const segments = relative.split('/');
+                const variant = segments[0];
+                const filename = segments[1] || `${variant}_front.png`;
+                relative = `hair/${variant}/${filename}`;
+                const { data: pub } = supabase.storage.from('store-assets').getPublicUrl(relative);
+                assetUrl = pub.publicUrl;
+              }
+            }
+          } catch { /* ignore */ }
+        }
+
+        // Hair assets fallback: store-assets/hair/{variant}/{variant}_front.png
+        if (!assetUrl && (row.category === 'hair' || row.avatar_category === 'hair') && row.name) {
+          const variant = String(row.name).toLowerCase().replace(/\s+/g, '_');
+          const path = `hair/${variant}/${variant}_front.png`;
+          const { data: pub } = supabase.storage.from('store-assets').getPublicUrl(path);
+          assetUrl = pub.publicUrl;
+        }
+
+        let backUrl: string | null = row.asset_url_back || null;
+        if (backUrl && !/^https?:\/\//i.test(backUrl)) {
+          let relBack = String(backUrl).replace(/^store-assets\//, '');
+
+          const isHair = (row.category === 'hair' || row.avatar_category === 'hair');
+          if (isHair && !relBack.startsWith('hair/')) {
+            const segments = relBack.split('/');
+            const variant = segments[0];
+            const filename = segments[1] || `${variant}_back.png`;
+            relBack = `hair/${variant}/${filename}`;
+          }
+
+          const { data: pub } = supabase.storage.from('store-assets').getPublicUrl(relBack);
+          backUrl = pub.publicUrl;
+        }
+
+        if (backUrl && /^https?:\/\//i.test(backUrl) && backUrl.includes('/store-assets/')) {
+          try {
+            const url = new URL(backUrl);
+            const idx = url.pathname.indexOf('/store-assets/');
+            if (idx !== -1) {
+              let relative = url.pathname.substring(idx + '/store-assets/'.length);
+              const isHair = (row.category === 'hair' || row.avatar_category === 'hair');
+              if (isHair && !relative.startsWith('hair/')) {
+                const segments = relative.split('/');
+                const variant = segments[0];
+                const filename = segments[1] || `${variant}_back.png`;
+                relative = `hair/${variant}/${filename}`;
+                const { data: pub } = supabase.storage.from('store-assets').getPublicUrl(relative);
+                backUrl = pub.publicUrl;
+              }
+            }
+          } catch { /* ignore */ }
+        }
+
+        const category: string = row.category || row.avatar_category || 'other';
+
+        return {
+          id: row.id,
+          name: row.name,
+          category,
+          asset_url: assetUrl,
+          asset_url_back: backUrl,
+          created_at: row.created_at,
+        } as AvatarItem;
+      });
+
+      return normalized;
     },
     enabled: !!memberId,
   });
@@ -41,7 +142,13 @@ const useMemberInventory = (memberId?: string) => {
 export const InventoryPanel = ({ memberId }: InventoryPanelProps) => {
   const { data: items, isLoading } = useMemberInventory(memberId);
 
-  const categories = Array.from(new Set(items?.map(item => item.category).filter(cat => cat !== 'base_body')));
+  const categories = Array.from(
+    new Set(
+      (items || [])
+        .map(item => item.category || 'other')
+        .filter(cat => cat && cat !== 'base_body')
+    )
+  );
 
   return (
     <div className="w-full p-4 bg-secondary rounded-lg shadow-inner">
@@ -58,7 +165,9 @@ export const InventoryPanel = ({ memberId }: InventoryPanelProps) => {
           {categories.map(category => (
             <TabsContent key={category} value={category}>
               <div className="grid grid-cols-3 gap-4 mt-4">
-                {items?.filter(item => item.category === category).map(item => (
+                {items
+                  ?.filter(item => (item.category || 'other') === category)
+                  .map(item => (
                   <DraggableAvatarItem key={item.id} item={item} />
                 ))}
               </div>

@@ -10,6 +10,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { PlusCircle, Trash2, Pencil, Gem, Gift, ChevronsUpDown } from 'lucide-react';
 import { StoreItemForm, StoreItemFormValues } from './StoreItemForm';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { useAuth } from '@/context/AuthContext';
 
 type StoreItem = StoreItemFormValues & { id: string; };
 
@@ -17,24 +18,30 @@ export const StoreManagement = () => {
   const queryClient = useQueryClient();
   const [isFormOpen, setFormOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<StoreItem | null>(null);
+  const { household } = useAuth();
 
   const { data: items, isLoading } = useQuery<StoreItem[]>({
-    queryKey: ['store_items'],
+    queryKey: ['store_items', household?.id],
     queryFn: async () => {
-      const { data, error } = await supabase.from('store_items').select('*').eq('is_active', true).order('created_at');
+      const { data, error } = await supabase
+        .from('store_items')
+        .select('*')
+        .order('created_at');
       if (error) throw error;
-      return data;
+      return data as StoreItem[];
     },
   });
 
   const upsertMutation = useMutation({
     mutationFn: async (values: StoreItemFormValues) => {
-      const { error } = await supabase.from('store_items').upsert(values);
+      if (!household?.id) throw new Error('Household not found');
+      const payload = { ...values, household_id: household.id } as any;
+      const { error } = await supabase.from('store_items').upsert(payload);
       if (error) throw error;
     },
     onSuccess: (_, values) => {
       showSuccess(`Item "${values.name}" saved!`);
-      queryClient.invalidateQueries({ queryKey: ['store_items'] });
+      queryClient.invalidateQueries({ queryKey: ['store_items', household?.id] });
       setFormOpen(false);
       setSelectedItem(null);
     },
@@ -48,8 +55,8 @@ export const StoreManagement = () => {
     },
     onSuccess: () => {
       showSuccess('Item deactivated and removed from store.');
-      queryClient.invalidateQueries({ queryKey: ['store_items'] });
-      queryClient.invalidateQueries({ queryKey: ['store_items_active'] });
+      queryClient.invalidateQueries({ queryKey: ['store_items', household?.id] });
+      queryClient.invalidateQueries({ queryKey: ['store_items_active', household?.id] });
     },
     onError: (error: Error) => showError(error.message),
   });

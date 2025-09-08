@@ -72,7 +72,7 @@ export const MemberDashboardPanel = ({ member, chores, isExpanded, onToggleExpan
       const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
       
       const { data, error } = await supabase
-        .from('quest_member_rewards')
+        .from('quest_sub_tasks')
         .select('points_awarded, created_at')
         .eq('member_id', member.id)
         .gte('created_at', twentyFourHoursAgo.toISOString())

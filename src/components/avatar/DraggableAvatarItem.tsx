@@ -21,15 +21,6 @@ const zIndexMap: Record<string, number> = {
   accessory: 40,
 };
 
-const headStyle: React.CSSProperties = {
-width: '60%',
-height: 'auto',
-top: '10%',
-left: 0,
-right: 0,
-margin: '0 auto',
-};
-
 export const DraggableAvatarItem = ({ item }: DraggableAvatarItemProps) => {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: item.id,
@@ -64,12 +55,14 @@ export const DraggableAvatarItem = ({ item }: DraggableAvatarItemProps) => {
             style={{ zIndex: zIndexMap['hair_back'] }}
           />
         )}
-        <img
-          src="https://dvqkkqvjsqjnvwwvxenh.supabase.co/storage/v1/object/public/avatars/head.png"
-          alt="Avatar Head"
-          className="object-contain absolute inset-0 w-full h-full"
-          style={{ zIndex: zIndexMap['base_head'] }}
-        />
+        {item.category === 'hair' && (
+          <img
+            src="https://dvqkkqvjsqjnvwwvxenh.supabase.co/storage/v1/object/public/avatars/light_head.png"
+            alt="Avatar Head"
+            className="object-contain absolute inset-0 w-full h-full"
+            style={{ zIndex: zIndexMap['base_head'] }}
+          />
+        )}
         <img
           src={item.asset_url}
           alt="Hair Front"

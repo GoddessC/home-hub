@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
@@ -10,7 +10,7 @@ import { ArrowLeft, Coins } from 'lucide-react';
 
 export const StorePage = () => {
   const { memberId } = useParams<{ memberId: string }>();
-  const { user, household } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
@@ -57,13 +57,84 @@ export const StorePage = () => {
     enabled: !!memberId,
   });
 
-  // Fetch all active store items
+  // Fetch all active store items (avatar items)
   const { data: storeItems, isLoading: isLoadingItems } = useQuery({
     queryKey: ['store_items_active'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('store_items').select('*').eq('is_active', true);
+      const { data, error } = await supabase
+        .from('avatar_items')
+        .select('*');
       if (error) throw error;
-      return data;
+
+      // Normalize to the shape StoreItemCard expects and ensure image_url is populated
+      const normalized = (data || []).map((row: any) => {
+        let imageUrl: string | undefined = row.image_url || row.asset_url;
+        const isHair = (row.category === 'hair' || row.avatar_category === 'hair');
+
+        // Case A: provided value is a storage-relative path
+        if (imageUrl && !/^https?:\/\//i.test(imageUrl)) {
+          let relativePath = imageUrl.replace(/^store-assets\//, '');
+
+          // Normalize hair path to hair/{variant}/{variant}_front.png
+          if (isHair && !relativePath.startsWith('hair/')) {
+            const segments = relativePath.split('/');
+            const variant = segments[0];
+            const filename = segments[1] || `${variant}_front.png`;
+            relativePath = `hair/${variant}/${filename}`;
+          }
+
+          const { data: pub } = supabase.storage
+            .from('store-assets')
+            .getPublicUrl(relativePath);
+          imageUrl = pub.publicUrl;
+        }
+
+        // Case B: provided value is a full public URL but missing the hair/ segment
+        if (imageUrl && /^https?:\/\//i.test(imageUrl) && imageUrl.includes('/store-assets/')) {
+          try {
+            const url = new URL(imageUrl);
+            const idx = url.pathname.indexOf('/store-assets/');
+            if (idx !== -1) {
+              let relativePath = url.pathname.substring(idx + '/store-assets/'.length);
+              if (isHair && !relativePath.startsWith('hair/')) {
+                // e.g., hair_one/hair_one_front.png -> hair/hair_one/hair_one_front.png
+                const segments = relativePath.split('/');
+                const variant = segments[0];
+                const filename = segments[1] || `${variant}_front.png`;
+                relativePath = `hair/${variant}/${filename}`;
+                const { data: pub } = supabase.storage
+                  .from('store-assets')
+                  .getPublicUrl(relativePath);
+                imageUrl = pub.publicUrl;
+              }
+            }
+          } catch { /* ignore URL parse errors */ }
+        }
+
+        // Fallback for hair when nothing provided
+        if ((!imageUrl || imageUrl === '') && isHair && row.name) {
+          const variant = String(row.name).toLowerCase().replace(/\s+/g, '_');
+          const path = `hair/${variant}/${variant}_front.png`;
+          const { data: pub } = supabase.storage.from('store-assets').getPublicUrl(path);
+          imageUrl = pub.publicUrl;
+        }
+
+        const pointCost =
+          row.point_cost ??
+          row.points_cost ??
+          row.points ??
+          row.cost ??
+          0;
+
+        return {
+          id: row.id,
+          name: row.name,
+          image_url: imageUrl || '',
+          point_cost: pointCost,
+        };
+      });
+
+      return normalized;
     },
   });
 

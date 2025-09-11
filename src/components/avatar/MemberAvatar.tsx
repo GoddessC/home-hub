@@ -21,6 +21,9 @@ const zIndexMap: Record<string, number> = {
     hair_back: 12,
     base_body: 10,
     shirt: 20,
+    tops: 20,
+    bottoms: 18,
+    shoes: 16,
     base_head: 15,
     hair: 30,
     accessory: 40,
@@ -49,6 +52,31 @@ const headStyle: React.CSSProperties = {
 const baseHeadStyle: React.CSSProperties = {
   width: '100%',
 }
+
+const bottomsStyle: React.CSSProperties = {
+  position: 'absolute',
+  width: '40%',
+  top: '55%',
+  left: '28%',
+  height: 'auto',
+}
+
+const shoesStyle: React.CSSProperties = {
+  position: 'absolute',
+  width: '40%',
+  top: '80%',
+  left: '24%',
+  height: 'auto',
+}
+
+const topsStyle: React.CSSProperties = {
+  position: 'absolute',
+  top: '28%',
+  left: '18%',
+  width: '65%',
+  height: 'auto',
+}
+
 
 export const MemberAvatar = ({ memberId, className, viewMode = 'headshot' }: MemberAvatarProps) => {
   const { data: savedConfig, isLoading } = useQuery({
@@ -85,8 +113,13 @@ export const MemberAvatar = ({ memberId, className, viewMode = 'headshot' }: Mem
   return (
     <div className={cn("relative w-24 h-36", className)}>
       {/* Back Hair Layer */}
-      {hairItem?.asset_url_back && (
-        <img src={hairItem.asset_url_back} alt="Hair Back" className="object-contain" style={{ ...headStyle, zIndex: zIndexMap['hair_back'] }} />
+      {hairItem && (
+        <img 
+          src={hairItem.asset_url_back || hairItem.asset_url?.replace('_front.png', '_back.png') || hairItem.asset_url} 
+          alt="Hair Back" 
+          className="object-contain" 
+          style={{ ...headStyle, zIndex: zIndexMap['hair_back'] }} 
+        />
       )}
 
       {/* Base Body - ONLY in full view mode */}
@@ -103,14 +136,25 @@ export const MemberAvatar = ({ memberId, className, viewMode = 'headshot' }: Mem
       {Object.entries(savedConfig).map(([category, item]) => {
         if (!item || ['hair', 'base_body', 'base_head'].includes(category)) return null;
         
-        const isBodyItem = category === 'shirt';
+        const isBodyItem = ['shirt', 'tops', 'bottoms', 'shoes'].includes(category);
         
         // Don't render body items in headshot view
         if (viewMode === 'headshot' && isBodyItem) {
             return null;
         }
 
-        const itemStyle = isBodyItem ? bodyStyle : headStyle;
+        // Apply specific styles based on category
+        let itemStyle = headStyle; // default
+        if (category === 'tops') {
+          itemStyle = topsStyle;
+        } else if (category === 'bottoms') {
+          itemStyle = bottomsStyle;
+        } else if (category === 'shoes') {
+          itemStyle = shoesStyle;
+        } else if (isBodyItem) {
+          itemStyle = bodyStyle;
+        }
+
         return <img key={item.id} src={item.asset_url} alt={category} className="object-contain" style={{ ...itemStyle, zIndex: zIndexMap[category] || 15 }} />
       })}
 

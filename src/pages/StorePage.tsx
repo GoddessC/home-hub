@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { StoreItemCard } from '@/components/store/StoreItemCard';
 import { showSuccess, showError } from '@/utils/toast';
 import { ArrowLeft, Coins } from 'lucide-react';
+import { getMemberAvailablePoints } from '@/utils/pointsUtils';
 
 export const StorePage = () => {
   const { memberId } = useParams<{ memberId: string }>();
@@ -47,12 +48,10 @@ export const StorePage = () => {
 
   // Fetch the member's available points
   const { data: memberPoints, isLoading: isLoadingPoints } = useQuery({
-    queryKey: ['member_points', memberId],
+    queryKey: ['member_available_points', memberId],
     queryFn: async () => {
         if (!memberId) return 0;
-        const { data, error } = await supabase.rpc('get_member_available_points', { p_member_id: memberId });
-        if (error) throw error;
-        return data;
+        return await getMemberAvailablePoints(memberId);
     },
     enabled: !!memberId,
   });
@@ -158,7 +157,7 @@ export const StorePage = () => {
     },
     onSuccess: () => {
       showSuccess("Purchase successful!");
-      queryClient.invalidateQueries({ queryKey: ['member_points', memberId] });
+      queryClient.invalidateQueries({ queryKey: ['member_available_points', memberId] });
       queryClient.invalidateQueries({ queryKey: ['member_inventory', memberId] });
     },
     onError: (error: Error) => {

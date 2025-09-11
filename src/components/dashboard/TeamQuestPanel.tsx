@@ -89,7 +89,7 @@ export const TeamQuestPanel = ({ quest, isLoading }: TeamQuestPanelProps) => {
   const handleConfettiComplete = () => {
     setShowConfetti(false);
     // Update points and achievements immediately
-    queryClient.invalidateQueries({ queryKey: ['member_score'] });
+    queryClient.invalidateQueries({ queryKey: ['member_available_points'] });
     queryClient.invalidateQueries({ queryKey: ['member_weekly_score'] });
     queryClient.invalidateQueries({ queryKey: ['member_all_time_score'] });
     // Invalidate member achievements to refresh banners

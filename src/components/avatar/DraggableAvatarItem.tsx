@@ -10,18 +10,63 @@ interface DraggableAvatarItemProps {
     asset_url_back?: string | null;
     category: string;
   };
+  currentHeadUrl?: string | null;
 }
 
 const zIndexMap: Record<string, number> = {
   hair_back: 12,
   base_body: 10,
+  shoes: 16,
+  bottoms: 18,
   shirt: 20,
+  tops: 20,
   base_head: 15,
   hair: 30,
   accessory: 40,
 };
 
-export const DraggableAvatarItem = ({ item }: DraggableAvatarItemProps) => {
+// Positioning styles for different item categories
+const headStyle: React.CSSProperties = {
+  position: 'absolute',
+  width: '90%',
+  height: 'auto',
+  top: '10%',
+  left: '5%',
+};
+
+const bodyStyle: React.CSSProperties = {
+  position: 'absolute',
+  width: '75%',
+  height: 'auto',
+  top: '40%',
+  left: '12.5%',
+};
+
+const bottomsStyle: React.CSSProperties = {
+  position: 'absolute',
+  width: '40%',
+  top: '55%',
+  left: '28%',
+  height: 'auto',
+};
+
+const shoesStyle: React.CSSProperties = {
+  position: 'absolute',
+  width: '40%',
+  top: '80%',
+  left: '24%',
+  height: 'auto',
+};
+
+const topsStyle: React.CSSProperties = {
+  position: 'absolute',
+  top: '28%',
+  left: '18%',
+  width: '65%',
+  height: 'auto',
+};
+
+export const DraggableAvatarItem = ({ item, currentHeadUrl }: DraggableAvatarItemProps) => {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: item.id,
     data: {
@@ -47,27 +92,34 @@ export const DraggableAvatarItem = ({ item }: DraggableAvatarItemProps) => {
       )}
     >
       <div className="absolute inset-0 w-full h-full">
-        {item.asset_url_back && (
-          <img
-            src={item.asset_url_back}
-            alt="Hair Back"
-            className="object-contain absolute inset-0 w-full h-full"
-            style={{ zIndex: zIndexMap['hair_back'] }}
-          />
-        )}
         {item.category === 'hair' && (
           <img
-            src="https://dvqkkqvjsqjnvwwvxenh.supabase.co/storage/v1/object/public/avatars/light_head.png"
+            src={item.asset_url_back || item.asset_url?.replace('_front.png', '_back.png') || item.asset_url}
+            alt="Hair Back"
+            className="object-contain"
+            style={{ ...headStyle, zIndex: zIndexMap['hair_back'] }}
+          />
+        )}
+        {item.category === 'hair' && currentHeadUrl && (
+          <img
+            src={currentHeadUrl}
             alt="Avatar Head"
-            className="object-contain absolute inset-0 w-full h-full"
-            style={{ zIndex: zIndexMap['base_head'] }}
+            className="object-contain"
+            style={{ ...headStyle, zIndex: zIndexMap['base_head'] }}
           />
         )}
         <img
           src={item.asset_url}
-          alt="Hair Front"
-          className="object-contain absolute inset-0 w-full h-full"
-          style={{ zIndex: zIndexMap['hair'] }}
+          alt={item.category}
+          className="object-contain"
+          style={{ 
+            ...(item.category === 'tops' ? topsStyle : 
+                item.category === 'bottoms' ? bottomsStyle :
+                item.category === 'shoes' ? shoesStyle :
+                item.category === 'shirt' ? bodyStyle :
+                headStyle),
+            zIndex: zIndexMap[item.category] || 15
+          }}
         />
       </div>
     </Card>

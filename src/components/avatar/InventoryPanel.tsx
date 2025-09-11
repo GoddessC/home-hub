@@ -6,6 +6,7 @@ import { DraggableAvatarItem } from './DraggableAvatarItem';
 
 interface InventoryPanelProps {
   memberId: string | undefined;
+  currentHeadUrl?: string | null;
 }
 
 type AvatarItem = {
@@ -139,7 +140,7 @@ const useMemberInventory = (memberId?: string) => {
   });
 };
 
-export const InventoryPanel = ({ memberId }: InventoryPanelProps) => {
+export const InventoryPanel = ({ memberId, currentHeadUrl }: InventoryPanelProps) => {
   const { data: items, isLoading } = useMemberInventory(memberId);
 
   const categories = Array.from(
@@ -168,7 +169,7 @@ export const InventoryPanel = ({ memberId }: InventoryPanelProps) => {
                 {items
                   ?.filter(item => (item.category || 'other') === category)
                   .map(item => (
-                  <DraggableAvatarItem key={item.id} item={item} />
+                  <DraggableAvatarItem key={item.id} item={item} currentHeadUrl={currentHeadUrl} />
                 ))}
               </div>
             </TabsContent>

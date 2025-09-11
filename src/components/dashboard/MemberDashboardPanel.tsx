@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Skeleton } from '@/components/ui/skeleton';
 import { showError } from '@/utils/toast';
-import { startOfWeek, endOfWeek, format } from 'date-fns';
+import { format } from 'date-fns';
 import { Member, useAuth } from '@/context/AuthContext';
 import { Button } from '../ui/button';
 import { FeelingsCheckinDialog } from './FeelingsCheckinDialog';
@@ -15,6 +15,7 @@ import { Link } from 'react-router-dom';
 import { ChoreLog } from '@/pages/KioskDashboard';
 import { MemberAvatar } from '../avatar/MemberAvatar';
 import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip';
+import { getMemberAvailablePoints } from '@/utils/pointsUtils';
 
 interface MemberDashboardPanelProps {
   member: Member;
@@ -35,25 +36,24 @@ export const MemberDashboardPanel = ({ member, chores, isExpanded, onToggleExpan
   const [showQuestBadge, setShowQuestBadge] = useState(false);
   const [questPoints, setQuestPoints] = useState(0);
 
-  const { data: weeklyScore, isLoading: isLoadingScore } = useQuery({
-    queryKey: ['member_score', member.id],
+  // Get available points (total earned - total spent) - this should match the store
+  const { data: availablePoints, isLoading: isLoadingAvailablePoints } = useQuery({
+    queryKey: ['member_available_points', member.id],
     queryFn: async () => {
-      const weekStartsOn = (household?.chore_reset_day as (0 | 1 | 2 | 3 | 4 | 5 | 6)) ?? 0;
-      const weekStart = format(startOfWeek(new Date(), { weekStartsOn }), 'yyyy-MM-dd');
-      const weekEnd = format(endOfWeek(new Date(), { weekStartsOn }), 'yyyy-MM-dd');
-      
-      const { data, error } = await supabase
-        .from('chore_log')
-        .select('chores(points)')
-        .eq('member_id', member.id)
-        .not('completed_at', 'is', null)
-        .gte('due_date', weekStart)
-        .lte('due_date', weekEnd);
-      if (error) throw error;
-      return data.reduce((acc, item: any) => acc + (Array.isArray(item.chores) ? item.chores[0]?.points : item.chores?.points || 0), 0);
+      return await getMemberAvailablePoints(member.id);
     },
-    enabled: !!member && !!household,
+    enabled: !!member,
   });
+
+  // Get weekly points for display purposes (currently not used but kept for future use)
+  // const { data: weeklyScore } = useQuery({
+  //   queryKey: ['member_weekly_score', member.id],
+  //   queryFn: async () => {
+  //     const weekStartsOn = (household?.chore_reset_day as (0 | 1 | 2 | 3 | 4 | 5 | 6)) ?? 0;
+  //     return await getMemberWeeklyPoints(member.id, weekStartsOn);
+  //   },
+  //   enabled: !!member && !!household,
+  // });
 
   const { data: achievements, isLoading: isLoadingAchievements } = useQuery<Achievements>({
     queryKey: ['member_achievements', member.id],
@@ -161,7 +161,10 @@ export const MemberDashboardPanel = ({ member, chores, isExpanded, onToggleExpan
       if (context?.todayKey?.length) {
         queryClient.invalidateQueries({ queryKey: context.todayKey });
       }
-      queryClient.invalidateQueries({ queryKey: ['member_score', member.id] });
+      // Invalidate points queries to refresh the UI immediately
+      queryClient.invalidateQueries({ queryKey: ['member_available_points', member.id] });
+      queryClient.invalidateQueries({ queryKey: ['member_weekly_score', member.id] });
+      queryClient.invalidateQueries({ queryKey: ['member_all_time_score', member.id] });
       queryClient.invalidateQueries({ queryKey: ['member_achievements', member.id] });
       // Also invalidate all member achievements to refresh banners for all members
       queryClient.invalidateQueries({ queryKey: ['member_achievements'] });
@@ -243,20 +246,20 @@ export const MemberDashboardPanel = ({ member, chores, isExpanded, onToggleExpan
         >
           {!isLoadingAchievements && (
             <>
-              {achievements?.has_completed_chores && (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <img src="/orange-check.png" alt="All Chores Done!" className={cn("absolute w-20 h-20 transition-all duration-300 z-20 top-10 right-0")} />
-                  </TooltipTrigger>
-                  <TooltipContent><p>All Chores Done Today!</p></TooltipContent>
-                </Tooltip>
-              )}
               {achievements?.has_completed_quest && (
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <img src="/orange-check.png" alt="Quest Complete!" className={cn("absolute w-20 h-20 transition-all duration-300 z-20", isExpanded ? "top-15 right-0" : "top-15 right-0")} />
                   </TooltipTrigger>
                   <TooltipContent><p>Team Quest Completed!</p></TooltipContent>
+                </Tooltip>
+              )}
+              {achievements?.has_completed_chores && !achievements?.has_completed_quest && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <img src="/orange-check.png" alt="All Chores Done!" className={cn("absolute w-20 h-20 transition-all duration-300 z-20 top-10 right-0")} />
+                  </TooltipTrigger>
+                  <TooltipContent><p>All Chores Done Today!</p></TooltipContent>
                 </Tooltip>
               )}
               {showQuestBadge && (
@@ -279,7 +282,7 @@ export const MemberDashboardPanel = ({ member, chores, isExpanded, onToggleExpan
           {!isExpanded ? (
             <>
               <div className="absolute top-2 right-2 bg-primary text-primary-foreground rounded-full px-2 py-1 text-xs font-bold z-10">
-                {isLoadingScore ? <Skeleton className="h-4 w-8 bg-primary/50" /> : `${weeklyScore} pts`}
+                {isLoadingAvailablePoints ? <Skeleton className="h-4 w-8 bg-primary/50" /> : `${availablePoints ?? 0} pts`}
               </div>
               <div className="flex flex-col items-center justify-center p-2">
                 <MemberAvatar memberId={member.id} className="w-24 h-36 mb-2" />
@@ -292,8 +295,8 @@ export const MemberDashboardPanel = ({ member, chores, isExpanded, onToggleExpan
                 <CardTitle>{member.full_name}</CardTitle>
                 <div className="flex items-start gap-2">
                     <div className="text-right">
-                        <p className="text-2xl font-bold">{isLoadingScore ? <Skeleton className="h-8 w-12" /> : weeklyScore}</p>
-                        <p className="text-xs text-muted-foreground">Points this week</p>
+                        <p className="text-2xl font-bold">{isLoadingAvailablePoints ? <Skeleton className="h-8 w-12" /> : availablePoints ?? 0}</p>
+                        <p className="text-xs text-muted-foreground">Available points</p>
                     </div>
                     <Button
                         variant="secondary"

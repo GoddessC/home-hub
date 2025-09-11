@@ -153,7 +153,7 @@ export const AvatarBuilderPage = () => {
               />
             </div>
             <div className="w-1/4 flex flex-col gap-6">
-              <InventoryPanel memberId={memberId} />
+              <InventoryPanel memberId={memberId} currentHeadUrl={equippedItems?.base_head?.asset_url} />
             </div>
           </div>
         </main>

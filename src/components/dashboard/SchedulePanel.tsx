@@ -1,13 +1,16 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Clock } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Clock, RefreshCw, Calendar } from 'lucide-react';
 import { format } from 'date-fns';
 import { useAuth } from '@/context/AuthContext';
 import { cn } from '@/lib/utils';
 import { useState, useEffect } from 'react';
 import { WeatherIcon } from './WeatherIcon';
+import { generateCurrentWeekSchedule, generateNextWeekSchedule } from '@/utils/scheduleUtils';
+import { showSuccess, showError } from '@/utils/toast';
 
 type ScheduleItem = {
   id: string;
@@ -23,6 +26,7 @@ interface SchedulePanelProps {
 
 export const SchedulePanel = ({ className }: SchedulePanelProps) => {
   const { household } = useAuth();
+  const queryClient = useQueryClient();
   const [currentTime, setCurrentTime] = useState(new Date());
 
   // Update clock every second
@@ -49,6 +53,30 @@ export const SchedulePanel = ({ className }: SchedulePanelProps) => {
       return data;
     },
     enabled: !!household?.id,
+  });
+
+  const generateCurrentWeekMutation = useMutation({
+    mutationFn: () => {
+      if (!household?.id) throw new Error("Household not found");
+      return generateCurrentWeekSchedule(household.id);
+    },
+    onSuccess: () => {
+      showSuccess('Schedule generated for this week!');
+      queryClient.invalidateQueries({ queryKey: ['schedule', household?.id] });
+    },
+    onError: (error: Error) => showError(error.message),
+  });
+
+  const generateNextWeekMutation = useMutation({
+    mutationFn: () => {
+      if (!household?.id) throw new Error("Household not found");
+      return generateNextWeekSchedule(household.id);
+    },
+    onSuccess: () => {
+      showSuccess('Schedule generated for next week!');
+      queryClient.invalidateQueries({ queryKey: ['schedule', household?.id] });
+    },
+    onError: (error: Error) => showError(error.message),
   });
 
   const getCurrentTime = () => {
@@ -120,7 +148,7 @@ export const SchedulePanel = ({ className }: SchedulePanelProps) => {
           <CardContent className="p-6">
             <div className="text-center">
               <div className="text-4xl font-mono font-bold text-primary mb-2">
-                {format(currentTime, 'h:mm:s a')}
+                {format(currentTime, 'h:mm:ss a')}
               </div>
               <div className="text-lg text-muted-foreground mb-4">
                 {format(currentTime, 'EEEE, MMMM do, yyyy')}
@@ -137,16 +165,43 @@ export const SchedulePanel = ({ className }: SchedulePanelProps) => {
 
         {/* Empty Schedule */}
         <Card className="w-full">
-          <CardHeader>
+          <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="flex items-center gap-2">
               <Clock className="h-5 w-5" />
               Today's Schedule
             </CardTitle>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => generateCurrentWeekMutation.mutate()}
+                disabled={generateCurrentWeekMutation.isPending}
+                className="flex items-center gap-1"
+              >
+                <RefreshCw className="h-3 w-3" />
+                This Week
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => generateNextWeekMutation.mutate()}
+                disabled={generateNextWeekMutation.isPending}
+                className="flex items-center gap-1"
+              >
+                <Calendar className="h-3 w-3" />
+                Next Week
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-muted-foreground text-center py-4">
-              No schedule items for today.
-            </p>
+            <div className="text-center py-4">
+              <p className="text-sm text-muted-foreground mb-4">
+                No schedule items for today.
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Generate a schedule from your templates using the buttons above.
+              </p>
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -160,7 +215,7 @@ export const SchedulePanel = ({ className }: SchedulePanelProps) => {
         <CardContent className="p-6">
           <div className="text-center">
             <div className="text-4xl font-mono font-bold text-primary mb-2">
-              {format(currentTime, 'h:mm:s a')}
+              {format(currentTime, 'h:mm:ss a')}
             </div>
             <div className="text-lg text-muted-foreground mb-4">
               {format(currentTime, 'EEEE, MMMM do, yyyy')}
@@ -177,11 +232,33 @@ export const SchedulePanel = ({ className }: SchedulePanelProps) => {
 
       {/* Schedule */}
       <Card className="w-full">
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="flex items-center gap-2">
             <Clock className="h-5 w-5" />
             Today's Schedule
           </CardTitle>
+          {/* <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => generateCurrentWeekMutation.mutate()}
+              disabled={generateCurrentWeekMutation.isPending}
+              className="flex items-center gap-1"
+            >
+              <RefreshCw className="h-3 w-3" />
+              This Week
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => generateNextWeekMutation.mutate()}
+              disabled={generateNextWeekMutation.isPending}
+              className="flex items-center gap-1"
+            >
+              <Calendar className="h-3 w-3" />
+              Next Week
+            </Button>
+          </div> */}
         </CardHeader>
         <CardContent>
         <div className="space-y-3">

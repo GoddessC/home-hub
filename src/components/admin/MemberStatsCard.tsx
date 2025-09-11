@@ -5,10 +5,11 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { showError, showSuccess } from '@/utils/toast';
-import { startOfWeek, endOfWeek, format } from 'date-fns';
+// import { format } from 'date-fns'; // Not currently used
 import { Member, useAuth } from '@/context/AuthContext';
 import { Trash2, PlusCircle } from 'lucide-react';
 import { AssignChoreDialog } from './AssignChoreDialog';
+import { getMemberAvailablePoints, getMemberWeeklyPoints, getMemberTotalPoints } from '@/utils/pointsUtils';
 
 interface MemberStatsCardProps {
   member: Member;
@@ -19,24 +20,19 @@ export const MemberStatsCard = ({ member }: MemberStatsCardProps) => {
   const { household } = useAuth();
   const [isAssignChoreOpen, setAssignChoreOpen] = useState(false);
 
+  const { data: availablePoints, isLoading: isLoadingAvailable } = useQuery({
+    queryKey: ['member_available_points', member.id],
+    queryFn: async () => {
+      return await getMemberAvailablePoints(member.id);
+    },
+    enabled: !!member,
+  });
+
   const { data: weeklyScore, isLoading: isLoadingWeekly } = useQuery({
     queryKey: ['member_weekly_score', member.id],
     queryFn: async () => {
       const weekStartsOn = (household?.chore_reset_day as (0 | 1 | 2 | 3 | 4 | 5 | 6)) ?? 0;
-      const weekStart = format(startOfWeek(new Date(), { weekStartsOn }), 'yyyy-MM-dd');
-      const weekEnd = format(endOfWeek(new Date(), { weekStartsOn }), 'yyyy-MM-dd');
-      
-      const { data, error } = await supabase
-        .from('chore_log')
-        .select('chores(points)')
-        .eq('member_id', member.id)
-        .not('completed_at', 'is', null)
-        .gte('due_date', weekStart)
-        .lte('due_date', weekEnd);
-      if (error) throw error;
-      // FIX: Supabase can return the joined table as an object or an array.
-      // This handles both cases to correctly sum the points.
-      return data.reduce((acc, item: any) => acc + (Array.isArray(item.chores) ? item.chores[0]?.points : item.chores?.points || 0), 0);
+      return await getMemberWeeklyPoints(member.id, weekStartsOn);
     },
     enabled: !!member && !!household,
   });
@@ -44,15 +40,7 @@ export const MemberStatsCard = ({ member }: MemberStatsCardProps) => {
   const { data: allTimeScore, isLoading: isLoadingAllTime } = useQuery({
     queryKey: ['member_all_time_score', member.id],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('chore_log')
-        .select('chores(points)')
-        .eq('member_id', member.id)
-        .not('completed_at', 'is', null);
-      if (error) throw error;
-      // FIX: Supabase can return the joined table as an object or an array.
-      // This handles both cases to correctly sum the points.
-      return data.reduce((acc, item: any) => acc + (Array.isArray(item.chores) ? item.chores[0]?.points : item.chores?.points || 0), 0);
+      return await getMemberTotalPoints(member.id);
     },
     enabled: !!member,
   });
@@ -88,6 +76,10 @@ export const MemberStatsCard = ({ member }: MemberStatsCardProps) => {
                 </Button>
             </CardHeader>
             <CardContent className="flex justify-around text-center">
+                <div>
+                    <p className="text-2xl font-bold">{isLoadingAvailable ? <Skeleton className="h-8 w-12 mx-auto" /> : availablePoints ?? 0}</p>
+                    <p className="text-xs text-muted-foreground">Available Points</p>
+                </div>
                 <div>
                     <p className="text-2xl font-bold">{isLoadingWeekly ? <Skeleton className="h-8 w-12 mx-auto" /> : weeklyScore}</p>
                     <p className="text-xs text-muted-foreground">Points This Week</p>

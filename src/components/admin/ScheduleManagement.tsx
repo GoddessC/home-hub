@@ -14,6 +14,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { ChevronsUpDown } from 'lucide-react';
 import { format } from 'date-fns';
 import { useAuth } from '@/context/AuthContext';
+import { ScheduleTemplateManagement } from './ScheduleTemplateManagement';
 
 type ScheduleItem = {
   id: string;
@@ -192,6 +193,9 @@ export const ScheduleManagement = () => {
 
   return (
     <>
+      {/* Schedule Template Management */}
+      <ScheduleTemplateManagement />
+
       <Collapsible defaultOpen>
         <Card>
           <CardHeader className="flex-row items-center justify-between">

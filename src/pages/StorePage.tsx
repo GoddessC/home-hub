@@ -56,6 +56,22 @@ export const StorePage = () => {
     enabled: !!memberId,
   });
 
+  // Fetch the member's avatar configuration to get their head URL
+  const { data: memberAvatarConfig, isLoading: isLoadingAvatarConfig } = useQuery({
+    queryKey: ['member_avatar_config', memberId],
+    queryFn: async () => {
+      if (!memberId) return null;
+      const { data, error } = await supabase
+        .from('member_avatar_config')
+        .select('config')
+        .eq('member_id', memberId)
+        .single();
+      if (error && error.code !== 'PGRST116') throw error;
+      return (data?.config as any) || null;
+    },
+    enabled: !!memberId,
+  });
+
   // Fetch all active store items (avatar items)
   const { data: storeItems, isLoading: isLoadingItems } = useQuery({
     queryKey: ['store_items_active'],
@@ -118,6 +134,81 @@ export const StorePage = () => {
           imageUrl = pub.publicUrl;
         }
 
+        // Handle back hair URL for hair items
+        let backImageUrl: string | null = null;
+        if (isHair) {
+          // Try to use existing asset_url_back
+          if (row.asset_url_back) {
+            let backUrl = row.asset_url_back;
+            if (!/^https?:\/\//i.test(backUrl)) {
+              let relBack = String(backUrl).replace(/^store-assets\//, '');
+              if (!relBack.startsWith('hair/')) {
+                const segments = relBack.split('/');
+                const variant = segments[0];
+                const filename = segments[1] || `${variant}_back.png`;
+                relBack = `hair/${variant}/${filename}`;
+              }
+              const { data: pub } = supabase.storage.from('store-assets').getPublicUrl(relBack);
+              backImageUrl = pub.publicUrl;
+            } else {
+              // Handle full URL that might be missing the hair/ segment
+              if (backUrl.includes('/store-assets/')) {
+                try {
+                  const url = new URL(backUrl);
+                  const idx = url.pathname.indexOf('/store-assets/');
+                  if (idx !== -1) {
+                    let relative = url.pathname.substring(idx + '/store-assets/'.length);
+                    if (!relative.startsWith('hair/')) {
+                      const segments = relative.split('/');
+                      const variant = segments[0];
+                      const filename = segments[1] || `${variant}_back.png`;
+                      relative = `hair/${variant}/${filename}`;
+                      const { data: pub } = supabase.storage.from('store-assets').getPublicUrl(relative);
+                      backImageUrl = pub.publicUrl;
+                    } else {
+                      backImageUrl = backUrl;
+                    }
+                  } else {
+                    backImageUrl = backUrl;
+                  }
+                } catch {
+                  backImageUrl = backUrl;
+                }
+              } else {
+                backImageUrl = backUrl;
+              }
+            }
+          } else {
+            // Generate back hair URL from front hair URL
+            const generatedBackUrl = imageUrl?.replace('_front.png', '_back.png');
+            if (generatedBackUrl && generatedBackUrl.includes('/store-assets/')) {
+              try {
+                const url = new URL(generatedBackUrl);
+                const idx = url.pathname.indexOf('/store-assets/');
+                if (idx !== -1) {
+                  let relative = url.pathname.substring(idx + '/store-assets/'.length);
+                  if (!relative.startsWith('hair/')) {
+                    const segments = relative.split('/');
+                    const variant = segments[0];
+                    const filename = segments[1] || `${variant}_back.png`;
+                    relative = `hair/${variant}/${filename}`;
+                    const { data: pub } = supabase.storage.from('store-assets').getPublicUrl(relative);
+                    backImageUrl = pub.publicUrl;
+                  } else {
+                    backImageUrl = generatedBackUrl;
+                  }
+                } else {
+                  backImageUrl = generatedBackUrl;
+                }
+              } catch {
+                backImageUrl = generatedBackUrl;
+              }
+            } else {
+              backImageUrl = generatedBackUrl || null;
+            }
+          }
+        }
+
         const pointCost =
           row.point_cost ??
           row.points_cost ??
@@ -129,6 +220,8 @@ export const StorePage = () => {
           id: row.id,
           name: row.name,
           image_url: imageUrl || '',
+          back_image_url: backImageUrl,
+          category: row.category || row.avatar_category || 'other',
           point_cost: pointCost,
         };
       });
@@ -165,7 +258,10 @@ export const StorePage = () => {
     },
   });
 
-  const isLoading = isLoadingPoints || isLoadingItems || isLoadingInventory || isLoadingMember || isLoadingCurrentUser;
+  const isLoading = isLoadingPoints || isLoadingItems || isLoadingInventory || isLoadingMember || isLoadingCurrentUser || isLoadingAvatarConfig;
+
+  // Extract the head URL from the member's avatar config
+  const currentHeadUrl = memberAvatarConfig?.base_head?.asset_url || null;
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
@@ -202,6 +298,7 @@ export const StorePage = () => {
                 isOwned={inventory?.includes(item.id) ?? false}
                 onPurchase={purchaseMutation.mutate}
                 isPurchasing={purchaseMutation.isPending}
+                currentHeadUrl={currentHeadUrl}
               />
             ))}
           </div>

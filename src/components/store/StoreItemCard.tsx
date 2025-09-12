@@ -17,6 +17,8 @@ interface StoreItem {
   id: string;
   name: string;
   image_url: string;
+  back_image_url?: string | null;
+  category: string;
   point_cost: number;
 }
 
@@ -26,9 +28,10 @@ interface StoreItemCardProps {
   isOwned: boolean;
   onPurchase: (itemId: string) => void;
   isPurchasing: boolean;
+  currentHeadUrl?: string | null;
 }
 
-export const StoreItemCard = ({ item, userPoints, isOwned, onPurchase, isPurchasing }: StoreItemCardProps) => {
+export const StoreItemCard = ({ item, userPoints, isOwned, onPurchase, isPurchasing, currentHeadUrl }: StoreItemCardProps) => {
   const canAfford = userPoints >= item.point_cost;
 
   return (
@@ -37,7 +40,37 @@ export const StoreItemCard = ({ item, userPoints, isOwned, onPurchase, isPurchas
         <CardTitle className="text-lg">{item.name}</CardTitle>
       </CardHeader>
       <CardContent className="flex-grow flex items-center justify-center">
-        <img src={item.image_url} alt={item.name} className="max-h-32 object-contain" />
+        {item.category === 'hair' ? (
+          <div className="relative w-full h-32 flex items-center justify-center">
+            {/* Back Hair Layer */}
+            {item.back_image_url && (
+              <img 
+                src={item.back_image_url} 
+                alt={`${item.name} Back`} 
+                className="absolute max-h-32 object-contain" 
+                style={{ zIndex: 1 }}
+              />
+            )}
+            {/* Head Layer */}
+            {currentHeadUrl && (
+              <img 
+                src={currentHeadUrl} 
+                alt="Avatar Head" 
+                className="absolute max-h-32 object-contain" 
+                style={{ zIndex: 2 }}
+              />
+            )}
+            {/* Front Hair Layer */}
+            <img 
+              src={item.image_url} 
+              alt={item.name} 
+              className="relative max-h-32 object-contain" 
+              style={{ zIndex: 3 }}
+            />
+          </div>
+        ) : (
+          <img src={item.image_url} alt={item.name} className="max-h-32 object-contain" />
+        )}
       </CardContent>
       <CardFooter>
         {isOwned ? (

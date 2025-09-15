@@ -13,6 +13,7 @@ interface MemberAvatarProps {
   memberId: string;
   className?: string;
   viewMode?: 'full' | 'headshot';
+  currentFeeling?: string | null;
 }
 
 type AvatarConfig = Record<string, AvatarItemConfig>;
@@ -25,6 +26,7 @@ const zIndexMap: Record<string, number> = {
     bottoms: 18,
     shoes: 16,
     base_head: 15,
+    face: 25,
     hair: 30,
     accessory: 40,
 };
@@ -41,7 +43,7 @@ const bodyStyle: React.CSSProperties = {
 
 const headStyle: React.CSSProperties = {
   position: 'absolute',
-  width: '90%',
+  width: '100%',
   height: 'auto',
   top: '10%',
   left: 0,
@@ -77,8 +79,34 @@ const topsStyle: React.CSSProperties = {
   height: 'auto',
 }
 
+const faceStyle: React.CSSProperties = {
+  position: 'absolute',
+  width: '55%',
+  height: 'auto',
+  top: '35%',
+  right: '0',
+  left: '-5px',
+  margin: '0 auto',
+}
 
-export const MemberAvatar = ({ memberId, className, viewMode = 'headshot' }: MemberAvatarProps) => {
+const hairStyle: React.CSSProperties = {
+  position: 'absolute',
+  width: '100%',
+  height: 'auto',
+  top: '10%',
+  left: '0',
+}
+
+const hairBackStyle: React.CSSProperties = {
+  position: 'absolute',
+  width: '100%',
+  height: 'auto',
+  top: '10%',
+  left: '0',
+}
+
+
+export const MemberAvatar = ({ memberId, className, viewMode = 'headshot', currentFeeling }: MemberAvatarProps) => {
   const { data: savedConfig, isLoading } = useQuery({
     queryKey: ['avatar_config', memberId],
     queryFn: async () => {
@@ -88,6 +116,25 @@ export const MemberAvatar = ({ memberId, className, viewMode = 'headshot' }: Mem
       return (data?.config as AvatarConfig) || null;
     },
     enabled: !!memberId,
+  });
+
+  // Get the feeling-based face if currentFeeling is provided
+  const { data: feelingFace } = useQuery({
+    queryKey: ['feeling_face', currentFeeling],
+    queryFn: async () => {
+      if (!currentFeeling) return null;
+      const { data, error } = await supabase
+        .from('feeling_face_mapping')
+        .select(`
+          face_item_id,
+          avatar_items!inner(id, name, asset_url)
+        `)
+        .eq('feeling', currentFeeling)
+        .single();
+      if (error) return null;
+      return (data?.avatar_items as any) || null;
+    },
+    enabled: !!currentFeeling,
   });
 
   if (isLoading) {
@@ -109,6 +156,10 @@ export const MemberAvatar = ({ memberId, className, viewMode = 'headshot' }: Mem
   const hairItem = savedConfig.hair;
   const bodyItem = savedConfig.base_body;
   const headItem = savedConfig.base_head;
+  const faceItem = savedConfig.face;
+
+  // Determine which face to show: feeling-based face (if currentFeeling provided) or saved face
+  const displayFace = currentFeeling ? feelingFace : faceItem;
 
   return (
     <div className={cn("relative w-24 h-36", className)}>
@@ -118,7 +169,7 @@ export const MemberAvatar = ({ memberId, className, viewMode = 'headshot' }: Mem
           src={hairItem.asset_url_back || hairItem.asset_url?.replace('_front.png', '_back.png') || hairItem.asset_url} 
           alt="Hair Back" 
           className="object-contain" 
-          style={{ ...headStyle, zIndex: zIndexMap['hair_back'] }} 
+          style={{ ...hairBackStyle, zIndex: zIndexMap['hair_back'] }} 
         />
       )}
 
@@ -132,9 +183,14 @@ export const MemberAvatar = ({ memberId, className, viewMode = 'headshot' }: Mem
         <img src={headItem.asset_url} alt="Avatar Head" style={{ ...headStyle, ...baseHeadStyle, zIndex: zIndexMap['base_head'] }} className="object-contain" />
       )}
 
+      {/* Face Expression */}
+      {displayFace && (
+        <img src={displayFace.asset_url} alt="Face Expression" style={{ ...faceStyle, zIndex: zIndexMap['face'] }} className="object-contain" />
+      )}
+
       {/* Equipped Items */}
       {Object.entries(savedConfig).map(([category, item]) => {
-        if (!item || ['hair', 'base_body', 'base_head'].includes(category)) return null;
+        if (!item || ['hair', 'base_body', 'base_head', 'face'].includes(category)) return null;
         
         const isBodyItem = ['shirt', 'tops', 'bottoms', 'shoes'].includes(category);
         
@@ -151,7 +207,9 @@ export const MemberAvatar = ({ memberId, className, viewMode = 'headshot' }: Mem
           itemStyle = bottomsStyle;
         } else if (category === 'shoes') {
           itemStyle = shoesStyle;
-        } else if (isBodyItem) {
+        } else if (category === 'face') {
+          itemStyle = faceStyle;
+        }else if (isBodyItem) {
           itemStyle = bodyStyle;
         }
 
@@ -160,7 +218,7 @@ export const MemberAvatar = ({ memberId, className, viewMode = 'headshot' }: Mem
 
       {/* Front Hair Layer */}
       {hairItem && (
-        <img src={hairItem.asset_url} alt="Hair Front" className="object-contain" style={{ ...headStyle, zIndex: zIndexMap['hair'] }} />
+        <img src={hairItem.asset_url} alt="Hair Front" className="object-contain" style={{ ...hairStyle, zIndex: zIndexMap['hair'] }} />
       )}
     </div>
   );

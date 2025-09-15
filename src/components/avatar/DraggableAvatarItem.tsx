@@ -21,6 +21,7 @@ const zIndexMap: Record<string, number> = {
   shirt: 20,
   tops: 20,
   base_head: 15,
+  face: 25,
   hair: 30,
   accessory: 40,
 };
@@ -101,6 +102,14 @@ export const DraggableAvatarItem = ({ item, currentHeadUrl }: DraggableAvatarIte
           />
         )}
         {item.category === 'hair' && currentHeadUrl && (
+          <img
+            src={currentHeadUrl}
+            alt="Avatar Head"
+            className="object-contain"
+            style={{ ...headStyle, zIndex: zIndexMap['base_head'] }}
+          />
+        )}
+        {item.category === 'face' && currentHeadUrl && (
           <img
             src={currentHeadUrl}
             alt="Avatar Head"

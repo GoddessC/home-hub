@@ -45,6 +45,25 @@ export const MemberDashboardPanel = ({ member, chores, isExpanded, onToggleExpan
     enabled: !!member,
   });
 
+  // Get member's current feeling for avatar display
+  const { data: currentFeeling } = useQuery({
+    queryKey: ['member_current_feeling', member.id],
+    queryFn: async () => {
+      if (!household) return null;
+      const { data, error } = await supabase
+        .from('feelings_log')
+        .select('feeling')
+        .eq('member_id', member.id)
+        .eq('household_id', household.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+      if (error && error.code !== 'PGRST116') throw error;
+      return data?.feeling || null;
+    },
+    enabled: !!member && !!household,
+  });
+
   // Get weekly points for display purposes (currently not used but kept for future use)
   // const { data: weeklyScore } = useQuery({
   //   queryKey: ['member_weekly_score', member.id],
@@ -285,7 +304,7 @@ export const MemberDashboardPanel = ({ member, chores, isExpanded, onToggleExpan
                 {isLoadingAvailablePoints ? <Skeleton className="h-4 w-8 bg-primary/50" /> : `${availablePoints ?? 0} pts`}
               </div>
               <div className="flex flex-col items-center justify-center p-2">
-                <MemberAvatar memberId={member.id} className="w-24 h-36 mb-2" />
+                <MemberAvatar memberId={member.id} className="w-24 h-36 mb-2" currentFeeling={currentFeeling} />
                 <h3 className="font-bold text-lg">{member.full_name}</h3>
               </div>
             </>

@@ -21,6 +21,7 @@ export const AvatarCanvas = ({ config, isPoofing }: AvatarCanvasProps) => {
     shirt: 20,
     tops: 20,
     base_head: 15,
+    face: 25,
     hair: 30,
     accessory: 25,
   };
@@ -105,9 +106,14 @@ export const AvatarCanvas = ({ config, isPoofing }: AvatarCanvasProps) => {
           <img src={baseHead.asset_url} alt="Avatar Head" className="absolute inset-0 w-1/2 mx-auto h-auto object-contain" style={{ zIndex: zIndexMap['base_head'] }} />
         )}
 
-        {/* Equipped Items (excluding hair) */}
+        {/* Face Expression */}
+        {equippedItems.face && (
+          <img src={equippedItems.face.asset_url} alt="Face Expression" className="absolute inset-0 w-1/2 mx-auto h-auto object-contain" style={{ zIndex: zIndexMap['face'] }} />
+        )}
+
+        {/* Equipped Items (excluding hair and face) */}
         {Object.entries(equippedItems).map(([category, item]) => {
-          if (!item) return null;
+          if (!item || category === 'face') return null;
           
           // Apply specific styles based on category
           let itemStyle: React.CSSProperties = { position: 'absolute', width: '50%', height: 'auto', left: '25%', top: '50%' }; // default

@@ -170,7 +170,7 @@ export const SchedulePanel = ({ className }: SchedulePanelProps) => {
               <Clock className="h-5 w-5" />
               Today's Schedule
             </CardTitle>
-            <div className="flex items-center gap-2">
+            {/* <div className="flex items-center gap-2">
               <Button
                 variant="outline"
                 size="sm"
@@ -191,7 +191,7 @@ export const SchedulePanel = ({ className }: SchedulePanelProps) => {
                 <Calendar className="h-3 w-3" />
                 Next Week
               </Button>
-            </div>
+ x           </div> */}
           </CardHeader>
           <CardContent>
             <div className="text-center py-4">

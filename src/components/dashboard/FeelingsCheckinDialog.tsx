@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { showSuccess, showError } from '@/utils/toast';
+import { showError } from '@/utils/toast';
 import { Member, useAuth } from '@/context/AuthContext';
 import { cn } from '@/lib/utils';
 import { CheckCircle } from 'lucide-react';
@@ -40,6 +40,27 @@ export const FeelingsCheckinDialog = ({ isOpen, setOpen, member }: FeelingsCheck
   const [step, setStep] = useState(1);
   const [selectedFeeling, setSelectedFeeling] = useState<string | null>(null);
 
+  // Fetch face images for feelings
+  const { data: feelingFaces } = useQuery({
+    queryKey: ['feeling_faces'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('feeling_face_mapping')
+        .select(`
+          feeling,
+          avatar_items!inner(id, name, asset_url)
+        `);
+      if (error) throw error;
+      
+      const faceMap: Record<string, string> = {};
+      data.forEach((item: any) => {
+        faceMap[item.feeling] = item.avatar_items.asset_url;
+      });
+      return faceMap;
+    },
+    enabled: isOpen,
+  });
+
   const mutation = useMutation({
     mutationFn: async ({ feeling, context }: { feeling: string; context: string | null }) => {
       if (!household) throw new Error("Household not found");
@@ -59,6 +80,9 @@ export const FeelingsCheckinDialog = ({ isOpen, setOpen, member }: FeelingsCheck
         const newLogs = oldData ? [newLog, ...oldData] : [newLog];
         return newLogs;
       });
+
+      // Invalidate current feeling query to update avatar
+      queryClient.invalidateQueries({ queryKey: ['member_current_feeling', member.id] });
 
       setStep(3); // Move to confirmation step
       setTimeout(() => {
@@ -96,12 +120,19 @@ export const FeelingsCheckinDialog = ({ isOpen, setOpen, member }: FeelingsCheck
               <DialogDescription>Pick the one that feels most true.</DialogDescription>
             </DialogHeader>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4 py-4">
-              {Object.entries(feelings).map(([key, { emoji, text, color }]) => (
-                <Button key={key} variant="outline" className={cn("h-24 flex-col gap-2 text-lg", color)} onClick={() => handleFeelingSelect(key)}>
-                  <span className="text-4xl">{emoji}</span>
-                  <span>{text}</span>
-                </Button>
-              ))}
+              {Object.entries(feelings).map(([key, { emoji, text, color }]) => {
+                const faceImage = feelingFaces?.[key];
+                return (
+                  <Button key={key} variant="outline" className={cn("h-24 flex-col gap-2 text-lg", color)} onClick={() => handleFeelingSelect(key)}>
+                    {faceImage ? (
+                      <img src={faceImage} alt={text} className="w-8 h-8 object-contain" />
+                    ) : (
+                      <span className="text-4xl">{emoji}</span>
+                    )}
+                    <span>{text}</span>
+                  </Button>
+                );
+              })}
             </div>
           </>
         )}

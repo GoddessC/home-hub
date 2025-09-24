@@ -9,6 +9,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { showSuccess, showError } from '@/utils/toast';
 import { cn } from '@/lib/utils';
+import { Separator } from '@/components/ui/separator';
 
 const registerSchema = z.object({
   fullName: z.string().min(2, 'Please enter your full name.'),
@@ -89,6 +90,17 @@ const Register = () => {
               {isSubmitting ? 'Registering...' : 'Register'}
             </Button>
           </form>
+          <Separator className="my-6" />
+          <div className="space-y-3">
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full"
+              onClick={() => supabase.auth.signInWithOAuth({ provider: 'google' })}
+            >
+              Continue with Google
+            </Button>
+          </div>
           <div className="mt-4 text-center text-sm">
             Already have an account?{' '}
             <Link to="/login" className="underline">

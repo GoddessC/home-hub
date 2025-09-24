@@ -90,21 +90,29 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (!user) return null;
 
       if (user.is_anonymous) {
-        const { data: deviceData, error } = await supabase.from('devices').select('*, household:households(*)').eq('kiosk_user_id', user.id).single();
+        const { data: deviceData, error } = await supabase
+          .from('devices')
+          .select('*, household:households(*)')
+          .eq('kiosk_user_id', user.id)
+          .maybeSingle();
         if (error && error.code !== 'PGRST116') throw error;
-        return { device: deviceData, household: deviceData?.household, member: null, profile: null };
+        return { device: deviceData ?? null, household: deviceData?.household ?? null, member: null, profile: null };
       }
 
       const { data: memberData, error: memberError } = await supabase
         .from('members')
         .select('*, household:households(*)')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
       
       if (memberError && memberError.code !== 'PGRST116') throw memberError;
-      if (!memberData) return null; // Can happen briefly after signup
+      if (!memberData) return null; // New user without household/member yet
 
-      const { data: profileData } = await supabase.from('profiles').select('*').eq('id', user.id).single();
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .maybeSingle();
 
       return {
         member: memberData,

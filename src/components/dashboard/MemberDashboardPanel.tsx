@@ -252,14 +252,14 @@ export const MemberDashboardPanel = ({ member, chores, isExpanded, onToggleExpan
   return (
     <>
       <div className={cn(
-        "transition-all duration-500 ease-in-out transform",
-        isExpanded ? "col-span-full md:col-span-2 lg:col-span-2 scale-105" : "col-span-1 scale-100"
+        "transition-all duration-500 ease-in-out h-full overflow-hidden",
+        isExpanded ? "col-span-full md:col-span-2 lg:col-span-2" : "col-span-1"
       )}>
         <Card
           className={cn(
             "w-full flex flex-col cursor-pointer transition-all duration-500 ease-in-out relative transform",
             isAnonymous ? "dark:bg-gray-800 dark:hover:bg-gray-700" : "bg-white hover:bg-gray-50",
-            isExpanded ? "min-h-[24rem] shadow-xl" : "aspect-square items-center justify-center text-center shadow-md hover:shadow-lg"
+            isExpanded ? "h-full flex-1 shadow-xl" : "aspect-rectangle items-center justify-center text-center shadow-md hover:shadow-lg"
           )}
           onClick={() => onToggleExpanded(!isExpanded)}
         >
@@ -331,63 +331,72 @@ export const MemberDashboardPanel = ({ member, chores, isExpanded, onToggleExpan
                     </Button>
                 </div>
               </CardHeader>
-              <CardContent className="flex-grow flex flex-col justify-between">
-                <div>
-                  <h4 className="mb-2 text-sm font-medium text-muted-foreground">Today's Chores</h4>
-                  {chores.length > 0 ? (
-                    <ul className="space-y-3">
-                      {chores.map(chore => {
-                        const choreData = Array.isArray(chore.chores) ? chore.chores[0] : chore.chores;
-                        return (
-                            <li key={chore.id} className="flex items-center space-x-3 p-3 rounded-md bg-background">
-                            <Checkbox
-                                id={`${member.id}-${chore.id}`}
-                                checked={!!chore.completed_at}
-                                disabled={!!chore.completed_at}
-                                onCheckedChange={(checked) => {
-                                  // Only allow checking, not unchecking
-                                  if (checked && !chore.completed_at) {
-                                    updateChoreMutation.mutate({ choreId: chore.id, isCompleted: true });
-                                  }
-                                }}
-                            />
-                            <label 
-                              htmlFor={`${member.id}-${chore.id}`} 
-                              className={`flex-grow text-sm font-medium leading-none ${
-                                chore.completed_at 
-                                  ? 'cursor-not-allowed opacity-70 line-through text-muted-foreground' 
-                                  : 'peer-disabled:cursor-not-allowed peer-disabled:opacity-70'
-                              }`}
-                            >
-                                {choreData?.title}
-                            </label>
-                            <span className={`font-semibold ${chore.completed_at ? 'text-muted-foreground' : 'text-primary'}`}>
-                              +{choreData?.points} pt
-                            </span>
-                            </li>
-                        )
-                      })}
-                    </ul>
-                  ) : (
-                    <p className="text-sm text-muted-foreground text-center py-4">No chores for today!</p>
-                  )}
+              <CardContent className="flex-grow flex flex-row gap-6 items-stretch justify-between">
+                <div className="flex-1 flex flex-col justify-between">
+                  <div>
+                    <h4 className="mb-2 text-sm font-medium text-muted-foreground">Today's Chores</h4>
+                    {chores.length > 0 ? (
+                      <ul className="space-y-3">
+                        {chores.map(chore => {
+                          const choreData = Array.isArray(chore.chores) ? chore.chores[0] : chore.chores;
+                          return (
+                              <li key={chore.id} className="flex items-center space-x-3 p-3 rounded-md bg-background">
+                              <Checkbox
+                                  id={`${member.id}-${chore.id}`}
+                                  checked={!!chore.completed_at}
+                                  disabled={!!chore.completed_at}
+                                  onCheckedChange={(checked) => {
+                                    if (checked && !chore.completed_at) {
+                                      updateChoreMutation.mutate({ choreId: chore.id, isCompleted: true });
+                                    }
+                                  }}
+                              />
+                              <label 
+                                htmlFor={`${member.id}-${chore.id}`} 
+                                className={`flex-grow text-sm font-medium leading-none ${
+                                  chore.completed_at 
+                                    ? 'cursor-not-allowed opacity-70 line-through text-muted-foreground' 
+                                    : 'peer-disabled:cursor-not-allowed peer-disabled:opacity-70'
+                                }`}
+                              >
+                                  {choreData?.title}
+                              </label>
+                              <span className={`font-semibold ${chore.completed_at ? 'text-muted-foreground' : 'text-primary'}`}>
+                                +{choreData?.points} pt
+                              </span>
+                              </li>
+                          )
+                        })}
+                      </ul>
+                    ) : (
+                      <p className="text-sm text-muted-foreground text-center py-4">No chores for today!</p>
+                    )}
+                  </div>
+                  <div className="mt-4 pt-4 border-t">
+                      <div className="flex items-center justify-center gap-4 flex-wrap">
+                          {household?.is_feelings_enabled && checkinStatus.showButton && (
+                              <Button onClick={(e) => { e.stopPropagation(); setFeelingsDialogOpen(true); }}>
+                                  Log My Feeling
+                              </Button>
+                          )}
+                          {!isAnonymous && (
+                              <Button asChild variant="outline" onClick={(e) => e.stopPropagation()}>
+                                  <Link to={`/avatar-builder/${member.id}`}>
+                                      <Palette className="mr-2 h-4 w-4" />
+                                      Edit Avatar
+                                  </Link>
+                              </Button>
+                          )}
+                      </div>
+                  </div>
                 </div>
-                <div className="mt-4 pt-4 border-t">
-                    <div className="flex items-center justify-center gap-4 flex-wrap">
-                        {household?.is_feelings_enabled && checkinStatus.showButton && (
-                            <Button onClick={(e) => { e.stopPropagation(); setFeelingsDialogOpen(true); }}>
-                                Log My Feeling
-                            </Button>
-                        )}
-                        {!isAnonymous && (
-                            <Button asChild variant="outline" onClick={(e) => e.stopPropagation()}>
-                                <Link to={`/avatar-builder/${member.id}`}>
-                                    <Palette className="mr-2 h-4 w-4" />
-                                    Edit Avatar
-                                </Link>
-                            </Button>
-                        )}
-                    </div>
+                <div className="flex items-end justify-end">
+                  <MemberAvatar
+                    memberId={member.id}
+                    className="w-32 h-48 md:w-40 md:h-60 lg:w-48 lg:h-72"
+                    viewMode="full"
+                    currentFeeling={currentFeeling}
+                  />
                 </div>
               </CardContent>
             </div>

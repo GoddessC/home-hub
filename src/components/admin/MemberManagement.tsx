@@ -16,6 +16,8 @@ export const MemberManagement = () => {
   const { household } = useAuth();
   const queryClient = useQueryClient();
   const [assigningToMember, setAssigningToMember] = useState<Member | null>(null);
+  const [editingMemberId, setEditingMemberId] = useState<string | null>(null);
+  const [editingName, setEditingName] = useState<string>('');
 
   const { data: members, isLoading } = useQuery<Member[]>({
     queryKey: ['members', household?.id],
@@ -87,6 +89,23 @@ export const MemberManagement = () => {
     }
   });
 
+  const updateMemberNameMutation = useMutation({
+    mutationFn: async ({ memberId, full_name }: { memberId: string; full_name: string }) => {
+      const { error } = await supabase
+        .from('members')
+        .update({ full_name })
+        .eq('id', memberId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      showSuccess('Member name updated.');
+      setEditingMemberId(null);
+      setEditingName('');
+      queryClient.invalidateQueries({ queryKey: ['members', household?.id] });
+    },
+    onError: (error: Error) => showError(`Failed to update name: ${error.message}`),
+  });
+
   return (
     <>
       <Collapsible defaultOpen={false}>
@@ -121,13 +140,43 @@ export const MemberManagement = () => {
                     <li key={member.id} className="flex items-center justify-between p-3 bg-secondary rounded-lg">
                       <div className="flex items-center gap-4">
                         <MemberAvatar memberId={member.id} className="w-12 h-16" />
-                        <span className="font-medium">{member.full_name}</span>
+                        {editingMemberId === member.id ? (
+                          <input
+                            className="px-2 py-1 rounded border bg-background"
+                            value={editingName}
+                            onChange={(e) => setEditingName(e.target.value)}
+                          />
+                        ) : (
+                          <span className="font-medium">{member.full_name}</span>
+                        )}
                       </div>
                       <div className="flex items-center gap-2">
                         <Button variant="outline" size="sm" onClick={() => setAssigningToMember(member)}>
                           <PlusCircle className="h-4 w-4 mr-2" />
                           Assign
                         </Button>
+                        {editingMemberId === member.id ? (
+                          <>
+                            <Button
+                              size="sm"
+                              onClick={() => updateMemberNameMutation.mutate({ memberId: member.id, full_name: editingName.trim() })}
+                              disabled={!editingName.trim() || updateMemberNameMutation.isPending}
+                            >
+                              Save
+                            </Button>
+                            <Button variant="ghost" size="sm" onClick={() => { setEditingMemberId(null); setEditingName(''); }}>
+                              Cancel
+                            </Button>
+                          </>
+                        ) : (
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => { setEditingMemberId(member.id); setEditingName(member.full_name ?? ''); }}
+                          >
+                            Edit
+                          </Button>
+                        )}
                         {member.role !== 'OWNER' && (
                           <Button variant="ghost" size="icon" onClick={() => deleteMemberMutation.mutate(member.id)} disabled={deleteMemberMutation.isPending}>
                             <Trash2 className="h-5 w-5 text-destructive" />

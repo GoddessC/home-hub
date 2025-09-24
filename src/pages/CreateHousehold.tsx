@@ -39,41 +39,57 @@ const CreateHousehold = () => {
   });
 
   const onSubmit = async (data: HouseholdFormValues) => {
-    if (!user || !household) {
-      showError("Could not find your household to update.");
+    if (!user) {
+      showError("You must be signed in to create a household.");
       return;
     }
 
     try {
-      // UPDATE the household name and mark setup as complete
-      const { error } = await supabase
-        .from('households')
-        .update({ name: data.name, is_setup_complete: true })
-        .eq('id', household.id);
+      // Ensure a household exists. If not, create one and make the current user the OWNER member.
+      let householdId = household?.id ?? null;
 
-      if (error) throw error;
+      if (!householdId) {
+        const rawFullName = (user.user_metadata as any)?.full_name as string | undefined;
+        const ownerFullName = rawFullName ? rawFullName.split(' ')[0] : 'Owner';
+        const { data: rpcResult, error: rpcError } = await supabase.rpc('create_household_with_owner', {
+          p_name: data.name,
+          p_owner_user_id: user.id,
+          p_owner_full_name: ownerFullName,
+        });
+        if (rpcError) throw rpcError;
+        householdId = rpcResult as unknown as string;
+      }
 
-      // Insert new members if any were added
+      // Update household name (in case of existing household) and mark setup complete
+      // Name already set and setup completed inside RPC for new households.
+      // For existing households, still ensure name + setup flag are saved.
+      if (household) {
+        const { error: updateError } = await supabase
+          .from('households')
+          .update({ name: data.name, is_setup_complete: true })
+          .eq('id', householdId as string);
+        if (updateError) throw updateError;
+      }
+
+      // Insert new child members if any were added
       if (data.members && data.members.length > 0) {
         const newMembers = data.members
-            .filter(member => member.full_name.trim() !== '')
-            .map(member => ({
-                household_id: household.id,
-                full_name: member.full_name,
-                role: 'CHILD' as const,
-            }));
-        
+          .filter(member => member.full_name.trim() !== '')
+          .map(member => ({
+            household_id: householdId as string,
+            full_name: member.full_name,
+            role: 'CHILD' as const,
+          }));
+
         if (newMembers.length > 0) {
-            const { error: memberError } = await supabase.from('members').insert(newMembers);
-            if (memberError) throw memberError;
+          const { error: memberError } = await supabase.from('members').insert(newMembers);
+          if (memberError) throw memberError;
         }
       }
 
       showSuccess("Household setup complete! Redirecting to Admin Panel...");
       await queryClient.invalidateQueries();
-      
       navigate('/admin', { replace: true });
-
     } catch (error: any) {
       showError(`Failed to update household: ${error.message}`);
     }

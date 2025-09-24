@@ -16,6 +16,7 @@ import { TeamQuestPanel, Quest } from '@/components/dashboard/TeamQuestPanel';
 import { SchedulePanel } from '@/components/dashboard/SchedulePanel';
 import { AlarmModal } from '@/components/alarms/AlarmModal';
 import { useAlarmSystem } from '@/hooks/useAlarmSystem';
+import { MemberAvatar } from '@/components/avatar/MemberAvatar';
 
 export type ChoreLog = {
   id: string;
@@ -34,7 +35,7 @@ const KioskDashboard = () => {
   const { device, household, signOut, isAnonymous, member } = useAuth();
   const [isCalmCornerSuggested, setIsCalmCornerSuggested] = useState(false);
   const [headerTime, setHeaderTime] = useState(new Date());
-  const [expandedMemberId, setExpandedMemberId] = useState<string | null>(null);
+  const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null);
   const suggestionTimer = useRef<NodeJS.Timeout | null>(null);
   
   // Alarm system
@@ -173,39 +174,66 @@ const KioskDashboard = () => {
           </div>
         </div>
       </header>
-      <main className="flex-grow container mx-auto p-4 md:p-8 main-container bottom-right glass-card">
-        <div className="flex gap-8">
-          {/* Left sidebar with schedule */}
-          <div className="hidden lg:block w-80 flex-shrink-0">
-            <SchedulePanel />
-          </div>
-          
-          {/* Main content */}
-          <div className="flex-grow">
-            <div className="space-y-8">
-              <TeamQuestPanel quest={activeQuest} isLoading={isLoadingQuest} />
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 gap-4">
-              {isLoadingMembers || isLoadingChores ? (
-                Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className={cn("h-48 w-full rounded-lg", isAnonymous && "bg-gray-700")} />)
+      <main className="flex-grow container mx-auto p-4 md:p-8 main-container bottom-right glass-card h-full overflow-hidden">
+        <div className="flex gap-6 items-stretch h-full">
+          {/* Left: Members column */}
+          <div className="w-56 max-h-[calc(100vh-12rem)] overflow-y-auto pr-2">
+            <div className="flex flex-col gap-3">
+              {isLoadingMembers ? (
+                Array.from({ length: 6 }).map((_, i) => (
+                  <Skeleton key={i} className={cn("h-20 w-full rounded-lg", isAnonymous && "bg-gray-700")} />
+                ))
               ) : (
-                members?.map(m => (
-                  <MemberDashboardPanel 
-                    key={m.id} 
-                    member={m} 
-                    chores={chores?.filter(c => c.member_id === m.id) || []}
-                    isExpanded={expandedMemberId === m.id}
-                    onToggleExpanded={(expanded) => {
-                      if (expanded) {
-                        setExpandedMemberId(m.id);
-                      } else {
-                        setExpandedMemberId(null);
-                      }
-                    }}
-                  />
+                members?.map((m) => (
+                  <button
+                    key={m.id}
+                    onClick={() => setSelectedMemberId(prev => prev === m.id ? null : m.id)}
+                    className={cn(
+                      "flex items-center gap-3 p-2 rounded-xl border text-left transition-colors h-40",
+                      selectedMemberId === m.id ? "bg-primary/10 border-primary" : "bg-background/70 hover:bg-accent"
+                    )}
+                  >
+                    <MemberAvatar memberId={m.id} className="w-10 h-14" />
+                    <div className="flex-1">
+                      <div className="font-medium truncate">{m.full_name}</div>
+                    </div>
+                  </button>
                 ))
               )}
             </div>
+          </div>
+
+          {/* Center: Selected member details */}
+          <div className="flex-1 min-w-0 flex flex-col h-full">
+            <div className="grid h-full">
+              <TeamQuestPanel quest={activeQuest} isLoading={isLoadingQuest} />
+              <div className="h-full flex flex-col">
+                {isLoadingMembers || isLoadingChores ? (
+                  <Skeleton className={cn("h-96 w-full rounded-lg", isAnonymous && "bg-gray-700")} />
+                ) : (
+                  (() => {
+                    const selected = members?.find((m) => m.id === selectedMemberId) ?? null;
+                    if (!selected) {
+                      return <div className="text-center text-muted-foreground py-16">No member selected.</div>;
+                    }
+                    return (
+                      <MemberDashboardPanel
+                        key={selected.id}
+                        member={selected}
+                        chores={chores?.filter((c) => c.member_id === selected.id) || []}
+                        isExpanded={true}
+                        onToggleExpanded={() => {}}
+                      />
+                    );
+                  })()
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Right: Schedule */}
+          <div className="hidden lg:block w-80 flex-shrink-0">
+            <SchedulePanel />
           </div>
         </div>
       </main>

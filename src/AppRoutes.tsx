@@ -77,13 +77,12 @@ const AppRoutes = () => {
     );
   }
 
-  // Fallback for when user is logged in but data is missing
+  // New authenticated user without member/household yet → go to setup
   return (
-    <div className="flex items-center justify-center h-screen">
-      <div className="text-center">
-        <p className="text-xl">Finalizing your account setup...</p>
-      </div>
-    </div>
+    <Routes>
+      <Route path="/create-household" element={<CreateHousehold />} />
+      <Route path="*" element={<Navigate to="/create-household" replace />} />
+    </Routes>
   );
 };
 

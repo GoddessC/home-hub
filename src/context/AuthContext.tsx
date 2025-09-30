@@ -61,9 +61,40 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
+  const [hasRedirectedToFinish, setHasRedirectedToFinish] = useState(false);
+  const [isCompletingRegistration, setIsCompletingRegistration] = useState(() => {
+    return localStorage.getItem('isCompletingRegistration') === 'true';
+  });
+
+  // Clear redirect state when user navigates away from register
+  useEffect(() => {
+    const handleRouteChange = () => {
+      if (!window.location.pathname.includes('/register')) {
+        setHasRedirectedToFinish(false);
+        setIsCompletingRegistration(false);
+        localStorage.removeItem('isCompletingRegistration');
+      }
+    };
+
+    // Listen for route changes
+    window.addEventListener('popstate', handleRouteChange);
+    
+    return () => {
+      window.removeEventListener('popstate', handleRouteChange);
+    };
+  }, []);
   const queryClient = useQueryClient();
 
   useEffect(() => {
+    // Check if we should disable auth context completely
+    const isOnRegisterPage = typeof window !== 'undefined' && window.location.pathname.includes('/register');
+    const isAuthContextDisabled = typeof window !== 'undefined' && (window as any).disableAuthContext;
+    
+    if (isOnRegisterPage || isAuthContextDisabled) {
+      setAuthLoading(false);
+      return;
+    }
+
     const getSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       setSession(session);
@@ -84,7 +115,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
   }, []);
 
-  const { data, isLoading: dataLoading } = useQuery({
+  // Check if we're on register page - if so, don't run the query at all
+  const isOnRegisterPage = typeof window !== 'undefined' && window.location.pathname.includes('/register');
+  const isCompletingRegistrationGlobal = typeof window !== 'undefined' && (window as any).isCompletingRegistration;
+  const isAuthContextDisabled = typeof window !== 'undefined' && (window as any).disableAuthContext;
+  
+  const { data, isLoading: dataLoading, error: queryError } = useQuery({
     queryKey: ['authData', user?.id],
     queryFn: async () => {
       if (!user) return null;
@@ -106,7 +142,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         .maybeSingle();
       
       if (memberError && memberError.code !== 'PGRST116') throw memberError;
-      if (!memberData) return null; // New user without household/member yet
+      if (!memberData) {
+        // Authenticated (e.g., Google) user without member/household → finish signup flow
+        // Only redirect if not already on register page and not completing registration
+        const isCompleting = isCompletingRegistration || isCompletingRegistrationGlobal;
+        if (!isOnRegisterPage && !isCompleting) {
+          setHasRedirectedToFinish(true);
+          window.location.href = '/register';
+        }
+        // Return null instead of throwing error to prevent query retries
+        return null;
+      }
 
       const { data: profileData } = await supabase
         .from('profiles')
@@ -121,8 +167,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         device: null,
       };
     },
-    enabled: !authLoading && !!user,
+    enabled: !authLoading && !!user && !isOnRegisterPage && !isCompletingRegistrationGlobal && !isAuthContextDisabled,
     staleTime: 5 * 60 * 1000, // 5 minutes
+    retry: false, // Don't retry on error
   });
 
   const householdId = data?.household?.id;
@@ -180,12 +227,26 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     signInAsKiosk,
   };
 
+  // Don't render children until auth is loaded to prevent useAuth errors
+  if (authLoading) {
+    return (
+      <AuthContext.Provider value={value}>
+        <div className="flex items-center justify-center h-screen">
+          <div className="text-center">
+            <p className="text-xl">Loading HomeHub...</p>
+          </div>
+        </div>
+      </AuthContext.Provider>
+    );
+  }
+
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {
+    console.error('useAuth must be used within an AuthProvider');
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;

@@ -45,10 +45,14 @@ export const useAlarmSystem = () => {
     const currentTime = now.toTimeString().slice(0, 5); // HH:MM format
     const currentDay = now.getDay();
 
+    console.log(`[ALARM CHECK] Time: ${currentTime}, Day: ${currentDay}, Alarms: ${alarms.length}`);
+
     // Check for new alarms that should trigger
     const triggeredAlarm = alarms.find(alarm => {
       // Check if alarm should trigger today
       const shouldTriggerToday = alarm.days_of_week?.includes(currentDay) ?? false;
+      console.log(`[ALARM CHECK] ${alarm.name}: shouldTriggerToday=${shouldTriggerToday}, days=${alarm.days_of_week}, active=${alarm.is_active}`);
+      
       if (!shouldTriggerToday) return false;
 
       // Check if time matches (within 1 minute tolerance)
@@ -58,28 +62,29 @@ export const useAlarmSystem = () => {
         new Date(`2000-01-01T${currentTime}:00`).getTime()
       );
       
+      console.log(`[ALARM CHECK] ${alarm.name}: timeDiff=${timeDiff}ms, alarmTime=${alarmTime}, currentTime=${currentTime}`);
       return timeDiff <= 60000; // 1 minute tolerance
     });
 
     if (triggeredAlarm) {
-      console.log('Alarm triggered:', triggeredAlarm.name, 'at', currentTime);
+      console.log('🚨 ALARM TRIGGERED:', triggeredAlarm.name, 'at', currentTime);
       setActiveAlarm(triggeredAlarm);
     }
   }, [alarms, activeAlarm]);
 
   // Set up alarm checking interval
   useEffect(() => {
-    if (!household?.id || !alarms.length) return;
+    if (!household?.id) return;
 
-    // Set up interval to check every 30 seconds
-    checkInterval.current = setInterval(checkForAlarms, 30000);
+    // Set up interval to check every 10 seconds for more responsive alarms
+    checkInterval.current = setInterval(checkForAlarms, 10000);
 
     return () => {
       if (checkInterval.current) {
         clearInterval(checkInterval.current);
       }
     };
-  }, [household?.id, alarms.length, checkForAlarms]);
+  }, [household?.id, checkForAlarms]);
 
   // Check for snoozed alarms that are ready to ring again
   useEffect(() => {
@@ -124,10 +129,21 @@ export const useAlarmSystem = () => {
     setActiveAlarm(null);
   }, [isSnoozeEnabled]);
 
+  // Test function to manually trigger an alarm
+  const testAlarm = useCallback(() => {
+    if (alarms.length > 0) {
+      console.log('🧪 TESTING ALARM:', alarms[0].name);
+      setActiveAlarm(alarms[0]);
+    } else {
+      console.log('❌ No alarms available for testing');
+    }
+  }, [alarms]);
+
   return {
     activeAlarm,
     dismissAlarm,
     snoozeAlarm,
     isAlarmActive: !!activeAlarm,
+    testAlarm,
   };
 };

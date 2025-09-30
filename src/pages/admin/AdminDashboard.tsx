@@ -10,7 +10,8 @@ import { HouseholdSettings } from '@/components/admin/HouseholdSettings';
 import { CalmCornerManagement } from '@/components/admin/CalmCornerManagement';
 import { FeelingsManagement } from '@/components/admin/FeelingsManagement';
 import { QuestManagement } from '@/components/admin/QuestManagement';
-import { AlarmManagement } from '@/components/admin/AlarmManagement';
+// Alarm management disabled for now
+// import { AlarmManagement } from '@/components/admin/AlarmManagement';
 import { WeatherSettings } from '@/components/admin/WeatherSettings';
 import { StoreManagement } from '@/components/admin/StoreManagement';
 import { ScheduleManagement } from '@/components/admin/ScheduleManagement';
@@ -42,7 +43,8 @@ const AdminDashboard = () => {
                 <AnnouncementManagement />
                 <FeelingsManagement />
                 <QuestManagement />
-                <AlarmManagement />
+                {/* Alarm management disabled for now */}
+                {/* <AlarmManagement /> */}
                 <MemberManagement />
                 <ChoreTemplateManagement />
                 <StoreManagement />

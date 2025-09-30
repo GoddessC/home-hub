@@ -37,12 +37,13 @@ export const MemberDashboardPanel = ({ member, chores, isExpanded, onToggleExpan
   const [questPoints, setQuestPoints] = useState(0);
 
   // Get available points (total earned - total spent) - this should match the store
-  const { data: availablePoints, isLoading: isLoadingAvailablePoints } = useQuery({
+  const { data: availablePoints, isLoading: isLoadingAvailablePoints, error: pointsError } = useQuery({
     queryKey: ['member_available_points', member.id],
     queryFn: async () => {
+      if (!member?.id) return 0;
       return await getMemberAvailablePoints(member.id);
     },
-    enabled: !!member,
+    enabled: !!member?.id,
   });
 
   // Get member's current feeling for avatar display
@@ -56,10 +57,9 @@ export const MemberDashboardPanel = ({ member, chores, isExpanded, onToggleExpan
         .eq('member_id', member.id)
         .eq('household_id', household.id)
         .order('created_at', { ascending: false })
-        .limit(1)
-        .single();
-      if (error && error.code !== 'PGRST116') throw error;
-      return data?.feeling || null;
+        .limit(1);
+      if (error) throw error;
+      return data && data.length > 0 ? data[0].feeling : null;
     },
     enabled: !!member && !!household,
   });
@@ -92,14 +92,18 @@ export const MemberDashboardPanel = ({ member, chores, isExpanded, onToggleExpan
       
       const { data, error } = await supabase
         .from('quest_sub_tasks')
-        .select('points_awarded, created_at')
+        .select('created_at, quests(reward_points_each)')
         .eq('member_id', member.id)
-        .gte('created_at', twentyFourHoursAgo.toISOString())
-        .order('created_at', { ascending: false })
+        .gte('completed_at', twentyFourHoursAgo.toISOString())
+        .not('completed_at', 'is', null)
+        .order('completed_at', { ascending: false })
         .limit(1);
       
       if (error) return null;
-      return data.length > 0 ? data[0] : null;
+      return data.length > 0 ? {
+        points_awarded: (data[0].quests as any)?.reward_points_each || 0,
+        created_at: data[0].created_at
+      } : null;
     },
     enabled: !!member.id,
     refetchInterval: 30000, // Check every 30 seconds
@@ -301,7 +305,13 @@ export const MemberDashboardPanel = ({ member, chores, isExpanded, onToggleExpan
           {!isExpanded ? (
             <>
               <div className="absolute top-2 right-2 bg-primary text-primary-foreground rounded-full px-2 py-1 text-xs font-bold z-10">
-                {isLoadingAvailablePoints ? <Skeleton className="h-4 w-8 bg-primary/50" /> : `${availablePoints ?? 0} pts`}
+                {isLoadingAvailablePoints ? (
+                  <Skeleton className="h-4 w-8 bg-primary/50" />
+                ) : pointsError ? (
+                  <span className="text-red-200">Error</span>
+                ) : (
+                  `${availablePoints ?? 0} pts`
+                )}
               </div>
               <div className="flex flex-col items-center justify-center p-2">
                 <MemberAvatar memberId={member.id} className="w-24 h-36 mb-2" currentFeeling={currentFeeling} />
@@ -314,7 +324,7 @@ export const MemberDashboardPanel = ({ member, chores, isExpanded, onToggleExpan
                 <CardTitle>{member.full_name}</CardTitle>
                 <div className="flex items-start gap-2">
                     <div className="text-right">
-                        <p className="text-2xl font-bold">{isLoadingAvailablePoints ? <Skeleton className="h-8 w-12" /> : availablePoints ?? 0}</p>
+                        <div className="text-2xl font-bold">{isLoadingAvailablePoints ? <Skeleton className="h-8 w-12" /> : availablePoints ?? 0}</div>
                         <p className="text-xs text-muted-foreground">Available points</p>
                     </div>
                     <Button

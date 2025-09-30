@@ -1,10 +1,10 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
+import { RegistrationProvider } from './context/RegistrationContext';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import NotFound from './pages/NotFound';
-import CreateHousehold from './pages/CreateHousehold';
 import KioskPairingPage from './pages/KioskPairingPage';
 import KioskDashboard from './pages/KioskDashboard';
 import KioskCalmCorner from './pages/KioskCalmCorner';
@@ -12,7 +12,26 @@ import { AvatarBuilderPage } from './pages/AvatarBuilder';
 import { StorePage } from './pages/StorePage';
 
 const AppRoutes = () => {
-  const { session, loading, isAnonymous, household, member, device } = useAuth();
+  let session, loading, isAnonymous, household, member, device;
+  
+  try {
+    const authData = useAuth();
+    session = authData.session;
+    loading = authData.loading;
+    isAnonymous = authData.isAnonymous;
+    household = authData.household;
+    member = authData.member;
+    device = authData.device;
+  } catch (error) {
+    console.error('Auth context not available:', error);
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-center">
+          <p className="text-xl">Loading HomeHub...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (loading) {
     return (
@@ -29,7 +48,11 @@ const AppRoutes = () => {
     return (
       <Routes>
         <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
+        <Route path="/register" element={
+          <RegistrationProvider>
+            <Register />
+          </RegistrationProvider>
+        } />
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     );
@@ -47,17 +70,6 @@ const AppRoutes = () => {
     )
   }
 
-  // Authenticated Human User
-  // If household exists but setup is not complete, force to setup page
-  if (household && !household.is_setup_complete) {
-    return (
-        <Routes>
-            <Route path="/create-household" element={<CreateHousehold />} />
-            <Route path="*" element={<Navigate to="/create-household" replace />} />
-        </Routes>
-    )
-  }
-
   // If setup is complete, show the main app
   if (household && member) {
     return (
@@ -71,17 +83,20 @@ const AppRoutes = () => {
         <Route path="/kiosk/calm-corner" element={<KioskCalmCorner />} />
         <Route path="/login" element={<Navigate to="/" replace />} />
         <Route path="/register" element={<Navigate to="/" replace />} />
-        <Route path="/create-household" element={<Navigate to="/" replace />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     );
   }
 
-  // New authenticated user without member/household yet → go to setup
+  // User exists but no household/member - redirect to registration to complete setup
   return (
     <Routes>
-      <Route path="/create-household" element={<CreateHousehold />} />
-      <Route path="*" element={<Navigate to="/create-household" replace />} />
+      <Route path="/register" element={
+        <RegistrationProvider>
+          <Register />
+        </RegistrationProvider>
+      } />
+      <Route path="*" element={<Navigate to="/register" replace />} />
     </Routes>
   );
 };

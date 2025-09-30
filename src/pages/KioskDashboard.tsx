@@ -14,9 +14,11 @@ import { MemberDashboardPanel } from '@/components/dashboard/MemberDashboardPane
 import { TeamQuestPanel, Quest } from '@/components/dashboard/TeamQuestPanel';
 // removed WeatherIcon from header per request
 import { SchedulePanel } from '@/components/dashboard/SchedulePanel';
-import { AlarmModal } from '@/components/alarms/AlarmModal';
-import { useAlarmSystem } from '@/hooks/useAlarmSystem';
+// Alarm system disabled for now
+// import { AlarmModal } from '@/components/alarms/AlarmModal';
+// import { useAlarmSystem } from '@/hooks/useAlarmSystem';
 import { MemberAvatar } from '@/components/avatar/MemberAvatar';
+import { getMemberAvailablePoints } from '@/utils/pointsUtils';
 
 export type ChoreLog = {
   id: string;
@@ -31,6 +33,23 @@ export type ChoreLog = {
   }[] | null;
 };
 
+// Component to display member points in the sidebar
+const MemberPointsDisplay = ({ memberId }: { memberId: string }) => {
+  const { data: availablePoints, isLoading } = useQuery({
+    queryKey: ['member_available_points', memberId],
+    queryFn: async () => {
+      return await getMemberAvailablePoints(memberId);
+    },
+    enabled: !!memberId,
+  });
+
+  if (isLoading) {
+    return <Skeleton className="h-4 w-8 bg-primary/50" />;
+  }
+
+  return <span>{availablePoints ?? 0} pts</span>;
+};
+
 const KioskDashboard = () => {
   const { device, household, signOut, isAnonymous, member } = useAuth();
   const [isCalmCornerSuggested, setIsCalmCornerSuggested] = useState(false);
@@ -38,8 +57,8 @@ const KioskDashboard = () => {
   const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null);
   const suggestionTimer = useRef<NodeJS.Timeout | null>(null);
   
-  // Alarm system
-  const { activeAlarm, dismissAlarm, snoozeAlarm, isAlarmActive } = useAlarmSystem();
+  // Alarm system - disabled for now
+  // const { activeAlarm, dismissAlarm, snoozeAlarm, isAlarmActive, testAlarm } = useAlarmSystem();
 
   useEffect(() => {
     const t = setInterval(() => setHeaderTime(new Date()), 1000);
@@ -125,11 +144,10 @@ const KioskDashboard = () => {
         .eq('household_id', household.id)
         .eq('status', 'ACTIVE')
         .order('created_at', { ascending: false })
-        .limit(1)
-        .single();
+        .limit(1);
       
-      if (error && error.code !== 'PGRST116') throw error;
-      return data;
+      if (error) throw error;
+      return data && data.length > 0 ? data[0] : null;
     },
     enabled: !!household?.id,
   });
@@ -189,13 +207,17 @@ const KioskDashboard = () => {
                     key={m.id}
                     onClick={() => setSelectedMemberId(prev => prev === m.id ? null : m.id)}
                     className={cn(
-                      "flex items-center gap-3 p-2 rounded-xl border text-left transition-colors h-40",
+                      "flex items-center gap-3 p-2 rounded-xl border text-left transition-colors h-40 relative",
                       selectedMemberId === m.id ? "bg-primary/10 border-primary" : "bg-background/70 hover:bg-accent"
                     )}
                   >
                     <MemberAvatar memberId={m.id} className="w-10 h-14" />
                     <div className="flex-1">
                       <div className="font-medium truncate">{m.full_name}</div>
+                    </div>
+                    {/* Points display */}
+                    <div className="absolute top-2 right-2 bg-primary text-primary-foreground rounded-full px-2 py-1 text-xs font-bold">
+                      <MemberPointsDisplay memberId={m.id} />
                     </div>
                   </button>
                 ))
@@ -254,14 +276,7 @@ const KioskDashboard = () => {
         </Link>
       )}
 
-      {/* Alarm Modal */}
-      <AlarmModal
-        alarm={activeAlarm}
-        isOpen={isAlarmActive}
-        onClose={dismissAlarm}
-        onSnooze={snoozeAlarm}
-        isSnoozeEnabled={household?.alarm_snooze_enabled ?? true}
-      />
+      {/* Alarm system disabled for now */}
     </div>
   );
 };

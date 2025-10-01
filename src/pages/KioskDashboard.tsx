@@ -250,37 +250,23 @@ const KioskDashboard = () => {
         {/* Header - Top Right */}
         <div className="flex-1 flex justify-between items-center p-4">
           <div className="flex items-center gap-4">
-            <h1 className={cn("text-3xl font-bold", isAnonymous ? "" : "text-gray-800")}>
-              {household?.name || (isAnonymous ? 'Kiosk Mode' : 'Dashboard')}
-            </h1>
             {isCalmCornerSuggested && (
               <div className="bg-yellow-100 border border-yellow-300 rounded-lg px-3 py-2">
                 <p className="text-yellow-800 text-sm font-medium">
-                  💡 Calm Corner suggestion available
+                  💡 Calm Corner suggested
                 </p>
               </div>
             )}
           </div>
-          <div className="flex items-center gap-4">
-            <AnnouncementPanel />
-            <div className={cn("font-mono font-semibold", isAnonymous ? "text-white" : "text-gray-800")}>
+          <AnnouncementPanel />
+          <div className="flex items-center gap-2">
+            
+            <h3 className={cn("text-3xl font-bold", isAnonymous ? "" : "text-gray-800")}>
+              {household?.name || (isAnonymous ? 'Kiosk Mode' : 'Dashboard')}
+            </h3>
+            {/* <div className={cn("font-mono font-semibold", isAnonymous ? "text-white" : "text-gray-800")}>
               {format(headerTime, 'h:mm a')}
-            </div>
-            {isAnonymous ? (
-              <>
-                <span className="text-sm text-gray-400">{device?.display_name}</span>
-                <Button variant="destructive" onClick={signOut}>Exit Kiosk Mode</Button>
-              </>
-            ) : (
-              member?.role === 'OWNER' && (
-                <Button asChild variant="outline">
-                  <Link to="/admin">
-                    <Shield className="mr-2 h-4 w-4" />
-                    Admin Panel
-                  </Link>
-                </Button>
-              )
-            )}
+            </div> */}
           </div>
         </div>
       </div>
@@ -354,6 +340,21 @@ const KioskDashboard = () => {
             })
           )}
         </div>
+        {isAnonymous ? (
+              <>
+                <span className="text-sm text-gray-400">{device?.display_name}</span>
+                <Button variant="destructive" onClick={signOut}>Exit Kiosk Mode</Button>
+              </>
+            ) : (
+              member?.role === 'OWNER' && (
+                <Button asChild variant="outline" className="absolute left-6 bottom-8">
+                  <Link to="/admin">
+                    <Shield className="mr-2 h-4 w-4" />
+                    Admin Panel
+                  </Link>
+                </Button>
+              )
+            )}
       </div>
 
       {/* Backdrop */}
@@ -413,7 +414,7 @@ const KioskDashboard = () => {
           })()}
         </div>
       </div>
-
+          
       {/* Alarm system disabled for now */}
     </div>
   );

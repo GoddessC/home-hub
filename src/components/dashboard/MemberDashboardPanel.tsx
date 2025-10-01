@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Skeleton } from '@/components/ui/skeleton';
 import { showError } from '@/utils/toast';
@@ -9,12 +9,11 @@ import { format } from 'date-fns';
 import { Member, useAuth } from '@/context/AuthContext';
 import { Button } from '../ui/button';
 import { FeelingsCheckinDialog } from './FeelingsCheckinDialog';
-import { X, Palette } from 'lucide-react';
+import { Palette } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Link } from 'react-router-dom';
 import { ChoreLog } from '@/pages/KioskDashboard';
 import { MemberAvatar } from '../avatar/MemberAvatar';
-import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip';
 import { getMemberAvailablePoints } from '@/utils/pointsUtils';
 
 interface MemberDashboardPanelProps {
@@ -74,7 +73,7 @@ export const MemberDashboardPanel = ({ member, chores, isExpanded, onToggleExpan
   //   enabled: !!member && !!household,
   // });
 
-  const { data: achievements, isLoading: isLoadingAchievements } = useQuery<Achievements>({
+  const { data: achievements } = useQuery<Achievements>({
     queryKey: ['member_achievements', member.id],
     queryFn: async () => {
         const { data, error } = await supabase.rpc('get_member_achievements', { p_member_id: member.id });
@@ -267,41 +266,6 @@ export const MemberDashboardPanel = ({ member, chores, isExpanded, onToggleExpan
           )}
           onClick={() => onToggleExpanded(!isExpanded)}
         >
-          {!isLoadingAchievements && (
-            <>
-              {achievements?.has_completed_quest && (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <img src="/orange-check.png" alt="Quest Complete!" className={cn("absolute w-20 h-20 transition-all duration-300 z-20", isExpanded ? "top-15 right-0" : "top-15 right-0")} />
-                  </TooltipTrigger>
-                  <TooltipContent><p>Team Quest Completed!</p></TooltipContent>
-                </Tooltip>
-              )}
-              {achievements?.has_completed_chores && !achievements?.has_completed_quest && (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <img src="/orange-check.png" alt="All Chores Done!" className={cn("absolute w-20 h-20 transition-all duration-300 z-20 top-10 right-0")} />
-                  </TooltipTrigger>
-                  <TooltipContent><p>All Chores Done Today!</p></TooltipContent>
-                </Tooltip>
-              )}
-              {showQuestBadge && (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <div className="absolute z-30 transition-all duration-300 animate-bounce" style={{ top: "-30px", right: isExpanded ? "20px" : "0" }}>
-                      <div className="relative">
-                        <img src="/quest_badge.png" alt="Quest Reward!" className="w-16 h-16" />
-                        <div className="absolute inset-0 flex items-center justify-center text-black font-bold text-lg" style={{ paddingBottom: "4px" }}>
-                          +{questPoints}
-                        </div>
-                      </div>
-                    </div>
-                  </TooltipTrigger>
-                  <TooltipContent><p>Quest Reward Earned!</p></TooltipContent>
-                </Tooltip>
-              )}
-            </>
-          )}
           {!isExpanded ? (
             <>
               <div className="absolute top-2 right-2 bg-primary text-primary-foreground rounded-full px-2 py-1 text-xs font-bold z-10">
@@ -319,11 +283,30 @@ export const MemberDashboardPanel = ({ member, chores, isExpanded, onToggleExpan
               </div>
             </>
           ) : (
-            <div className="w-full h-full flex flex-col cursor-default" onClick={(e) => e.stopPropagation()}>
-              <CardContent className="flex-grow flex flex-row gap-6 items-stretch justify-between">
+            <div className="w-full h-full flex flex-col cursor-default glass-box" onClick={(e) => e.stopPropagation()}>
+              <CardContent className="flex-grow flex flex-row gap-6 items-stretch justify-between p-6">
+                {/* Left Section - Avatar */}
+                <div className="flex flex-col items-center gap-4 w-1/3">
+                  <MemberAvatar
+                    memberId={member.id}
+                    className="w-32 h-48 md:w-40 md:h-60 lg:w-48 lg:h-72"
+                    viewMode="full"
+                    currentFeeling={currentFeeling}
+                  />
+                  {!isAnonymous && (
+                    <Button asChild variant="outline" onClick={(e) => e.stopPropagation()}>
+                      <Link to={`/avatar-builder/${member.id}`}>
+                        <Palette className="mr-2 h-4 w-4" />
+                        Edit Avatar
+                      </Link>
+                    </Button>
+                  )}
+                </div>
+
+                {/* Right Section - Chores */}
                 <div className="flex-1 flex flex-col justify-between">
                   <div>
-                    <h4 className="mb-2 text-sm font-medium text-muted-foreground">Today's Chores</h4>
+                    <h4 className="mb-4 text-lg font-semibold text-muted-foreground">Today's Chores</h4>
                     {chores.length > 0 ? (
                       <ul className="space-y-3">
                         {chores.map(chore => {
@@ -358,36 +341,49 @@ export const MemberDashboardPanel = ({ member, chores, isExpanded, onToggleExpan
                         })}
                       </ul>
                     ) : (
-                      <p className="text-sm text-muted-foreground text-center py-4">No chores for today!</p>
+                      <p className="text-sm text-muted-foreground text-center py-8">No chores for today!</p>
                     )}
                   </div>
-                  <div className="mt-4 pt-4 border-t">
-                      <div className="flex items-center justify-center gap-4 flex-wrap">
-                          {household?.is_feelings_enabled && checkinStatus.showButton && (
-                              <Button onClick={(e) => { e.stopPropagation(); setFeelingsDialogOpen(true); }}>
-                                  Log My Feeling
-                              </Button>
-                          )}
-                          {!isAnonymous && (
-                              <Button asChild variant="outline" onClick={(e) => e.stopPropagation()}>
-                                  <Link to={`/avatar-builder/${member.id}`}>
-                                      <Palette className="mr-2 h-4 w-4" />
-                                      Edit Avatar
-                                  </Link>
-                              </Button>
-                          )}
-                      </div>
-                  </div>
-                </div>
-                <div className="flex items-end justify-end">
-                  <MemberAvatar
-                    memberId={member.id}
-                    className="w-32 h-48 md:w-40 md:h-60 lg:w-48 lg:h-72"
-                    viewMode="full"
-                    currentFeeling={currentFeeling}
-                  />
                 </div>
               </CardContent>
+
+              {/* Bottom Section - Badges and Feelings Button */}
+              <div className="flex items-center justify-between p-6 pt-0">
+                {/* Badges Section - Bottom Center */}
+                <div className="flex-1 flex justify-center">
+                  <div className="flex items-center gap-4">
+                    {achievements?.has_completed_quest && (
+                      <div className="flex items-center gap-2 bg-orange-100 text-orange-800 px-3 py-2 rounded-full text-sm font-medium">
+                        <img src="/orange-check.png" alt="Quest Complete!" className="w-6 h-6" />
+                        Quest Complete!
+                      </div>
+                    )}
+                    {achievements?.has_completed_chores && !achievements?.has_completed_quest && (
+                      <div className="flex items-center gap-2 bg-green-100 text-green-800 px-3 py-2 rounded-full text-sm font-medium">
+                        <img src="/orange-check.png" alt="All Chores Done!" className="w-6 h-6" />
+                        All Chores Done!
+                      </div>
+                    )}
+                    {showQuestBadge && (
+                      <div className="flex items-center gap-2 bg-purple-100 text-purple-800 px-3 py-2 rounded-full text-sm font-medium">
+                        <img src="/quest_badge.png" alt="Quest Reward!" className="w-6 h-6" />
+                        +{questPoints} Quest Reward!
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Feelings Button - Bottom Right */}
+                {household?.is_feelings_enabled && checkinStatus.showButton && (
+                  <Button 
+                    onClick={(e) => { e.stopPropagation(); setFeelingsDialogOpen(true); }}
+                    className="rounded-full w-12 h-12 p-0 bg-gradient-to-br from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-white shadow-lg hover:shadow-xl transition-all duration-200"
+                    size="lg"
+                  >
+                    <span className="text-lg">😊</span>
+                  </Button>
+                )}
+              </div>
             </div>
           )}
         </Card>

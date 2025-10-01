@@ -1,16 +1,11 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Button } from '@/components/ui/button';
-import { Clock, RefreshCw, Calendar } from 'lucide-react';
+import { Clock } from 'lucide-react';
 import { format } from 'date-fns';
 import { useAuth } from '@/context/AuthContext';
 import { cn } from '@/lib/utils';
-import { useState, useEffect } from 'react';
-import { WeatherIcon } from './WeatherIcon';
-import { generateCurrentWeekSchedule, generateNextWeekSchedule } from '@/utils/scheduleUtils';
-import { showSuccess, showError } from '@/utils/toast';
 
 type ScheduleItem = {
   id: string;
@@ -26,17 +21,6 @@ interface SchedulePanelProps {
 
 export const SchedulePanel = ({ className }: SchedulePanelProps) => {
   const { household } = useAuth();
-  const queryClient = useQueryClient();
-  const [currentTime, setCurrentTime] = useState(new Date());
-
-  // Update clock every second
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentTime(new Date());
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, []);
 
   const { data: todaysSchedule, isLoading } = useQuery<ScheduleItem[]>({
     queryKey: ['schedule', household?.id, format(new Date(), 'yyyy-MM-dd')],
@@ -55,29 +39,6 @@ export const SchedulePanel = ({ className }: SchedulePanelProps) => {
     enabled: !!household?.id,
   });
 
-  const generateCurrentWeekMutation = useMutation({
-    mutationFn: () => {
-      if (!household?.id) throw new Error("Household not found");
-      return generateCurrentWeekSchedule(household.id);
-    },
-    onSuccess: () => {
-      showSuccess('Schedule generated for this week!');
-      queryClient.invalidateQueries({ queryKey: ['schedule', household?.id] });
-    },
-    onError: (error: Error) => showError(error.message),
-  });
-
-  const generateNextWeekMutation = useMutation({
-    mutationFn: () => {
-      if (!household?.id) throw new Error("Household not found");
-      return generateNextWeekSchedule(household.id);
-    },
-    onSuccess: () => {
-      showSuccess('Schedule generated for next week!');
-      queryClient.invalidateQueries({ queryKey: ['schedule', household?.id] });
-    },
-    onError: (error: Error) => showError(error.message),
-  });
 
   const getCurrentTime = () => {
     const now = new Date();
@@ -100,26 +61,6 @@ export const SchedulePanel = ({ className }: SchedulePanelProps) => {
   if (isLoading) {
     return (
       <div className={cn("space-y-4", className)}>
-        {/* Digital Clock */}
-        <Card className="w-full">
-          <CardContent className="p-6">
-            <div className="text-center">
-              <div className="text-4xl font-mono font-bold text-primary mb-2">
-                {format(currentTime, 'h:mm:ss a')}
-              </div>
-              <div className="text-xl text-muted-foreground mb-4">
-                {format(currentTime, 'EEEE, MMMM do, yyyy')}
-              </div>
-              {/* Weather under the clock */}
-              <div className="flex items-center justify-center">
-                <div className="scale-150">
-                  <WeatherIcon />
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
         {/* Schedule Loading */}
         <Card className="w-full">
           <CardHeader>
@@ -143,26 +84,6 @@ export const SchedulePanel = ({ className }: SchedulePanelProps) => {
   if (!todaysSchedule || todaysSchedule.length === 0) {
     return (
       <div className={cn("space-y-4", className)}>
-        {/* Digital Clock */}
-        <Card className="w-full">
-          <CardContent className="p-6">
-            <div className="text-center">
-              <div className="text-4xl font-mono font-bold text-primary mb-2">
-                {format(currentTime, 'h:mm:ss a')}
-              </div>
-              <div className="text-lg text-muted-foreground mb-4">
-                {format(currentTime, 'EEEE, MMMM do, yyyy')}
-              </div>
-              {/* Weather under the clock */}
-              <div className="flex items-center justify-center">
-                <div className="scale-150">
-                  <WeatherIcon />
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
         {/* Empty Schedule */}
         <Card className="w-full">
           <CardHeader className="flex flex-row items-center justify-between">
@@ -210,26 +131,6 @@ export const SchedulePanel = ({ className }: SchedulePanelProps) => {
 
   return (
     <div className={cn("space-y-4", className)}>
-      {/* Digital Clock */}
-      <Card className="w-full">
-        <CardContent className="p-6">
-          <div className="text-center">
-            <div className="text-4xl font-mono font-bold text-primary mb-2">
-              {format(currentTime, 'h:mm:ss a')}
-            </div>
-            <div className="text-lg text-muted-foreground mb-4">
-              {format(currentTime, 'EEEE, MMMM do, yyyy')}
-            </div>
-            {/* Weather under the clock */}
-            <div className="flex items-center justify-center">
-              <div className="scale-150">
-                <WeatherIcon />
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
       {/* Schedule */}
       <Card className="w-full">
         <CardHeader className="flex flex-row items-center justify-between">

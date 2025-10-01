@@ -320,27 +320,6 @@ export const MemberDashboardPanel = ({ member, chores, isExpanded, onToggleExpan
             </>
           ) : (
             <div className="w-full h-full flex flex-col cursor-default" onClick={(e) => e.stopPropagation()}>
-              <CardHeader className="flex flex-row items-start justify-between">
-                <CardTitle>{member.full_name}</CardTitle>
-                <div className="flex items-start gap-2">
-                    <div className="text-right">
-                        <div className="text-2xl font-bold">{isLoadingAvailablePoints ? <Skeleton className="h-8 w-12" /> : availablePoints ?? 0}</div>
-                        <p className="text-xs text-muted-foreground">Available points</p>
-                    </div>
-                    <Button
-                        variant="secondary"
-                        size="icon"
-                        className="h-8 w-8 shrink-0"
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            onToggleExpanded(false);
-                        }}
-                    >
-                        <X className="h-4 w-4" />
-                        <span className="sr-only">Close</span>
-                    </Button>
-                </div>
-              </CardHeader>
               <CardContent className="flex-grow flex flex-row gap-6 items-stretch justify-between">
                 <div className="flex-1 flex flex-col justify-between">
                   <div>

@@ -1,7 +1,7 @@
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
-import { UserNav } from '@/components/layout/UserNav';
+import { LogOut } from 'lucide-react';
 import { DeviceManagement } from '@/components/admin/DeviceManagement';
 import { MemberManagement } from '@/components/admin/MemberManagement';
 import { ChoreTemplateManagement } from '@/components/admin/ChoreTemplateManagement';
@@ -17,7 +17,7 @@ import { StoreManagement } from '@/components/admin/StoreManagement';
 import { ScheduleManagement } from '@/components/admin/ScheduleManagement';
 
 const AdminDashboard = () => {
-  const { household } = useAuth();
+  const { household, signOut } = useAuth();
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
@@ -30,7 +30,6 @@ const AdminDashboard = () => {
             <Button asChild variant="secondary">
               <Link to="/">View Dashboard</Link>
             </Button>
-            <UserNav />
           </div>
         </div>
       </header>
@@ -58,6 +57,20 @@ const AdminDashboard = () => {
             </div>
         </div>
       </main>
+      
+      {/* Sign Out Button at Bottom */}
+      <footer className="p-4 bg-white border-t border-gray-200">
+        <div className="container mx-auto flex justify-end">
+          <Button 
+            variant="destructive" 
+            onClick={signOut}
+            className="flex items-center gap-2"
+          >
+            <LogOut className="h-4 w-4" />
+            Sign Out
+          </Button>
+        </div>
+      </footer>
     </div>
   );
 };

@@ -51,20 +51,52 @@ export const TeamQuestPanel = ({ quest, isLoading }: TeamQuestPanelProps) => {
       return data;
     },
     onSuccess: (updatedSubTask) => {
-      queryClient.setQueryData(['active_quest', household?.id], (oldData: Quest | undefined | null) => {
+      queryClient.setQueryData(['active_quests', household?.id], (oldData: Quest[] | undefined) => {
         if (!oldData) return oldData;
         
-        const newSubTasks = oldData.quest_sub_tasks.map(task => 
-          task.id === updatedSubTask.id ? updatedSubTask : task
-        );
-
-        return {
-          ...oldData,
-          quest_sub_tasks: newSubTasks,
-        };
+        return oldData.map(quest => {
+          const newSubTasks = quest.quest_sub_tasks.map(task => 
+            task.id === updatedSubTask.id ? updatedSubTask : task
+          );
+          return {
+            ...quest,
+            quest_sub_tasks: newSubTasks,
+          };
+        });
       });
     },
     onError: (error: Error) => showError(error.message),
+  });
+
+  const completeQuestMutation = useMutation({
+    mutationFn: async (questId: string) => {
+      const { error } = await supabase
+        .from('quests')
+        .update({ 
+          status: 'COMPLETED',
+          completed_at: new Date().toISOString()
+        })
+        .eq('id', questId);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      // Remove the quest from the active quests list
+      queryClient.setQueryData(['active_quests', household?.id], (oldData: Quest[] | undefined) => {
+        if (!oldData) return oldData;
+        return oldData.filter(q => q.id !== quest?.id);
+      });
+      
+      // Update points and achievements
+      queryClient.invalidateQueries({ queryKey: ['member_available_points'] });
+      queryClient.invalidateQueries({ queryKey: ['member_weekly_score'] });
+      queryClient.invalidateQueries({ queryKey: ['member_all_time_score'] });
+      queryClient.invalidateQueries({ queryKey: ['member_achievements'] });
+    },
+    onError: (error: Error) => {
+      console.error('Error completing quest:', error);
+      showError('Failed to complete quest');
+    },
   });
 
   const { progress, completedCount, totalCount, isComplete } = useMemo(() => {
@@ -88,18 +120,14 @@ export const TeamQuestPanel = ({ quest, isLoading }: TeamQuestPanelProps) => {
 
   const handleConfettiComplete = () => {
     setShowConfetti(false);
-    // Update points and achievements immediately
-    queryClient.invalidateQueries({ queryKey: ['member_available_points'] });
-    queryClient.invalidateQueries({ queryKey: ['member_weekly_score'] });
-    queryClient.invalidateQueries({ queryKey: ['member_all_time_score'] });
-    // Invalidate member achievements to refresh banners
-    queryClient.invalidateQueries({ queryKey: ['member_achievements'] });
     
-    // Delay hiding the quest panel to let users see the completion
-    setTimeout(() => {
-      setJustCompleted(false);
-      queryClient.invalidateQueries({ queryKey: ['active_quest', household?.id] });
-    }, 5000); // 5 second delay
+    // Mark the quest as completed using the mutation
+    if (quest?.id) {
+      completeQuestMutation.mutate(quest.id);
+    }
+    
+    // Reset the completion state
+    setJustCompleted(false);
   };
 
   if (isLoading) {
@@ -122,16 +150,31 @@ export const TeamQuestPanel = ({ quest, isLoading }: TeamQuestPanelProps) => {
           </div>
         )}
         <CardHeader>
-          <CardTitle className="flex items-center gap-3 text-purple-800 dark:text-purple-200">
-            <Rocket className="h-6 w-6" />
-            <span>Team Quest: {quest.name}</span>
-          </CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-3 text-purple-800 dark:text-purple-200">
+              <Rocket className="h-6 w-6" />
+              <span>Team Quest: {quest.name}</span>
+            </CardTitle>
+            <div className="flex items-center gap-2 bg-purple-100 dark:bg-purple-800/50 px-3 py-1 rounded-full">
+              <span className="text-sm font-medium text-purple-700 dark:text-purple-300">Reward:</span>
+              <span className="text-lg font-bold text-purple-800 dark:text-purple-200">
+                {quest.reward_points_each} pts
+              </span>
+            </div>
+          </div>
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <div className="flex justify-between items-center mb-1 text-sm font-medium text-purple-700 dark:text-purple-300">
-              <span>Progress</span>
-              <span>{completedCount} / {totalCount} Tasks</span>
+            <div className="flex justify-between items-center mb-2">
+              <div className="flex items-center gap-4">
+                <div className="text-sm font-medium text-purple-700 dark:text-purple-300">
+                  Progress: {completedCount} / {totalCount} Tasks
+                </div>
+                <div className="flex items-center gap-1 text-sm font-semibold text-purple-600 dark:text-purple-400">
+                  <span>🎯</span>
+                  <span>{quest.reward_points_each} points each</span>
+                </div>
+              </div>
             </div>
             <Progress value={progress} className="[&>*]:bg-purple-500" />
           </div>

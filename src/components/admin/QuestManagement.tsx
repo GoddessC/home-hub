@@ -60,7 +60,8 @@ export const QuestManagement = () => {
     mutationFn: async (values: QuestFormValues) => {
       if (!household || !user) throw new Error("Not authorized");
 
-      const { error } = await supabase.rpc('create_new_quest', {
+      console.log('Creating quest with values:', values);
+      const { data, error } = await supabase.rpc('create_new_quest', {
         p_household_id: household.id,
         p_created_by: user.id,
         p_name: values.name,
@@ -68,11 +69,33 @@ export const QuestManagement = () => {
         p_sub_tasks: values.sub_tasks,
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Quest creation error:', error);
+        throw error;
+      }
+      
+      console.log('Quest created successfully:', data);
     },
-    onSuccess: () => {
+    onSuccess: async () => {
       showSuccess('Team Quest launched!');
-      queryClient.invalidateQueries({ queryKey: ['active_quest', household?.id] });
+      console.log('Quest created, invalidating active_quests query');
+      
+      // Let's also manually check what quests exist in the database
+      if (household?.id) {
+        const { data: allQuests, error } = await supabase
+          .from('quests')
+          .select('id, name, status, completed_at, created_at')
+          .eq('household_id', household.id)
+          .order('created_at', { ascending: false });
+        
+        if (error) {
+          console.error('Error fetching all quests:', error);
+        } else {
+          console.log('All quests in database:', allQuests);
+        }
+      }
+      
+      queryClient.invalidateQueries({ queryKey: ['active_quests', household?.id] });
       reset();
     },
     onError: (error: Error) => showError(error.message),

@@ -4,12 +4,12 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format } from 'date-fns';
-import { AnnouncementPanel } from '@/components/dashboard/AnnouncementPanel';
 import { Link } from 'react-router-dom';
-import { Leaf, Shield, X } from 'lucide-react';
+import { Leaf, Shield, X, Rocket } from 'lucide-react';
 import { useEffect, useState, useRef } from 'react';
 import { cn } from '@/lib/utils';
 import { MemberDashboardPanel } from '@/components/dashboard/MemberDashboardPanel';
+import { AnnouncementPanel } from '@/components/dashboard/AnnouncementPanel';
 import { TeamQuestPanel, Quest } from '@/components/dashboard/TeamQuestPanel';
 import { SchedulePanel } from '@/components/dashboard/SchedulePanel';
 import { ClockWeatherPanel } from '@/components/dashboard/ClockWeatherPanel';
@@ -105,7 +105,6 @@ const AnimatedProgressBorder = ({ percentage, children, className }: {
 const KioskDashboard = () => {
   const { device, household, signOut, isAnonymous, member } = useAuth();
   const [isCalmCornerSuggested, setIsCalmCornerSuggested] = useState(false);
-  const [headerTime, setHeaderTime] = useState(new Date());
   const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null);
   const [isMemberDetailsVisible, setIsMemberDetailsVisible] = useState(false);
   const suggestionTimer = useRef<NodeJS.Timeout | null>(null);
@@ -122,10 +121,6 @@ const KioskDashboard = () => {
   // Alarm system - disabled for now
   // const { activeAlarm, dismissAlarm, snoozeAlarm, isAlarmActive, testAlarm } = useAlarmSystem();
 
-  useEffect(() => {
-    const t = setInterval(() => setHeaderTime(new Date()), 1000);
-    return () => clearInterval(t);
-  }, []);
 
   useEffect(() => {
     if (!household || !isAnonymous) return;
@@ -196,20 +191,22 @@ const KioskDashboard = () => {
     enabled: !!household?.id,
   });
 
-  const { data: activeQuest, isLoading: isLoadingQuest } = useQuery<Quest | null>({
-    queryKey: ['active_quest', household?.id],
+  const { data: activeQuests, isLoading: isLoadingQuests } = useQuery<Quest[]>({
+    queryKey: ['active_quests', household?.id],
     queryFn: async () => {
-      if (!household?.id) return null;
+      if (!household?.id) return [];
       const { data, error } = await supabase
         .from('quests')
         .select('id, name, reward_points_each, quest_sub_tasks(*, members(id, full_name))')
         .eq('household_id', household.id)
         .eq('status', 'ACTIVE')
-        .order('created_at', { ascending: false })
-        .limit(1);
+        .is('completed_at', null) // Ensure we only get non-completed quests
+        .order('created_at', { ascending: false });
       
       if (error) throw error;
-      return data && data.length > 0 ? data[0] : null;
+      console.log('Fetched active quests:', data?.length || 0, 'quests:', data);
+      console.log('Query filters: household_id=', household.id, 'status=ACTIVE', 'completed_at=null');
+      return data || [];
     },
     enabled: !!household?.id,
   });
@@ -225,50 +222,20 @@ const KioskDashboard = () => {
 
   return (
     <div className={cn("min-h-screen dashboardBG", isAnonymous ? "text-white dark" : "")}>
-      {/* Top Section - Calm Corner + Header */}
-      <div className="flex">
-        {/* Calm Corner - Top Left */}
-        <div className="w-1/4">
-          <div className="bg-white border-t-0 border-l-0 border-r border-b border-gray-200 rounded-bl-2xl rounded-br-2xl p-4 h-32">
-            {household?.is_calm_corner_enabled && (
-              <Link to="/kiosk/calm-corner" className="block h-full" onClick={handleCalmCornerClick}>
-                <Button
-                  variant="ghost"
-                  className={cn(
-                    "w-full h-full flex flex-col items-center justify-center hover:bg-gray-50 transition-colors",
-                    isCalmCornerSuggested && "animate-rainbow-border border-4 border-transparent"
-                  )}
-                >
-                  <Leaf className="h-8 w-8 mb-2" />
-                  <span className="text-xs font-semibold">Calm Corner</span>
-                </Button>
-              </Link>
-            )}
-          </div>
-        </div>
-        
-        {/* Header - Top Right */}
-        <div className="flex-1 flex justify-between items-center p-4">
-          <div className="flex items-center gap-4">
-            {isCalmCornerSuggested && (
-              <div className="bg-yellow-100 border border-yellow-300 rounded-lg px-3 py-2">
-                <p className="text-yellow-800 text-sm font-medium">
-                  💡 Calm Corner suggested
-                </p>
-              </div>
-            )}
-          </div>
-          <AnnouncementPanel />
-          <div className="flex items-center gap-2">
-            
-            <h3 className={cn("text-3xl font-bold", isAnonymous ? "" : "text-gray-800")}>
+      {/* Top Section - Header */}
+      <div className="relative top-0 left-0 right-0">
+        <div className="w-3/4 flex justify-between p-4">
+          <div className="flex gap-8 self-start w-full">
+            <h3 className={cn("text-3xl font-bold self-center", isAnonymous ? "" : "text-gray-800")}>
               {household?.name || (isAnonymous ? 'Kiosk Mode' : 'Dashboard')}
             </h3>
-            {/* <div className={cn("font-mono font-semibold", isAnonymous ? "text-white" : "text-gray-800")}>
-              {format(headerTime, 'h:mm a')}
-            </div> */}
+            <AnnouncementPanel />
           </div>
         </div>
+      </div>
+
+      <div className="absolute top-4 right-4">
+        <ClockWeatherPanel />
       </div>
 
       {/* Main Content Area - 3 Column Layout */}
@@ -286,16 +253,66 @@ const KioskDashboard = () => {
         </div>
 
         {/* Right Column - Clock/Weather + Team Quests */}
-        <div className="w-1/4 p-4">
-          <div className="space-y-4">
-            <ClockWeatherPanel />
-            <TeamQuestPanel quest={activeQuest} isLoading={isLoadingQuest} />
+        <div className="w-1/4 p-4 absolute right-0 h-[30rem] scrollbar-width-none top-60">
+          <div className="space-y-4 h-full flex flex-col">
+            {/* Team Quests Section */}
+            <div className="flex-1 min-h-0">
+              <h3 className="text-lg font-semibold mb-3 text-center">Active Team Quests</h3>
+              <div className="h-full overflow-y-auto scrollbar-width-none space-y-4">
+                {isLoadingQuests ? (
+                  <div className="space-y-4">
+                    <Skeleton className="h-48 w-full" />
+                    <Skeleton className="h-48 w-full" />
+                  </div>
+                ) : activeQuests && activeQuests.length > 0 ? (
+                  <>
+                    {console.log('Rendering quests:', activeQuests.length, activeQuests)}
+                    {activeQuests.map((quest) => (
+                      <TeamQuestPanel key={quest.id} quest={quest} isLoading={false} />
+                    ))}
+                  </>
+                ) : (
+                  <div className="text-center text-muted-foreground py-8">
+                    <Rocket className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p>No active quests</p>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         </div>
+        {/* Calm Corner - Bottom Right */}
+        {household?.is_calm_corner_enabled && (
+          <div className="fixed bottom-4 right-4 z-40 w-64 h-64 p-4 shadow-lg flex flex-col  hover:bg-gray-50 transition-colors rounded-full items-center justify-center">
+            <Link
+              to="/kiosk/calm-corner"
+              className="block"
+              onClick={handleCalmCornerClick}
+            >
+              <Button
+                variant="ghost"
+                className={cn(
+                  "",
+                  isCalmCornerSuggested && "animate-rainbow-border border-4 border-transparent"
+                )}
+              >
+                <Leaf className="h-8 w-8 mb-2" />
+                <span className="text-xs font-semibold">Calm Corner</span>
+              </Button>
+            </Link>
+          </div>
+        )}
+        {isCalmCornerSuggested && (
+          <div className="bg-yellow-100 border border-yellow-300 rounded-lg px-3 py-2">
+            <p className="text-yellow-800 text-sm font-medium">
+              💡 Calm Corner suggested
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Member Row - Bottom Full Width */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 z-30">
+      <div className="fixed bottom-0 left-0 right-0 bg-white p-4 z-30">
         <div className="flex gap-4 overflow-x-auto pb-2 items-center justify-center">
           {isLoadingMembers ? (
             Array.from({ length: 6 }).map((_, i) => (
@@ -319,8 +336,8 @@ const KioskDashboard = () => {
                     className={cn(
                       "flex flex-col items-center gap-2 p-3 rounded-xl text-center transition-all duration-300 relative w-full h-full",
                       selectedMemberId === m.id 
-                        ? "bg-primary/10 scale-110 transform" 
-                        : "bg-background/70 hover:bg-accent hover:scale-105"
+                        ? "bg-primary/10 scale-110 transform rounded-full" 
+                        : "bg-background/70 hover:bg-accent hover:scale-105 rounded-full"
                     )}
                     style={{ minWidth: '120px', minHeight: '120px' }}
                   >

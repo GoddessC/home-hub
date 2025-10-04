@@ -2,6 +2,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { format } from 'date-fns';
 import { useState, useEffect } from 'react';
 import { WeatherIcon } from './WeatherIcon';
+import { AnalogClockComponent } from './AnalogClock';
 
 interface ClockWeatherPanelProps {
   className?: string;
@@ -23,13 +24,29 @@ export const ClockWeatherPanel = ({ className }: ClockWeatherPanelProps) => {
     <Card className={className}>
       <CardContent className="p-6">
         <div className="text-center">
-          <div className="text-4xl font-mono font-bold mb-2">
-            {format(currentTime, 'h:mm:ss a')}
+          {/* Analog and Digital Clocks */}
+          <div className="flex items-center justify-center gap-6 mb-4">
+            {/* Analog Clock */}
+            <div className="flex items-center justify-center">
+              <AnalogClockComponent
+                size={120}
+                accent="#0F172A"
+                face="#FFFFFF"
+                showSeconds={true}
+                className="drop-shadow-md"
+              />
+            </div>
+            {/* Digital Clock */}
+            <div className="flex flex-col">
+              <div className="text-3xl font-mono font-bold">
+                {format(currentTime, 'h:mm:ss a')}
+              </div>
+              <div className="text-sm text-muted-foreground">
+                {format(currentTime, 'EEEE, MMMM do')}
+              </div>
+            </div>
           </div>
-          <div className="text-xl text-muted-foreground mb-4">
-            {format(currentTime, 'EEEE, MMMM do, yyyy')}
-          </div>
-          {/* Weather under the clock */}
+          {/* Weather under the clocks */}
           <div className="flex items-center justify-center">
             <div className="scale-150">
               <WeatherIcon />

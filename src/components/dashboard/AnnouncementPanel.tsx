@@ -37,12 +37,12 @@ export const AnnouncementPanel = () => {
   }
 
   return (
-    <Card className="w-2/3 bg-blue-50 border-blue-200 dark:bg-blue-900/20 dark:border-blue-800">
-      <CardContent className="p-4 flex items-start space-x-4">
-        <Megaphone className="h-6 w-6 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-1" />
+    <Card className="w-2/3  ">
+      <CardContent className="flex items-start space-x-4 p-4">
+        <Megaphone className="h-6 w-6 flex-shrink-0 " />
         <div>
-            {/* <h3 className="font-bold text-blue-800 mr-4 dark:text-blue-300 float-left">Announcement:</h3> */}
-            <p className="text-blue-700 dark:text-blue-300/90 float-right">{announcement.message}</p>
+            <h3 className="font-bold text-red-500 float-left">Announcement:</h3>
+            <p className="text-red-500 float-right">&nbsp; {announcement.message}</p>
         </div>
       </CardContent>
     </Card>

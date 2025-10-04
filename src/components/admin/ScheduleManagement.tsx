@@ -26,14 +26,7 @@ type ScheduleItem = {
   created_at: string;
 };
 
-type ScheduleTemplate = {
-  id: string;
-  time: string;
-  title: string;
-  description?: string;
-  household_id: string;
-  created_at: string;
-};
+// Old ScheduleTemplate type removed - use new template system in ScheduleTemplateManagement
 
 export const ScheduleManagement = () => {
   const queryClient = useQueryClient();
@@ -59,21 +52,7 @@ export const ScheduleManagement = () => {
     enabled: !!household?.id,
   });
 
-  // Fetch schedule templates
-  const { data: templates, isLoading: isLoadingTemplates } = useQuery<ScheduleTemplate[]>({
-    queryKey: ['schedule_templates', household?.id],
-    queryFn: async () => {
-      if (!household?.id) return [];
-      const { data, error } = await supabase
-        .from('schedule_templates')
-        .select('*')
-        .eq('household_id', household.id)
-        .order('time');
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!household?.id,
-  });
+  // Note: Old template system removed - use ScheduleTemplateManagement for new templates
 
   const addScheduleItemMutation = useMutation({
     mutationFn: async (item: { time: string; title: string; description: string; is_template: boolean }) => {
@@ -93,46 +72,50 @@ export const ScheduleManagement = () => {
 
       // If marked as template, also save to templates
       if (item.is_template) {
-        const { error: templateError } = await supabase.from('schedule_templates').upsert({
-          household_id: household.id,
-          time: item.time,
-          title: item.title,
-          description: item.description,
-        });
+        // Create a template with the item as a single template item
+        const templateName = `${item.title} Template`;
+        
+        // First create the template
+        const { data: templateData, error: templateError } = await supabase
+          .from('schedule_templates')
+          .insert({
+            household_id: household.id,
+            template_name: templateName,
+            time: item.time, // Add the time column that the database expects
+            title: item.title, // Add the title column that the database expects
+            description: item.description || null,
+            days_of_week: [], // Empty array - user can assign days later
+            is_active: true,
+          })
+          .select()
+          .single();
+        
         if (templateError) throw templateError;
+
+        // Then create the template item
+        const { error: itemError } = await supabase
+          .from('schedule_template_items')
+          .insert({
+            template_id: templateData.id,
+            time: item.time,
+            title: item.title,
+            description: item.description,
+            sort_order: 0,
+          });
+        
+        if (itemError) throw itemError;
       }
     },
     onSuccess: () => {
       showSuccess('Schedule item added!');
       queryClient.invalidateQueries({ queryKey: ['schedule', household?.id] });
-      queryClient.invalidateQueries({ queryKey: ['schedule_templates', household?.id] });
+      queryClient.invalidateQueries({ queryKey: ['schedule_templates_full', household?.id] });
       setNewItem({ time: '', title: '', description: '', is_template: false });
     },
     onError: (error: Error) => showError(error.message),
   });
 
-  const addFromTemplateMutation = useMutation({
-    mutationFn: async (template: ScheduleTemplate) => {
-      if (!household) throw new Error("Household not found");
-      
-      const today = format(new Date(), 'yyyy-MM-dd');
-      
-      const { error } = await supabase.from('schedule_items').insert({
-        household_id: household.id,
-        time: template.time,
-        title: template.title,
-        description: template.description,
-        scheduled_date: today,
-        is_template: false,
-      });
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      showSuccess('Schedule item added from template!');
-      queryClient.invalidateQueries({ queryKey: ['schedule', household?.id] });
-    },
-    onError: (error: Error) => showError(error.message),
-  });
+  // Old template system removed - use ScheduleTemplateManagement for new templates
 
   const updateScheduleItemMutation = useMutation({
     mutationFn: async ({ id, time, title, description }: { id: string; time: string; title: string; description: string }) => {
@@ -162,17 +145,7 @@ export const ScheduleManagement = () => {
     onError: (error: Error) => showError(error.message),
   });
 
-  const deleteTemplateMutation = useMutation({
-    mutationFn: async (templateId: string) => {
-      const { error } = await supabase.from('schedule_templates').delete().eq('id', templateId);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      showSuccess('Template deleted.');
-      queryClient.invalidateQueries({ queryKey: ['schedule_templates', household?.id] });
-    },
-    onError: (error: Error) => showError(error.message),
-  });
+  // Old template system removed - use ScheduleTemplateManagement for new templates
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -311,47 +284,7 @@ export const ScheduleManagement = () => {
                 )}
               </div>
 
-              {/* Schedule Templates */}
-              <div>
-                <h4 className="font-medium mb-3">Quick Add from Templates</h4>
-                {isLoadingTemplates ? (
-                  <div className="space-y-2">
-                    <Skeleton className="h-12 w-full" />
-                    <Skeleton className="h-12 w-full" />
-                  </div>
-                ) : templates && templates.length > 0 ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                    {templates.map(template => (
-                      <div key={template.id} className="flex items-center justify-between p-2 bg-muted rounded-lg">
-                        <div className="flex items-center gap-2">
-                          <Clock className="h-3 w-3 text-muted-foreground" />
-                          <span className="text-sm">{template.time} - {template.title}</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => addFromTemplateMutation.mutate(template)}
-                            disabled={addFromTemplateMutation.isPending}
-                          >
-                            <PlusCircle className="h-3 w-3" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => deleteTemplateMutation.mutate(template.id)}
-                            disabled={deleteTemplateMutation.isPending}
-                          >
-                            <Trash2 className="h-3 w-3 text-destructive" />
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-sm text-muted-foreground text-center py-4">No templates saved yet.</p>
-                )}
-              </div>
+              {/* Note: Template functionality moved to ScheduleTemplateManagement component */}
             </CardContent>
           </CollapsibleContent>
         </Card>

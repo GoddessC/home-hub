@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { useForm, useFieldArray, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -18,7 +18,12 @@ const scheduleItemSchema = z.object({
 });
 
 const scheduleTemplateSchema = z.object({
-  template_name: z.string().min(1, 'Template name is required'),
+  template_name: z.string()
+    .trim()
+    .min(1, 'Template name is required')
+    .refine((val) => val.length > 0 && val.trim().length > 0, {
+      message: 'Template name cannot be empty or just whitespace'
+    }),
   description: z.string().optional(),
   days_of_week: z.array(z.number().min(0).max(6)).min(1, 'At least one day must be selected'),
   items: z.array(scheduleItemSchema).min(1, 'At least one schedule item is required'),
@@ -39,16 +44,25 @@ export const ScheduleTemplateForm = ({
   defaultValues, 
   isSubmitting 
 }: ScheduleTemplateFormProps) => {
-  const { register, handleSubmit, control, formState: { errors }, watch } = useForm<ScheduleTemplateFormValues>({
+  const { register, handleSubmit, control, formState: { errors }, watch, reset } = useForm<ScheduleTemplateFormValues>({
     resolver: zodResolver(scheduleTemplateSchema),
     defaultValues: {
-      template_name: '',
-      description: '',
-      days_of_week: [],
-      items: [{ time: '', title: '', description: '' }],
-      ...defaultValues,
+      template_name: defaultValues?.template_name || '',
+      description: defaultValues?.description || '',
+      days_of_week: defaultValues?.days_of_week || [],
+      items: defaultValues?.items || [{ time: '', title: '', description: '' }],
     },
   });
+
+  // Reset form when defaultValues change (for editing vs creating)
+  React.useEffect(() => {
+    reset({
+      template_name: defaultValues?.template_name || '',
+      description: defaultValues?.description || '',
+      days_of_week: defaultValues?.days_of_week || [],
+      items: defaultValues?.items || [{ time: '', title: '', description: '' }],
+    });
+  }, [defaultValues, reset]);
 
   const { fields, append, remove } = useFieldArray({
     control,
@@ -65,8 +79,12 @@ export const ScheduleTemplateForm = ({
     }
   };
 
+  const handleFormSubmit = (data: ScheduleTemplateFormValues) => {
+    onSubmit(data);
+  };
+
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+    <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
       <Card>
         <CardHeader>
           <CardTitle>Schedule Template Details</CardTitle>

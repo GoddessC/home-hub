@@ -83,13 +83,22 @@ export const ScheduleTemplateManagement = () => {
     mutationFn: async (data: ScheduleTemplateFormValues) => {
       if (!household) throw new Error("Household not found");
 
+      // Ensure template_name is not empty or just whitespace
+      const trimmedTemplateName = data.template_name?.trim();
+      
+      if (!trimmedTemplateName || trimmedTemplateName.length === 0) {
+        throw new Error("Template name cannot be empty");
+      }
+
       // Create the template
       const { data: templateData, error: templateError } = await supabase
         .from('schedule_templates')
         .insert({
           household_id: household.id,
-          template_name: data.template_name,
-          description: data.description,
+          template_name: trimmedTemplateName,
+          time: data.items[0]?.time || '', // Use first item's time for backward compatibility
+          title: data.items[0]?.title || '', // Use first item's title for backward compatibility
+          description: data.description?.trim() || null,
           days_of_week: data.days_of_week,
           is_active: true,
         })
@@ -123,12 +132,20 @@ export const ScheduleTemplateManagement = () => {
 
   const updateTemplateMutation = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: ScheduleTemplateFormValues }) => {
+      // Ensure template_name is not empty or just whitespace
+      const trimmedTemplateName = data.template_name?.trim();
+      if (!trimmedTemplateName || trimmedTemplateName.length === 0) {
+        throw new Error("Template name cannot be empty");
+      }
+
       // Update the template
       const { error: templateError } = await supabase
         .from('schedule_templates')
         .update({
-          template_name: data.template_name,
-          description: data.description,
+          template_name: trimmedTemplateName,
+          time: data.items[0]?.time || '', // Use first item's time for backward compatibility
+          title: data.items[0]?.title || '', // Use first item's title for backward compatibility
+          description: data.description?.trim() || null,
           days_of_week: data.days_of_week,
         })
         .eq('id', id);

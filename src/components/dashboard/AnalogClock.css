@@ -1,0 +1,41 @@
+/* Analog Clock Component Styles */
+.analog-clock-container {
+  display: inline-block;
+  position: relative;
+}
+
+.analog-clock-container svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+/* Ensure proper rendering on all devices */
+.analog-clock-container svg line,
+.analog-clock-container svg circle {
+  vector-effect: non-scaling-stroke;
+}
+
+/* Smooth transitions for hand movements */
+.analog-clock-container svg line[stroke-width="3"],
+.analog-clock-container svg line[stroke-width="2"],
+.analog-clock-container svg line[stroke-width="1"] {
+  transition: transform 0.1s ease-out;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .analog-clock-container svg line,
+  .analog-clock-container svg circle {
+    stroke-width: 2px;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .analog-clock-container svg line[stroke-width="3"],
+  .analog-clock-container svg line[stroke-width="2"],
+  .analog-clock-container svg line[stroke-width="1"] {
+    transition: none;
+  }
+}

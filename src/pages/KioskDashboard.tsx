@@ -107,6 +107,7 @@ const KioskDashboard = () => {
   const [isCalmCornerSuggested, setIsCalmCornerSuggested] = useState(false);
   const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null);
   const [isMemberDetailsVisible, setIsMemberDetailsVisible] = useState(false);
+  const [hoveredMemberId, setHoveredMemberId] = useState<string | null>(null);
   const suggestionTimer = useRef<NodeJS.Timeout | null>(null);
 
   // Calculate completion percentage for a member
@@ -116,6 +117,30 @@ const KioskDashboard = () => {
     if (memberChores.length === 0) return 0;
     const completedChores = memberChores.filter(c => c.completed_at).length;
     return Math.round((completedChores / memberChores.length) * 100);
+  };
+
+  // Calculate magnification scale based on distance from hovered item
+  const getMagnificationScale = (_memberId: string, memberIndex: number) => {
+    if (!hoveredMemberId || !members) return 1;
+    
+    const hoveredIndex = members.findIndex(m => m.id === hoveredMemberId);
+    if (hoveredIndex === -1) return 1;
+    
+    const distance = Math.abs(memberIndex - hoveredIndex);
+    
+    if (distance === 0) {
+      // The hovered item - maximum magnification
+      return 1.3;
+    } else if (distance === 1) {
+      // Adjacent items - moderate magnification
+      return 1.15;
+    } else if (distance === 2) {
+      // Items 2 positions away - slight magnification
+      return 1.05;
+    } else {
+      // Far items - no magnification
+      return 1;
+    }
   };
   
   // Alarm system - disabled for now
@@ -223,8 +248,8 @@ const KioskDashboard = () => {
   return (
     <div className={cn("min-h-screen dashboardBG", isAnonymous ? "text-white dark" : "")}>
       {/* Top Section - Header */}
-      <div className="relative top-0 left-0 right-0">
-        <div className="w-3/4 flex justify-between p-4">
+      <div className="w-3/4 relative top-0 left-0 right-0">
+        <div className="flex justify-between p-4">
           <div className="flex gap-8 self-start w-full">
             <h3 className={cn("text-3xl font-bold self-center", isAnonymous ? "" : "text-gray-800")}>
               {household?.name || (isAnonymous ? 'Kiosk Mode' : 'Dashboard')}
@@ -234,12 +259,12 @@ const KioskDashboard = () => {
         </div>
       </div>
 
-      <div className="absolute top-4 right-4">
+      <div className="w-1/4 absolute top-4 right-4">
         <ClockWeatherPanel />
       </div>
 
       {/* Main Content Area - 3 Column Layout */}
-      <div className="flex h-[calc(100vh-8rem)]">
+      <div className="flex h-[calc(100vh-15rem)]">
         {/* Left Column - Schedule */}
         <div className="w-1/4 p-4">
           <SchedulePanel />
@@ -312,47 +337,64 @@ const KioskDashboard = () => {
       </div>
 
       {/* Member Row - Bottom Full Width */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white p-4 z-30">
-        <div className="flex gap-4 overflow-x-auto pb-2 items-center justify-center">
+      <div className="fixed bottom-0 left-0 right-0 z-[100] overflow-y-visible h-32">
+        <div className="flex gap-8 overflow-x-auto items-end overflow-y-visible justify-end">
           {isLoadingMembers ? (
             Array.from({ length: 6 }).map((_, i) => (
               <Skeleton key={i} className="h-20 w-32 rounded-lg flex-shrink-0" />
             ))
           ) : (
-            members?.map((m) => {
+            members?.map((m, index) => {
               const completionPercentage = getMemberCompletionPercentage(m.id);
+              const magnificationScale = getMagnificationScale(m.id, index);
+              const isHovered = hoveredMemberId === m.id;
+              
               return (
-                <AnimatedProgressBorder
+                <div
                   key={m.id}
-                  percentage={completionPercentage}
-                  className="flex-shrink-0"
+                  className="flex-shrink-0 transition-all duration-300 ease-out"
+                  style={{
+                    transform: `scale(${magnificationScale})`,
+                    zIndex: isHovered ? 20 : 10,
+                  }}
+                  onMouseEnter={() => setHoveredMemberId(m.id)}
+                  onMouseLeave={() => setHoveredMemberId(null)}
                 >
-                  <button
-                    onClick={() => {
-                      const newSelectedId = selectedMemberId === m.id ? null : m.id;
-                      setSelectedMemberId(newSelectedId);
-                      setIsMemberDetailsVisible(!!newSelectedId);
-                    }}
-                    className={cn(
-                      "flex flex-col items-center gap-2 p-3 rounded-xl text-center transition-all duration-300 relative w-full h-full",
-                      selectedMemberId === m.id 
-                        ? "bg-primary/10 scale-110 transform rounded-full" 
-                        : "bg-background/70 hover:bg-accent hover:scale-105 rounded-full"
-                    )}
-                    style={{ minWidth: '120px', minHeight: '120px' }}
+                  <AnimatedProgressBorder
+                    percentage={completionPercentage}
+                    className="w-full h-full"
                   >
-                    <MemberAvatar memberId={m.id} className="w-12 h-16" />
-                    <div className="font-medium text-sm truncate w-full">{m.full_name}</div>
-                    {/* Points display */}
-                    <div className="absolute top-1 right-1 bg-primary text-primary-foreground rounded-full px-2 py-1 text-xs font-bold">
-                      <MemberPointsDisplay memberId={m.id} />
-                    </div>
+                    <button
+                      onClick={() => {
+                        const newSelectedId = selectedMemberId === m.id ? null : m.id;
+                        setSelectedMemberId(newSelectedId);
+                        setIsMemberDetailsVisible(!!newSelectedId);
+                      }}
+                      className={cn(
+                        "flex flex-col items-center gap-2 p-3 rounded-xl text-center transition-all duration-300 relative w-full h-full",
+                        selectedMemberId === m.id 
+                          ? "bg-primary/10 rounded-full" 
+                          : "bg-background/70 hover:bg-accent rounded-full"
+                      )}
+                      style={{ 
+                        minWidth: '120px', 
+                        minHeight: '120px',
+                        transform: isHovered ? 'translateY(-8px)' : 'translateY(0)',
+                      }}
+                    >
+                      <MemberAvatar memberId={m.id} className="w-12 h-16" />
+                      <div className="font-medium text-sm truncate w-full">{m.full_name}</div>
+                      {/* Points display */}
+                      <div className="absolute top-1 right-1 bg-primary text-primary-foreground rounded-full px-2 py-1 text-xs font-bold">
+                        <MemberPointsDisplay memberId={m.id} />
+                      </div>
                       {/* Completion percentage
                       <div className="absolute bottom-1 left-1 bg-white/90 text-gray-700 rounded-full px-2 py-1 text-xs font-bold">
                         {completionPercentage}%
                       </div> */}
-                  </button>
-                </AnimatedProgressBorder>
+                    </button>
+                  </AnimatedProgressBorder>
+                </div>
               );
             })
           )}

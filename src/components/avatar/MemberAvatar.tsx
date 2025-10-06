@@ -14,6 +14,7 @@ interface MemberAvatarProps {
   className?: string;
   viewMode?: 'full' | 'headshot';
   currentFeeling?: string | null;
+  headTopPercentOverride?: string; // optional override for head top position
 }
 
 type AvatarConfig = Record<string, AvatarItemConfig>;
@@ -41,11 +42,11 @@ const bodyStyle: React.CSSProperties = {
   margin: '0 auto',
 };
 
-const getHeadStyle = (viewMode: 'headshot' | 'full'): React.CSSProperties => ({
+const getHeadStyle = (viewMode: 'headshot' | 'full', headTopPercentOverride?: string): React.CSSProperties => ({
   position: 'absolute',
   width: viewMode === 'full' ? '45%' : '100%',
   height: 'auto',
-  top: '18%',
+  top: headTopPercentOverride ?? '16%',
   left: 0,
   right: 0,
   margin: '0 auto',
@@ -102,7 +103,7 @@ const hairBackStyle: React.CSSProperties = {
 }
 
 
-export const MemberAvatar = ({ memberId, className, viewMode = 'headshot', currentFeeling }: MemberAvatarProps) => {
+export const MemberAvatar = ({ memberId, className, viewMode = 'headshot', currentFeeling, headTopPercentOverride }: MemberAvatarProps) => {
   const { data: savedConfig, isLoading } = useQuery({
     queryKey: ['avatar_config', memberId],
     queryFn: async () => {
@@ -141,7 +142,7 @@ export const MemberAvatar = ({ memberId, className, viewMode = 'headshot', curre
     // Fallback for members with no saved config
     return (
       <div className={cn("relative w-24 h-36", className)}>
-        <img src="https://dvqkkqvjsqjnvwwvxenh.supabase.co/storage/v1/object/public/avatars/medium_head.png" alt="Avatar Head" className="object-contain" style={{ ...getHeadStyle(viewMode), zIndex: zIndexMap['base_head'] }} />
+        <img src="https://dvqkkqvjsqjnvwwvxenh.supabase.co/storage/v1/object/public/avatars/medium_head.png" alt="Avatar Head" className="object-contain" style={{ ...getHeadStyle(viewMode, headTopPercentOverride), zIndex: zIndexMap['base_head'] }} />
         {viewMode === 'full' && (
           <img src="https://dvqkkqvjsqjnvwwvxenh.supabase.co/storage/v1/object/public/avatars/medium_body.png" alt="Avatar Body" className="object-contain" style={{ ...bodyStyle, zIndex: zIndexMap['base_body'] }} />
         )}
@@ -176,7 +177,7 @@ export const MemberAvatar = ({ memberId, className, viewMode = 'headshot', curre
 
       {/* Base Head */}
       {headItem && (
-        <img src={headItem.asset_url} alt="Avatar Head" style={{ ...getHeadStyle(viewMode), zIndex: zIndexMap['base_head'] }} className="object-contain" />
+        <img src={headItem.asset_url} alt="Avatar Head" style={{ ...getHeadStyle(viewMode, headTopPercentOverride), zIndex: zIndexMap['base_head'] }} className="object-contain" />
       )}
 
       {/* Face Expression */}
@@ -196,7 +197,7 @@ export const MemberAvatar = ({ memberId, className, viewMode = 'headshot', curre
         }
 
         // Apply specific styles based on category
-        let itemStyle = getHeadStyle(viewMode); // default
+        let itemStyle = getHeadStyle(viewMode, headTopPercentOverride); // default
         if (category === 'tops') {
           itemStyle = topsStyle;
         } else if (category === 'bottoms') {

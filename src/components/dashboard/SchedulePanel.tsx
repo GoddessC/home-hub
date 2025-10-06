@@ -136,7 +136,7 @@ export const SchedulePanel = ({ className }: SchedulePanelProps) => {
   return (
     <div className={cn("space-y-4", className)}>
       {/* Schedule */}
-      <Card className="w-full border-none">
+      <Card className="w-full border-none ">
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="flex items-center gap-2">
             <Clock className="h-5 w-5" />
@@ -166,7 +166,7 @@ export const SchedulePanel = ({ className }: SchedulePanelProps) => {
           </div> */}
         </CardHeader>
         <CardContent>
-        <div className="space-y-3 border-t-[1px] border-gray-200 overflow-y-scroll">
+        <div className="space-y-3 border-t-[1px] h-[30rem] border-gray-200 overflow-y-scroll">
           {todaysSchedule.map((item) => {
             // Use start_time and end_time if available, fallback to time for backward compatibility
             const startTime = item.start_time || item.time;

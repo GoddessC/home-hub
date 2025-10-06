@@ -153,7 +153,7 @@ export const TeamQuestPanel = ({ quest, isLoading }: TeamQuestPanelProps) => {
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-3 text-purple-800 dark:text-purple-200">
               <Rocket className="h-6 w-6" />
-              <span>Team Quest: {quest.name}</span>
+              <span>{quest.name}</span>
             </CardTitle>
             <div className="flex items-center gap-2 bg-purple-100 dark:bg-purple-800/50 px-3 py-1 rounded-full">
               <span className="text-sm font-medium text-purple-700 dark:text-purple-300">Reward:</span>

@@ -15,6 +15,7 @@ import { SchedulePanel } from '@/components/dashboard/SchedulePanel';
 import { ClockWeatherPanel } from '@/components/dashboard/ClockWeatherPanel';
 import { MemberRail } from '@/components/dashboard/MemberRail';
 import { MemberDetailsPanel } from '@/components/dashboard/MemberDetailsPanel';
+import { TouchLeaderboardPodiumView } from '@/components/dashboard/TouchLeaderboardPodiumView';
 // Alarm system disabled for now
 // import { AlarmModal } from '@/components/alarms/AlarmModal';
 // import { useAlarmSystem } from '@/hooks/useAlarmSystem';
@@ -256,9 +257,24 @@ const KioskDashboard = () => {
         </div>
 
         {/* Center Column - Main Content (Larger) */}
-        <div className="flex-1 p-4 min-w-0">
-          <div className="h-full flex flex-col">
-            
+        <div className="flex-1 min-w-0">
+          <div className="h-full flex flex-col w-3/5">
+            <TouchLeaderboardPodiumView
+              members={(members || []).map((m) => ({
+                id: m.id,
+                name: m.full_name,
+                // For now, use available points (async) is heavy; use 0 and TODO: hydrate
+                points: 0,
+                avatarUrl: null,
+                updatedAt: new Date().toISOString(),
+              }))}
+              settings={{ mode: 'family' }}
+              onMemberSelect={(m) => {
+                setSelectedMemberId(m.id);
+                setIsMemberDetailsVisible(true);
+              }}
+              className="flex-1"
+            />
           </div>
         </div>
 
@@ -294,7 +310,7 @@ const KioskDashboard = () => {
 
         {/* Calm Corner - Bottom Right */}
         {household?.is_calm_corner_enabled && (
-          <div className="fixed bottom-[-5%] left-[-4%] z-40 w-64 h-64 p-4 shadow-lg flex flex-col bg-[#800000] text-white hover:bg-[#e5c69c] transition-colors rounded-full items-center justify-center">
+          <div className="fixed bottom-[-5%] left-[-4%] z-40 w-64 h-64 p-4 shadow-lg flex flex-col bg-[#800000] text-white hover:rounded-full hover:bg-[#e5c69c] transition-colors rounded-full items-center justify-center">
             <Link
               to="/kiosk/calm-corner"
               className="block w-full h-full rounded-full"
@@ -303,7 +319,7 @@ const KioskDashboard = () => {
               <Button
                 variant="ghost"
                 className={cn(
-                  "flex flex-col items-center justify-center w-full h-full",
+                  "flex flex-col items-center justify-center w-full h-full hover:bg-[#e5c69c] rounded-full",
                   isCalmCornerSuggested && "animate-rainbow-border border-4 border-transparent"
                 )}
               >

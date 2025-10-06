@@ -58,21 +58,60 @@ export const FeelingsChart = () => {
   });
 
   const logsByDay = logs?.reduce((acc, log) => {
-    const day = format(new Date(log.created_at), 'yyyy-MM-dd');
-    if (!acc[day]) acc[day] = [];
-    acc[day].push(log);
+    try {
+      const date = new Date(log.created_at);
+      // Only process valid dates
+      if (isNaN(date.getTime())) {
+        console.warn('Invalid date found in feeling log:', log.created_at);
+        return acc;
+      }
+      const day = format(date, 'yyyy-MM-dd');
+      if (!acc[day]) acc[day] = [];
+      acc[day].push(log);
+    } catch (error) {
+      console.warn('Error processing date in feeling log:', log.created_at, error);
+    }
     return acc;
   }, {} as Record<string, FeelingLog[]>) || {};
 
-  const DayComponent = ({ date }: { date: Date, [key: string]: any }) => {
-    const dayKey = format(date, 'yyyy-MM-dd');
+  const DayComponent: React.FC<any> = ({ day, date, modifiers, ...buttonProps }: any) => {
+    // Handle undefined or null dates (shouldn't occur with react-day-picker)
+    const raw = day ?? date;
+    if (!raw) {
+      return null;
+    }
+    
+    // Convert to Date object if it's not already one
+    let dateObj: Date;
+    if (raw instanceof Date) {
+      dateObj = raw;
+    } else if (typeof raw === 'string' || typeof raw === 'number') {
+      dateObj = new Date(raw);
+    } else {
+      return null;
+    }
+    
+    // Safety check for invalid dates
+    if (isNaN(dateObj.getTime())) {
+      return null;
+    }
+    
+    const dayKey = format(dateObj, 'yyyy-MM-dd');
     const dayLogs = logsByDay[dayKey];
+    const isCurrentMonth = dateObj.getMonth() === month.getMonth();
 
     return (
       <Popover>
         <PopoverTrigger asChild>
-          <div className="relative w-full h-full flex items-center justify-center cursor-pointer">
-            {dayLogs && dayLogs.length > 0 && (
+          <button
+            {...buttonProps}
+            className={cn(
+              "h-9 w-9 p-0 font-normal relative flex items-center justify-center cursor-pointer",
+              !isCurrentMonth && "text-muted-foreground opacity-50",
+              buttonProps?.className
+            )}
+          >
+            {dayLogs && dayLogs.length > 0 && isCurrentMonth && (
               <div className="absolute inset-0.5 flex overflow-hidden rounded-md">
                 {dayLogs.map((log) => (
                   <div
@@ -83,26 +122,26 @@ export const FeelingsChart = () => {
                 ))}
               </div>
             )}
-            <span className="relative text-sm z-10">{date.getDate()}</span>
-          </div>
+            <span className="relative text-sm z-10">{dateObj.getDate()}</span>
+          </button>
         </PopoverTrigger>
         <PopoverContent>
-            <h4 className="font-bold mb-2">{format(date, 'PPP')}</h4>
-            {dayLogs && dayLogs.length > 0 ? (
-              <ul className="space-y-2">
-                {dayLogs.map(log => {
-                    const member = Array.isArray(log.members) ? log.members[0] : log.members;
-                    return (
-                        <li key={log.id} className="text-sm">
-                            <strong>{member?.full_name}:</strong> {feelingMeta[log.feeling]?.emoji} {log.feeling}
-                            {log.context && ` (About: ${contextMeta[log.context]?.emoji} ${contextMeta[log.context]?.text})`}
-                        </li>
-                    )
-                })}
-              </ul>
-            ) : (
-              <p className="text-sm text-muted-foreground">No feelings logged for this day.</p>
-            )}
+          <h4 className="font-bold mb-2">{format(dateObj, 'PPP')}</h4>
+          {dayLogs && dayLogs.length > 0 ? (
+            <ul className="space-y-2">
+              {dayLogs.map(log => {
+                const member = Array.isArray(log.members) ? log.members[0] : log.members;
+                return (
+                  <li key={log.id} className="text-sm">
+                    <strong>{member?.full_name}:</strong> {feelingMeta[log.feeling]?.emoji} {log.feeling}
+                    {log.context && ` (About: ${contextMeta[log.context]?.emoji} ${contextMeta[log.context]?.text})`}
+                  </li>
+                )
+              })}
+            </ul>
+          ) : (
+            <p className="text-sm text-muted-foreground">No feelings logged for this day.</p>
+          )}
         </PopoverContent>
       </Popover>
     );
@@ -118,7 +157,8 @@ export const FeelingsChart = () => {
       month={month}
       onMonthChange={setMonth}
       className="rounded-md border p-3"
-      components={{ Day: DayComponent }}
+      components={{ Day: DayComponent as any }}
+      showOutsideDays={true}
     />
   );
 };

@@ -160,6 +160,45 @@ header {
   );
 }
 
+.announcement-card {
+  display:flex;
+  background-color:#800000;
+  padding:1px;
+  border-radius:30px;
+  margin:20px;
+  position:relative;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+}
+.announcement-card:before,
+.announcement-card:after {
+  content:"";
+  background-color:#800000;
+  border-radius:50%;
+  display:block;
+  position:absolute;
+  z-index:-1;
+}
+.announcement-card:before {
+  width:44px;
+  height:44px;
+  top:-12px;
+  right:28px;
+  box-shadow:45px 30px 0 -9px #800000;
+}
+.announcement-card:after {
+  bottom:-10px;
+  left:26px;
+  width:30px;
+  height:30px;
+  box-shadow:-40px -34px 0 0 #800000,
+              28px -9px 0 -4px #800000,
+              16px 20px 0 -6px #800000,
+              4px 32px 0 -10px #800000
+  
+}
+
 .bottom-right {
   
 /* HTML: <div class="inverted-radius"></div> */
@@ -185,4 +224,36 @@ header {
 
 .oblong {
   border-radius: 75px 60px 10px 10px; 
+}
+
+/* Member Rail Styles */
+.scale-106 {
+  transform: scale(1.06);
+}
+
+.scroll-snap-type-x-mandatory {
+  scroll-snap-type: x mandatory;
+}
+
+.scroll-padding-inline-50\% {
+  scroll-padding-inline: 50%;
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .scale-106 {
+    transform: none;
+  }
+  
+  .transition-all {
+    transition: none;
+  }
+  
+  .duration-200 {
+    transition-duration: 100ms;
+  }
+  
+  .duration-300 {
+    transition-duration: 100ms;
+  }
 }

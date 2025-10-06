@@ -13,6 +13,8 @@ import { AnnouncementPanel } from '@/components/dashboard/AnnouncementPanel';
 import { TeamQuestPanel, Quest } from '@/components/dashboard/TeamQuestPanel';
 import { SchedulePanel } from '@/components/dashboard/SchedulePanel';
 import { ClockWeatherPanel } from '@/components/dashboard/ClockWeatherPanel';
+import { MemberRail } from '@/components/dashboard/MemberRail';
+import { MemberDetailsPanel } from '@/components/dashboard/MemberDetailsPanel';
 // Alarm system disabled for now
 // import { AlarmModal } from '@/components/alarms/AlarmModal';
 // import { useAlarmSystem } from '@/hooks/useAlarmSystem';
@@ -229,6 +231,15 @@ const KioskDashboard = () => {
             <h3 className={cn("text-3xl font-bold self-center", isAnonymous ? "" : "text-gray-800")}>
               {household?.name || (isAnonymous ? 'Kiosk Mode' : 'Dashboard')}
             </h3>
+            {/* Admin Panel Button */}
+            {!isAnonymous && member?.role === 'OWNER' && (
+              <Button asChild variant="outline" className="absolute left-4 bottom-2">
+                <Link to="/admin">
+                  <Shield className="mr-2 h-4 w-4" />
+                  Admin Panel
+                </Link>
+              </Button>
+            )}
             <AnnouncementPanel />
           </div>
         </div>
@@ -311,126 +322,45 @@ const KioskDashboard = () => {
         )}
       </div>
 
-      {/* Member Row - Bottom Full Width */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white p-4 z-30">
-        <div className="flex gap-4 overflow-x-auto pb-2 items-center justify-center">
-          {isLoadingMembers ? (
-            Array.from({ length: 6 }).map((_, i) => (
-              <Skeleton key={i} className="h-20 w-32 rounded-lg flex-shrink-0" />
-            ))
-          ) : (
-            members?.map((m) => {
-              const completionPercentage = getMemberCompletionPercentage(m.id);
-              return (
-                <AnimatedProgressBorder
-                  key={m.id}
-                  percentage={completionPercentage}
-                  className="flex-shrink-0"
-                >
-                  <button
-                    onClick={() => {
-                      const newSelectedId = selectedMemberId === m.id ? null : m.id;
-                      setSelectedMemberId(newSelectedId);
-                      setIsMemberDetailsVisible(!!newSelectedId);
-                    }}
-                    className={cn(
-                      "flex flex-col items-center gap-2 p-3 rounded-xl text-center transition-all duration-300 relative w-full h-full",
-                      selectedMemberId === m.id 
-                        ? "bg-primary/10 scale-110 transform rounded-full" 
-                        : "bg-background/70 hover:bg-accent hover:scale-105 rounded-full"
-                    )}
-                    style={{ minWidth: '120px', minHeight: '120px' }}
-                  >
-                    <MemberAvatar memberId={m.id} className="w-12 h-16" />
-                    <div className="font-medium text-sm truncate w-full">{m.full_name}</div>
-                    {/* Points display */}
-                    <div className="absolute top-1 right-1 bg-primary text-primary-foreground rounded-full px-2 py-1 text-xs font-bold">
-                      <MemberPointsDisplay memberId={m.id} />
-                    </div>
-                      {/* Completion percentage
-                      <div className="absolute bottom-1 left-1 bg-white/90 text-gray-700 rounded-full px-2 py-1 text-xs font-bold">
-                        {completionPercentage}%
-                      </div> */}
-                  </button>
-                </AnimatedProgressBorder>
-              );
-            })
-          )}
-        </div>
-        {isAnonymous ? (
-              <>
-                <span className="text-sm text-gray-400">{device?.display_name}</span>
-                <Button variant="destructive" onClick={signOut}>Exit Kiosk Mode</Button>
-              </>
-            ) : (
-              member?.role === 'OWNER' && (
-                <Button asChild variant="outline" className="absolute left-6 bottom-8">
-                  <Link to="/admin">
-                    <Shield className="mr-2 h-4 w-4" />
-                    Admin Panel
-                  </Link>
-                </Button>
-              )
-            )}
+      {/* Member Rail - Bottom Full Width */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-900 z-30">
+        {isLoadingMembers ? (
+          <div className="flex gap-4 overflow-x-auto px-6 py-4">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <Skeleton key={i} className="h-22 w-22 rounded-full flex-shrink-0" />
+            ))}
+          </div>
+        ) : (
+          <MemberRail
+            members={members || []}
+            onMemberSelect={(selectedMember) => {
+              setSelectedMemberId(selectedMember.id);
+              setIsMemberDetailsVisible(true);
+            }}
+            selectedMemberId={selectedMemberId}
+            chores={chores}
+          />
+        )}
+        
+        {/* Kiosk Mode Info */}
+        {isAnonymous && (
+          <div className="absolute right-6 bottom-8 flex items-center gap-4">
+            <span className="text-sm text-gray-400">{device?.display_name}</span>
+            <Button variant="destructive" onClick={signOut}>Exit Kiosk Mode</Button>
+          </div>
+        )}
       </div>
 
-      {/* Backdrop */}
-      <div 
-        className={cn(
-          "fixed top-0 left-0 right-0 bg-black/20 z-30 transition-opacity duration-500 ease-out",
-          isMemberDetailsVisible ? "opacity-100" : "opacity-0 pointer-events-none"
-        )}
-        style={{ height: 'calc(100vh - 120px)', bottom: '120px' }}
-        onClick={() => {
+      {/* Member Details Panel */}
+      <MemberDetailsPanel
+        member={members?.find(m => m.id === selectedMemberId) || null}
+        isOpen={isMemberDetailsVisible}
+        onClose={() => {
           setIsMemberDetailsVisible(false);
           setSelectedMemberId(null);
         }}
+        chores={chores?.filter((c) => c.member_id === selectedMemberId) || []}
       />
-
-      {/* Member Details Card - Slide Up Animation */}
-      <div className={cn(
-        "fixed left-0 right-0 bg-white border-t border-gray-200 z-40 transition-all duration-500 ease-out",
-        isMemberDetailsVisible ? "translate-y-0 opacity-100" : "translate-y-full opacity-0"
-      )} style={{ 
-        height: 'calc(100vh - 120px)', // Full height minus member row height
-        bottom: '120px', // Position above the member row
-        pointerEvents: isMemberDetailsVisible ? 'auto' : 'none'
-      }}>
-        {/* Member Name Header */}
-        <div className="bg-primary text-primary-foreground p-4 text-center relative">
-          <h2 className="text-2xl font-bold">
-            {members?.find(m => m.id === selectedMemberId)?.full_name}
-          </h2>
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={() => {
-              setIsMemberDetailsVisible(false);
-              setSelectedMemberId(null);
-            }}
-            className="absolute top-4 right-4 text-primary-foreground hover:bg-primary-foreground/20"
-          >
-            <X className="h-4 w-4" />
-          </Button>
-        </div>
-        
-        {/* Member Details */}
-        <div className="flex-1 p-4 overflow-y-auto" style={{ height: 'calc(100vh - 200px)' }}>
-          {(() => {
-            const selected = members?.find((m) => m.id === selectedMemberId) ?? null;
-            if (!selected) return null;
-            return (
-              <MemberDashboardPanel
-                key={selected.id}
-                member={selected}
-                chores={chores?.filter((c) => c.member_id === selected.id) || []}
-                isExpanded={true}
-                onToggleExpanded={() => {}}
-              />
-            );
-          })()}
-        </div>
-      </div>
           
       {/* Alarm system disabled for now */}
     </div>

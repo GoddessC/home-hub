@@ -25,7 +25,7 @@ export const ClockWeatherPanel = ({ className }: ClockWeatherPanelProps) => {
       <CardContent className="p-6">
         <div className="text-center">
           {/* Analog and Digital Clocks */}
-          <div className="flex items-center justify-center gap-6 mb-4">
+          <div className="flex items-center justify-center gap-6">
             {/* Analog Clock */}
             <div className="flex items-center justify-center">
               <AnalogClockComponent
@@ -44,12 +44,13 @@ export const ClockWeatherPanel = ({ className }: ClockWeatherPanelProps) => {
               <div className="text-sm text-muted-foreground">
                 {format(currentTime, 'EEEE, MMMM do')}
               </div>
+              <WeatherIcon />
             </div>
           </div>
           {/* Weather under the clocks */}
           <div className="flex items-center justify-center">
             <div className="scale-150">
-              <WeatherIcon />
+          
             </div>
           </div>
         </div>

@@ -245,8 +245,8 @@ const KioskDashboard = () => {
         </div>
       </div>
 
-      <div className="absolute top-4 right-4">
-        <ClockWeatherPanel />
+      <div className="absolute top-16 right-0">
+        <ClockWeatherPanel className="border-r-0 rounded-l-full"/>
       </div>
 
       {/* Main Content Area - 3 Column Layout */}
@@ -264,7 +264,7 @@ const KioskDashboard = () => {
         </div>
 
         {/* Right Column - Clock/Weather + Team Quests */}
-        <div className="w-1/4 p-4 absolute right-0 h-[30rem] scrollbar-width-none top-60">
+        <div className="w-1/4 p-4 absolute right-4 h-[25rem] scrollbar-width-none top-80">
           <div className="space-y-4 h-full flex flex-col">
             {/* Team Quests Section */}
             <div className="flex-1 min-h-0">

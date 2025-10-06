@@ -128,7 +128,7 @@ export const MemberDetailsPanel: React.FC<MemberDetailsPanelProps> = ({
         </div>
 
         {/* Content */}
-        <div className="p-6">
+        <div className="p-6 h-3/4">
           <MemberDashboardPanel
             member={member}
             chores={chores}

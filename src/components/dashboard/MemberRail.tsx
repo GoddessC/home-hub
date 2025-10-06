@@ -67,7 +67,6 @@ interface MemberRailProps {
 
 interface MemberItemProps {
   member: Member;
-  isActive: boolean;
   isSelected: boolean;
   onClick: () => void;
   onKeyDown: (e: React.KeyboardEvent) => void;
@@ -78,7 +77,6 @@ interface MemberItemProps {
 
 const MemberItem: React.FC<MemberItemProps> = ({
   member,
-  isActive,
   isSelected,
   onClick,
   onKeyDown,
@@ -102,9 +100,7 @@ const MemberItem: React.FC<MemberItemProps> = ({
           "w-22 h-22 rounded-full border-2 border-transparent transition-all duration-200 ease-out",
           "focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2",
           "flex flex-col items-center justify-center gap-1 p-2",
-          "hover:bg-gray-50 dark:hover:bg-gray-800",
-          isActive && "scale-106 shadow-lg shadow-gray-400/25",
-          isSelected && "border-blue-500 bg-blue-50 dark:bg-blue-900/20"
+          "hover:bg-gray-50 dark:hover:bg-gray-800"
         )}
         style={{
           minWidth: '130px',
@@ -340,7 +336,6 @@ export const MemberRail: React.FC<MemberRailProps> = ({
           <MemberItem
             key={member.id}
             member={member}
-            isActive={index === activeIndex}
             isSelected={member.id === selectedMemberId}
             onClick={() => handleItemClick(index)}
             onKeyDown={handleKeyDown}

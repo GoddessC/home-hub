@@ -18,7 +18,9 @@ import { ScheduleTemplateManagement } from './ScheduleTemplateManagement';
 
 type ScheduleItem = {
   id: string;
-  time: string;
+  time: string; // Keep for backward compatibility
+  start_time: string;
+  end_time: string;
   title: string;
   description?: string;
   is_template: boolean;
@@ -31,7 +33,7 @@ type ScheduleItem = {
 export const ScheduleManagement = () => {
   const queryClient = useQueryClient();
   const { household } = useAuth();
-  const [newItem, setNewItem] = useState({ time: '', title: '', description: '', is_template: false });
+  const [newItem, setNewItem] = useState({ time: '', start_time: '', end_time: '', title: '', description: '', is_template: false });
   const [editingItem, setEditingItem] = useState<ScheduleItem | null>(null);
 
   // Fetch today's schedule
@@ -45,7 +47,7 @@ export const ScheduleManagement = () => {
         .select('*')
         .eq('household_id', household.id)
         .eq('scheduled_date', today)
-        .order('time');
+        .order('start_time');
       if (error) throw error;
       return data;
     },
@@ -55,14 +57,16 @@ export const ScheduleManagement = () => {
   // Note: Old template system removed - use ScheduleTemplateManagement for new templates
 
   const addScheduleItemMutation = useMutation({
-    mutationFn: async (item: { time: string; title: string; description: string; is_template: boolean }) => {
+    mutationFn: async (item: { time: string; start_time: string; end_time: string; title: string; description: string; is_template: boolean }) => {
       if (!household) throw new Error("Household not found");
       
       const today = format(new Date(), 'yyyy-MM-dd');
       
       const { error } = await supabase.from('schedule_items').insert({
         household_id: household.id,
-        time: item.time,
+        time: item.time, // Keep for backward compatibility
+        start_time: item.start_time,
+        end_time: item.end_time,
         title: item.title,
         description: item.description,
         scheduled_date: today,
@@ -97,7 +101,9 @@ export const ScheduleManagement = () => {
           .from('schedule_template_items')
           .insert({
             template_id: templateData.id,
-            time: item.time,
+            time: item.time, // Keep for backward compatibility
+            start_time: item.start_time,
+            end_time: item.end_time,
             title: item.title,
             description: item.description,
             sort_order: 0,
@@ -110,7 +116,7 @@ export const ScheduleManagement = () => {
       showSuccess('Schedule item added!');
       queryClient.invalidateQueries({ queryKey: ['schedule', household?.id] });
       queryClient.invalidateQueries({ queryKey: ['schedule_templates_full', household?.id] });
-      setNewItem({ time: '', title: '', description: '', is_template: false });
+      setNewItem({ time: '', start_time: '', end_time: '', title: '', description: '', is_template: false });
     },
     onError: (error: Error) => showError(error.message),
   });
@@ -118,10 +124,10 @@ export const ScheduleManagement = () => {
   // Old template system removed - use ScheduleTemplateManagement for new templates
 
   const updateScheduleItemMutation = useMutation({
-    mutationFn: async ({ id, time, title, description }: { id: string; time: string; title: string; description: string }) => {
+    mutationFn: async ({ id, time, start_time, end_time, title, description }: { id: string; time: string; start_time: string; end_time: string; title: string; description: string }) => {
       const { error } = await supabase
         .from('schedule_items')
-        .update({ time, title, description })
+        .update({ time, start_time, end_time, title, description })
         .eq('id', id);
       if (error) throw error;
     },
@@ -149,16 +155,25 @@ export const ScheduleManagement = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newItem.time || !newItem.title) return;
-    addScheduleItemMutation.mutate(newItem);
+    if (!newItem.start_time || !newItem.end_time || !newItem.title) return;
+    
+    // Set time field for backward compatibility (use start_time)
+    const itemWithTime = {
+      ...newItem,
+      time: newItem.start_time
+    };
+    
+    addScheduleItemMutation.mutate(itemWithTime);
   };
 
   const handleUpdate = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!editingItem || !editingItem.time || !editingItem.title) return;
+    if (!editingItem || !editingItem.start_time || !editingItem.end_time || !editingItem.title) return;
     updateScheduleItemMutation.mutate({
       id: editingItem.id,
-      time: editingItem.time,
+      time: editingItem.start_time, // Use start_time for backward compatibility
+      start_time: editingItem.start_time,
+      end_time: editingItem.end_time,
       title: editingItem.title,
       description: editingItem.description || '',
     });
@@ -167,7 +182,7 @@ export const ScheduleManagement = () => {
   return (
     <>
       {/* Schedule Template Management */}
-      <ScheduleTemplateManagement />
+      {/* <ScheduleTemplateManagement /> */}
 
       <Collapsible defaultOpen>
         <Card>
@@ -188,14 +203,24 @@ export const ScheduleManagement = () => {
               {/* Add new schedule item */}
               <form onSubmit={handleSubmit} className="space-y-4 p-4 bg-muted/50 rounded-lg">
                 <h4 className="font-medium">Add Schedule Item</h4>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                   <div>
-                    <Label htmlFor="time">Time</Label>
+                    <Label htmlFor="start_time">Start Time</Label>
                     <Input
-                      id="time"
+                      id="start_time"
                       type="time"
-                      value={newItem.time}
-                      onChange={(e) => setNewItem({ ...newItem, time: e.target.value })}
+                      value={newItem.start_time}
+                      onChange={(e) => setNewItem({ ...newItem, start_time: e.target.value })}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="end_time">End Time</Label>
+                    <Input
+                      id="end_time"
+                      type="time"
+                      value={newItem.end_time}
+                      onChange={(e) => setNewItem({ ...newItem, end_time: e.target.value })}
                       required
                     />
                   </div>
@@ -296,15 +321,31 @@ export const ScheduleManagement = () => {
           <div className="bg-background p-6 rounded-lg w-full max-w-md">
             <h3 className="text-lg font-semibold mb-4">Edit Schedule Item</h3>
             <form onSubmit={handleUpdate} className="space-y-4">
-              <div>
-                <Label htmlFor="edit-time">Time</Label>
-                <Input
-                  id="edit-time"
-                  type="time"
-                  value={editingItem.time}
-                  onChange={(e) => setEditingItem({ ...editingItem, time: e.target.value })}
-                  required
-                />
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="edit-start-time">Start Time</Label>
+                  <Input
+                    id="edit-start-time"
+                    type="time"
+                    value={editingItem.start_time || editingItem.time}
+                    onChange={(e) => setEditingItem({ 
+                      ...editingItem, 
+                      start_time: e.target.value,
+                      time: e.target.value // Sync for backward compatibility
+                    })}
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="edit-end-time">End Time</Label>
+                  <Input
+                    id="edit-end-time"
+                    type="time"
+                    value={editingItem.end_time || editingItem.time}
+                    onChange={(e) => setEditingItem({ ...editingItem, end_time: e.target.value })}
+                    required
+                  />
+                </div>
               </div>
               <div>
                 <Label htmlFor="edit-title">Title</Label>

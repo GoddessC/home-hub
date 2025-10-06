@@ -185,16 +185,16 @@ header {
   height:44px;
   top:-12px;
   right:28px;
-  box-shadow:45px 30px 0 -9px #800000;
+  box-shadow:45px 30px 0 0 #800000;
 }
 .announcement-card:after {
   bottom:-10px;
   left:26px;
   width:30px;
   height:30px;
-  box-shadow:-40px -34px 0 0 #800000,
-              28px -9px 0 -4px #800000,
-              16px 20px 0 -6px #800000,
+  box-shadow:-40px -34px 0 2px #800000,
+              28px -9px 0 11px #800000,
+              14px 20px 0 -6px #800000,
               4px 32px 0 -10px #800000
   
 }

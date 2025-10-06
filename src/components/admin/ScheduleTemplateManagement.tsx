@@ -15,7 +15,9 @@ import { format } from 'date-fns';
 
 type ScheduleTemplateItem = {
   id: string;
-  time: string;
+  time: string; // Keep for backward compatibility
+  start_time: string;
+  end_time: string;
   title: string;
   description?: string;
   sort_order: number;
@@ -110,7 +112,9 @@ export const ScheduleTemplateManagement = () => {
       // Create the template items
       const itemsToInsert = data.items.map((item, index) => ({
         template_id: templateData.id,
-        time: item.time,
+        time: item.time, // Keep for backward compatibility
+        start_time: item.start_time,
+        end_time: item.end_time,
         title: item.title,
         description: item.description,
         sort_order: index,
@@ -163,7 +167,9 @@ export const ScheduleTemplateManagement = () => {
       // Insert new items
       const itemsToInsert = data.items.map((item, index) => ({
         template_id: id,
-        time: item.time,
+        time: item.time, // Keep for backward compatibility
+        start_time: item.start_time,
+        end_time: item.end_time,
         title: item.title,
         description: item.description,
         sort_order: index,
@@ -276,7 +282,9 @@ export const ScheduleTemplateManagement = () => {
               description: editingTemplate.description,
               days_of_week: editingTemplate.days_of_week,
               items: editingTemplate.items.map(item => ({
-                time: item.time,
+                time: item.time, // Keep for backward compatibility
+                start_time: item.start_time || item.time,
+                end_time: item.end_time || item.time,
                 title: item.title,
                 description: item.description || '',
               })),

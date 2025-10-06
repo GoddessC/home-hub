@@ -289,7 +289,7 @@ export const MemberDashboardPanel = ({ member, chores, isExpanded, onToggleExpan
                 <div className="flex flex-col items-center gap-4 w-1/3">
                   <MemberAvatar
                     memberId={member.id}
-                    className="w-32 h-48 md:w-40 md:h-60 lg:w-48 lg:h-72"
+                    className=" w-2/4 h-full"
                     viewMode="full"
                     currentFeeling={currentFeeling}
                   />

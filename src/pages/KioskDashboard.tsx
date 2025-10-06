@@ -5,7 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format } from 'date-fns';
 import { Link } from 'react-router-dom';
-import { Leaf, Shield, X, Rocket } from 'lucide-react';
+import { Leaf, Shield, Rocket } from 'lucide-react';
 import { useEffect, useState, useRef } from 'react';
 import { cn } from '@/lib/utils';
 import { MemberDashboardPanel } from '@/components/dashboard/MemberDashboardPanel';
@@ -223,17 +223,17 @@ const KioskDashboard = () => {
   };
 
   return (
-    <div className={cn("min-h-screen dashboardBG", isAnonymous ? "text-white dark" : "")}>
+    <div className={cn("overflow-hidden min-h-screen dashboardBG", isAnonymous ? "text-white dark" : "")}>
       {/* Top Section - Header */}
       <div className="relative top-0 left-0 right-0">
-        <div className="w-3/4 flex justify-between p-4">
+        <div className="w-3/4 flex justify-between p-8 pt-0">
           <div className="flex gap-8 self-start w-full">
             <h3 className={cn("text-3xl font-bold self-center", isAnonymous ? "" : "text-gray-800")}>
               {household?.name || (isAnonymous ? 'Kiosk Mode' : 'Dashboard')}
             </h3>
             {/* Admin Panel Button */}
             {!isAnonymous && member?.role === 'OWNER' && (
-              <Button asChild variant="outline" className="absolute left-4 bottom-2">
+              <Button asChild variant="outline" className="absolute left-8 bottom-1">
                 <Link to="/admin">
                   <Shield className="mr-2 h-4 w-4" />
                   Admin Panel
@@ -244,16 +244,15 @@ const KioskDashboard = () => {
           </div>
         </div>
       </div>
-
-      <div className="absolute top-16 right-0">
+      <div className="absolute top-8 right-0">
         <ClockWeatherPanel className="border-r-0 rounded-l-full"/>
       </div>
 
       {/* Main Content Area - 3 Column Layout */}
       <div className="flex h-[calc(100vh-8rem)]">
         {/* Left Column - Schedule */}
-        <div className="w-1/4 p-4">
-          <SchedulePanel />
+        <div className="w-1/4 p-4 h-3/4 top-8">
+          <SchedulePanel className="h-full overflow-hidden" />
         </div>
 
         {/* Center Column - Main Content (Larger) */}
@@ -264,12 +263,12 @@ const KioskDashboard = () => {
         </div>
 
         {/* Right Column - Clock/Weather + Team Quests */}
-        <div className="w-1/4 p-4 absolute right-4 h-[25rem] scrollbar-width-none top-80">
+        <div className="w-1/4 p-4 absolute right-6 h-[28rem] top-[15rem] scrollbar-width-none ">
           <div className="space-y-4 h-full flex flex-col">
             {/* Team Quests Section */}
             <div className="flex-1 min-h-0">
               <h3 className="text-lg font-semibold mb-3 text-center">Active Team Quests</h3>
-              <div className="h-full overflow-y-auto scrollbar-width-none space-y-4">
+              <div className="h-full overflow-y-auto scrollbar-width-none space-y-4 border border-gray-200 rounded-lg">
                 {isLoadingQuests ? (
                   <div className="space-y-4">
                     <Skeleton className="h-48 w-full" />
@@ -283,8 +282,8 @@ const KioskDashboard = () => {
                     ))}
                   </>
                 ) : (
-                  <div className="text-center text-muted-foreground py-8">
-                    <Rocket className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <div className="h-full flex flex-col items-center justify-center text-muted-foreground">
+                    <Rocket className="h-12 w-12 mb-4 opacity-50" />
                     <p>No active quests</p>
                   </div>
                 )}
@@ -292,23 +291,24 @@ const KioskDashboard = () => {
             </div>
           </div>
         </div>
+
         {/* Calm Corner - Bottom Right */}
         {household?.is_calm_corner_enabled && (
-          <div className="fixed bottom-4 right-4 z-40 w-64 h-64 p-4 shadow-lg flex flex-col  hover:bg-gray-50 transition-colors rounded-full items-center justify-center">
+          <div className="fixed bottom-[-5%] left-[-4%] z-40 w-64 h-64 p-4 shadow-lg flex flex-col bg-[#800000] text-white hover:bg-[#e5c69c] transition-colors rounded-full items-center justify-center">
             <Link
               to="/kiosk/calm-corner"
-              className="block"
+              className="block w-full h-full rounded-full"
               onClick={handleCalmCornerClick}
             >
               <Button
                 variant="ghost"
                 className={cn(
-                  "",
+                  "flex flex-col items-center justify-center w-full h-full",
                   isCalmCornerSuggested && "animate-rainbow-border border-4 border-transparent"
                 )}
               >
-                <Leaf className="h-8 w-8 mb-2" />
-                <span className="text-xs font-semibold">Calm Corner</span>
+                <Leaf className="h-8 w-8 mb-2"/>
+                <span className="text-xs font-semibold text-center">Calm Corner</span>
               </Button>
             </Link>
           </div>
@@ -322,34 +322,42 @@ const KioskDashboard = () => {
         )}
       </div>
 
-      {/* Member Rail - Bottom Full Width */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-900 z-30">
-        {isLoadingMembers ? (
-          <div className="flex gap-4 overflow-x-auto px-6 py-4">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <Skeleton key={i} className="h-22 w-22 rounded-full flex-shrink-0" />
-            ))}
-          </div>
-        ) : (
-          <MemberRail
-            members={members || []}
-            onMemberSelect={(selectedMember) => {
-              setSelectedMemberId(selectedMember.id);
-              setIsMemberDetailsVisible(true);
-            }}
-            selectedMemberId={selectedMemberId}
-            chores={chores}
-          />
-        )}
-        
-        {/* Kiosk Mode Info */}
-        {isAnonymous && (
-          <div className="absolute right-6 bottom-8 flex items-center gap-4">
-            <span className="text-sm text-gray-400">{device?.display_name}</span>
-            <Button variant="destructive" onClick={signOut}>Exit Kiosk Mode</Button>
-          </div>
-        )}
+      {/* Member Rail - Always Visible */}
+      <div className={cn(
+        "fixed bottom-0 right-0 w-4/5 h-48 bg-white z-30"
+      )}>
+
+        {/* Member Rail Content */}
+        <div className="h-full overflow-hidden">
+          {isLoadingMembers ? (
+            <div className="flex gap-4 overflow-x-auto px-6 py-4">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <Skeleton key={i} className="h-22 w-22 rounded-full flex-shrink-0" />
+              ))}
+            </div>
+          ) : (
+            <div className="h-full overflow-y-auto p-4">
+              <MemberRail
+                members={members || []}
+                onMemberSelect={(selectedMember) => {
+                  setSelectedMemberId(selectedMember.id);
+                  setIsMemberDetailsVisible(true);
+                }}
+                selectedMemberId={selectedMemberId}
+                chores={chores}
+              />
+            </div>
+          )}
+        </div>
       </div>
+
+      {/* Kiosk Mode Info */}
+      {isAnonymous && (
+        <div className="fixed bottom-6 left-6 z-40 flex items-center gap-4">
+          <span className="text-sm text-gray-400">{device?.display_name}</span>
+          <Button variant="destructive" onClick={signOut}>Exit Kiosk Mode</Button>
+        </div>
+      )}
 
       {/* Member Details Panel */}
       <MemberDetailsPanel

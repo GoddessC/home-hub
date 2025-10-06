@@ -12,9 +12,19 @@ import { Plus, Trash2, Clock, Save, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const scheduleItemSchema = z.object({
-  time: z.string().min(1, 'Time is required'),
+  time: z.string().min(1, 'Time is required'), // Keep for backward compatibility
+  start_time: z.string().min(1, 'Start time is required'),
+  end_time: z.string().min(1, 'End time is required'),
   title: z.string().min(1, 'Title is required'),
   description: z.string().optional(),
+}).refine((data) => {
+  // Ensure end_time is after start_time
+  const start = new Date(`2000-01-01T${data.start_time}`);
+  const end = new Date(`2000-01-01T${data.end_time}`);
+  return end > start;
+}, {
+  message: "End time must be after start time",
+  path: ["end_time"]
 });
 
 const scheduleTemplateSchema = z.object({
@@ -50,7 +60,7 @@ export const ScheduleTemplateForm = ({
       template_name: defaultValues?.template_name || '',
       description: defaultValues?.description || '',
       days_of_week: defaultValues?.days_of_week || [],
-      items: defaultValues?.items || [{ time: '', title: '', description: '' }],
+      items: defaultValues?.items || [{ time: '', start_time: '', end_time: '', title: '', description: '' }],
     },
   });
 
@@ -60,9 +70,19 @@ export const ScheduleTemplateForm = ({
       template_name: defaultValues?.template_name || '',
       description: defaultValues?.description || '',
       days_of_week: defaultValues?.days_of_week || [],
-      items: defaultValues?.items || [{ time: '', title: '', description: '' }],
+      items: defaultValues?.items || [{ time: '', start_time: '', end_time: '', title: '', description: '' }],
     });
   }, [defaultValues, reset]);
+
+  // Sync time field with start_time for backward compatibility
+  const watchedItems = watch('items');
+  React.useEffect(() => {
+    watchedItems.forEach((item, index) => {
+      if (item.start_time && item.start_time !== item.time) {
+        setValue(`items.${index}.time`, item.start_time);
+      }
+    });
+  }, [watchedItems, setValue]);
 
   const { fields, append, remove } = useFieldArray({
     control,
@@ -70,7 +90,7 @@ export const ScheduleTemplateForm = ({
   });
 
   const addScheduleItem = () => {
-    append({ time: '', title: '', description: '' });
+    append({ time: '', start_time: '', end_time: '', title: '', description: '' });
   };
 
   const removeScheduleItem = (index: number) => {
@@ -163,18 +183,33 @@ export const ScheduleTemplateForm = ({
                   )}
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
                   <div>
-                    <Label htmlFor={`items.${index}.time`}>Time</Label>
+                    <Label htmlFor={`items.${index}.start_time`}>Start Time</Label>
                     <Input
-                      id={`items.${index}.time`}
+                      id={`items.${index}.start_time`}
                       type="time"
-                      {...register(`items.${index}.time`)}
-                      className={cn(errors.items?.[index]?.time && "border-destructive")}
+                      {...register(`items.${index}.start_time`)}
+                      className={cn(errors.items?.[index]?.start_time && "border-destructive")}
                     />
-                    {errors.items?.[index]?.time && (
+                    {errors.items?.[index]?.start_time && (
                       <p className="text-red-500 text-xs mt-1">
-                        {errors.items[index]?.time?.message}
+                        {errors.items[index]?.start_time?.message}
+                      </p>
+                    )}
+                  </div>
+
+                  <div>
+                    <Label htmlFor={`items.${index}.end_time`}>End Time</Label>
+                    <Input
+                      id={`items.${index}.end_time`}
+                      type="time"
+                      {...register(`items.${index}.end_time`)}
+                      className={cn(errors.items?.[index]?.end_time && "border-destructive")}
+                    />
+                    {errors.items?.[index]?.end_time && (
+                      <p className="text-red-500 text-xs mt-1">
+                        {errors.items[index]?.end_time?.message}
                       </p>
                     )}
                   </div>

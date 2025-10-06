@@ -259,21 +259,12 @@ const KioskDashboard = () => {
         {/* Center Column - Main Content (Larger) */}
         <div className="flex-1 min-w-0">
           <div className="h-full flex flex-col w-3/5">
-            <TouchLeaderboardPodiumView
-              members={(members || []).map((m) => ({
-                id: m.id,
-                name: m.full_name,
-                // For now, use available points (async) is heavy; use 0 and TODO: hydrate
-                points: 0,
-                avatarUrl: null,
-                updatedAt: new Date().toISOString(),
-              }))}
-              settings={{ mode: 'family' }}
-              onMemberSelect={(m) => {
-                setSelectedMemberId(m.id);
+            <LeaderboardWithPoints
+              members={members || []}
+              onSelect={(mId) => {
+                setSelectedMemberId(mId);
                 setIsMemberDetailsVisible(true);
               }}
-              className="flex-1"
             />
           </div>
         </div>
@@ -388,6 +379,46 @@ const KioskDashboard = () => {
           
       {/* Alarm system disabled for now */}
     </div>
+  );
+};
+
+// Lightweight wrapper that fetches points for all members and feeds TouchLeaderboardPodiumView
+const LeaderboardWithPoints = ({ members, onSelect }: { members: Member[]; onSelect: (memberId: string) => void }) => {
+  const { data: pointsMap } = useQuery({
+    queryKey: ['leaderboard_points', members.map(m => m.id)],
+    queryFn: async () => {
+      // Query chore_log joined to chores to compute totals per member in one round trip
+      const { data, error } = await supabase
+        .from('chore_log')
+        .select('member_id, chores(points), completed_at');
+      if (error) throw error;
+      const totals: Record<string, number> = {};
+      (data || []).forEach((row: any) => {
+        if (!row.completed_at) return; // only completed count toward points
+        const pts = Array.isArray(row.chores) ? row.chores[0]?.points : row.chores?.points;
+        const inc = Number.isFinite(pts) ? pts : 0;
+        totals[row.member_id] = (totals[row.member_id] || 0) + inc;
+      });
+      return totals;
+    },
+    staleTime: 60_000,
+  });
+
+  const leaderboardMembers = (members || []).map(m => ({
+    id: m.id,
+    name: m.full_name,
+    points: pointsMap?.[m.id] ?? 0,
+    avatarUrl: null,
+    updatedAt: new Date().toISOString(),
+  }));
+
+  return (
+    <TouchLeaderboardPodiumView
+      members={leaderboardMembers}
+      settings={{ mode: 'family' }}
+      onMemberSelect={(mm) => onSelect(mm.id)}
+      className="flex-1"
+    />
   );
 };
 
